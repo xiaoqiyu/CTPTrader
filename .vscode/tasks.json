@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: g++ build active file",
+			"command": "/usr/bin/g++",
+			"args": [
+				"-g",
+				"*.cpp",
+				"-L",
+				"lib",
+				"-I",
+				"include",
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}",
+				"-lthosttraderapi_se",
+				"-lthostmduserapi_se",
+				"-lpthread"
+
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "compiler: /usr/bin/g++"
+		}
+	]
+}

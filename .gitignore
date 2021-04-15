@@ -33,3 +33,5 @@
 
 cache/
 conf/ctp.ini
+lib/*lib
+lib/*.dll
