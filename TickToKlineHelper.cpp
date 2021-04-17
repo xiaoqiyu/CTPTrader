@@ -79,10 +79,11 @@ void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const s
 	std::cout << "k线生成成功" << std::endl;
 }
 
-void TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData)
+KLineDataType* TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
 	m_priceVec.push_back(pDepthMarketData->LastPrice);
 	m_volumeVec.push_back(pDepthMarketData->Volume);
+	KLineDataType *p_kline_data = nullptr;
 	if (m_priceVec.size() == KLINENUM)
 	{
 		KLineDataType k_line_data;
@@ -97,17 +98,19 @@ void TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 		
 		m_priceVec.clear();
 		m_volumeVec.clear();
-		char filePath[100] = {'\0'};
-		sprintf(filePath, "cache/%s_kline.txt", pDepthMarketData->TradingDay);
-		std::ofstream outFile;
-		outFile.open(filePath, std::ios::app); // 文件追加写入 
-		outFile << pDepthMarketData->InstrumentID << "," 
-				<<pDepthMarketData->UpdateTime <<","
-				<< k_line_data.open_price <<","
-				<< k_line_data.high_price <<","
-				<< k_line_data.low_price << ","
-				<<k_line_data.close_price <<","
-				<< k_line_data.volume << std::endl;
-		outFile.close();
-	}
+		p_kline_data = &k_line_data;
+		// char filePath[100] = {'\0'};
+		// sprintf(filePath, "cache/%s_kline.txt", pDepthMarketData->TradingDay);
+		// std::ofstream outFile;
+		// outFile.open(filePath, std::ios::app); // 文件追加写入 
+		// outFile << pDepthMarketData->InstrumentID << "," 
+		// 		<<pDepthMarketData->UpdateTime <<","
+		// 		<< k_line_data.open_price <<","
+		// 		<< k_line_data.high_price <<","
+		// 		<< k_line_data.low_price << ","
+		// 		<<k_line_data.close_price <<","
+		// 		<< k_line_data.volume << std::endl;
+		// outFile.close();
+	} 
+	return p_kline_data;
 }

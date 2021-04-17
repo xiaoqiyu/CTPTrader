@@ -135,5 +135,5 @@
 
 // Market Handler task, FXXX for future, OXXX for options. 
 #define FDEPTHMKT 125
-#define DATATHREADNUM 1
+#define INSTRUMENTNUM 1
 #define KLINENUM 120

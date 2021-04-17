@@ -13,12 +13,12 @@
 
 INIReader reader;
 //TODO hack for testing, should be member of CTPMdHandler.
-MktDataQueue g_dataqueue;
+// MktDataQueue g_dataqueue;
 std::unordered_map<std::string, TickToKlineHelper> g_KlineHash; // k线存储表
+
 
 int main(int argc, char *argv[])
 {
-
     if (argc <= 1)
     {
         std::cout << "Please enter a config name" << std::endl;

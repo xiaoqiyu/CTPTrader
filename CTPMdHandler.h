@@ -3,11 +3,15 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cstring>
+#include <unordered_map>
 
 #include "include/ThostFtdcMdApi.h"
 #include "include/INIReader.h"
 #include "include/ctp_queue.h"
 #include "include/define.h"
+#include "TickToKlineHelper.h"
+#include "MktDataHandler.h"
 
 extern INIReader reader;
 extern MktDataQueue g_dataqueue;
@@ -19,35 +23,33 @@ class CTPMdHandler: public CThostFtdcMdSpi
 private:
 	CThostFtdcMdApi *g_pMdUserApi = nullptr;
 	//MktDataQueue _data_queue; 
-	thread  _data_thread[DATATHREADNUM];
+	// thread  _data_thread[DATATHREADNUM];
+	unordered_map<string,MktDataHandler*> dict_mkthandler;
 	//TODO to be added
 	bool _ready = false;
+	//TODO check this
+	// vector<thread> data_thread_lst;
+	vector<MktDataHandler*> data_handler_lst;
+	thread data_thread_lst [100];
+	// MktDataHandler* handler_lst[100];
 	//TODO 不用作为成员变量
 	int instrumentNum = 0; //行情合约订阅数量
 	char *pInstrumentID[]; // 行情合约代码列表，中、上、大、郑交易所各选一种
 
 
+
 	// ---- 继承自CTP父类的回调接口并实现 ---- //
 public:
 	CTPMdHandler(){
-		std::string strInstruments = reader.Get("md","InstrumentID","rb2110,m2109");
-		std::stringstream sstr(strInstruments);
-		std::string token;
-		int be = 0;
-		// std::cout<<"Subscribe Instruments are: "<<std::endl;
-		while(getline(sstr, token, ','))
-		{
-			pInstrumentID[be] = new char[token.length()+1];
-			strcpy(pInstrumentID[be], token.c_str());
-			// std::cout<<pInstrumentID[be]<<std::endl;
-			be++;
-		}
-		
-		instrumentNum = be;
+	
 		// std::cout<<instrumentNum<<std::endl;
 		// std::cout<<"finish constructor"<<std::endl;
 	};
 	~CTPMdHandler(){
+		for(vector<MktDataHandler*>::iterator iter = this->data_handler_lst.begin();  iter!=this->data_handler_lst.end();++iter)
+		{
+			(*iter)->release();
+		}
 		this->g_pMdUserApi->Release();
 		this->g_pMdUserApi=NULL;
 	};
@@ -81,12 +83,34 @@ public:
 	std::cout<<"CTPMdHandler Init..."<<std::endl;
 	this->g_pMdUserApi->Init();
 	this->_ready = true;
-	//TODO why the 2nd param???, remove thread hardcode
-	for(int i = 0; i < DATATHREADNUM; ++i)
+
+	// for(int i = 0; i < DATATHREADNUM; ++i)
+	// {
+	// 	std::cout<<"Data Thread: "<<i<<"  start"<<std::endl;
+	// 	this->_data_thread[i] = thread(&CTPMdHandler::ProcessData, this);
+	// }
+	//从conf 初始化合约代码
+	std::string strInstruments = reader.Get("md","InstrumentID","rb2110,m2109");
+	std::stringstream sstr(strInstruments);
+	std::string token;
+	int cnt = 0;
+	// std::cout<<"Subscribe Instruments are: "<<std::endl;
+	while(getline(sstr, token, ','))
 	{
-		std::cout<<"Data Thread: "<<i<<"  start"<<std::endl;
-		this->_data_thread[i] = thread(&CTPMdHandler::ProcessData, this);
+		pInstrumentID[cnt] = new char[token.length()+1];
+		strcpy(pInstrumentID[cnt], token.c_str());
+		std::cout<<"Market Data Handler "<<cnt<<" created for instrument: "<<token<<endl;
+		MktDataHandler *_p_tmp = new MktDataHandler();
+		_p_tmp->init(token.c_str());
+		dict_mkthandler.insert(pair<string,MktDataHandler*>(token,_p_tmp));
+		std::cout<<"Thread  "<<cnt<<" created for instrument: "<<token<<endl;
+		this->data_handler_lst.push_back(_p_tmp);
+		// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp); 
+		// this->data_thread_lst.push_back(t);
+		this->data_thread_lst[cnt] = thread(&CTPMdHandler::ProcessData, this, _p_tmp); 
+		cnt++;
 	}
+	instrumentNum = cnt;
 
 	//TODO check the thread
     // this->_active = true;
@@ -132,6 +156,6 @@ public:
 	void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp);
 
 	///行情数据处理线程函数
-	void ProcessData();
+	void ProcessData(MktDataHandler *pMktDataHandler);
 };
 

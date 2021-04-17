@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string>
+#include <cstring>
 
 std::mutex mtx;        // 全局互斥锁
 std::queue<int> que;   // 全局消息队列
@@ -49,4 +51,32 @@ int thread_test()
 		thd2[i].join();
 	}
 	return 0;
+}
+
+void test(const char *b)
+{
+    char a[10];
+    std::strcpy(a, b);
+    std::cout<<a<<b<<std::endl;
+}
+
+void test_str()
+{
+	std::string a="abc";
+    char d[10]={"abc"};
+    char *aa = new char[10];
+    strcpy(aa,a.c_str());
+    // std::cout<<d[1]<<d[7]<<std::endl;
+    // test(a.c_str());
+    test(d);
+    test(aa);
+    test(a.c_str());
+
+	std::string s = "abc";
+    std::string ss;
+    char *ptr = const_cast<char*>(s.c_str());
+    char cc[10] ={'\0'};
+    strcpy(cc, ptr);
+    std::cout<<cc<<","<<*(ptr+1)<<std::endl;
+
 }
