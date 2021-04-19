@@ -4,7 +4,7 @@
 #include  "CTPMdHandler.h"
 #include "TickToKlineHelper.h"
 
-extern std::unordered_map<std::string, TickToKlineHelper> g_KlineHash; // k线存储表
+// extern std::unordered_map<std::string, TickToKlineHelper> g_KlineHash; // k线存储表
 
 // ---- ctp_api回调函数 ---- //
 // 连接成功应答
@@ -12,6 +12,7 @@ void CTPMdHandler::OnFrontConnected()
 {
 	std::cout << "=====建立网络连接成功=====" << std::endl;
 	// 开始登录
+	INIReader reader(this->conf_file);
     CThostFtdcReqUserLoginField reqUserLogin = { 0 };
     strcpy(reqUserLogin.BrokerID,reader.Get("user","BrokerID","9999").c_str());
     strcpy(reqUserLogin.UserID,reader.Get("user","UserID","123456").c_str());
@@ -202,7 +203,7 @@ void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMa
 	// *mkt_data = *pDepthMarketData;
 	// data.mkt_data = mkt_data;
 	// g_dataqueue.push(data);
-	this->dict_mkthandler[pDepthMarketData->InstrumentID]->push_mkt_depth_data(pDepthMarketData);
+	this->dict_mkthandler[pDepthMarketData->InstrumentID]->on_tick(pDepthMarketData);
 
 
 
@@ -226,10 +227,12 @@ void CTPMdHandler::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp)
 	std::cout << "询价编号： " << pForQuoteRsp->ForQuoteSysID << std::endl;
 }
 
-void CTPMdHandler::ProcessData(MktDataHandler* p_mkt)
+void CTPMdHandler::ProcessData(StrategyHandler* p_strategy)
 {
-	std::cout<<"============================Start Process Data=========================="<<std::endl;
-	p_mkt->process_mkt_depth_data();
+	char * p_instrument = new char[11];
+	p_instrument = p_strategy->getInstrumentID();
+	std::cout<<"============================Start Process Data for Instrument: "<<p_instrument<<std::endl;
+	p_strategy->process_tick();
 	// try
 	// {
 	// 	while(true)

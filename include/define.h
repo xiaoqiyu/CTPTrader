@@ -1,9 +1,6 @@
 #pragma once
 
 
-//global
-//extern FILE* logfile;
-//#define LOG(format, ...) fprintf(logfile, format, __VA_ARGS__); printf(format, __VA_ARGS__); fflush(logfile);
 #define LOG(format, ...) printf(format, __VA_ARGS__)
 
 //Trader Handler Task 
@@ -19,8 +16,8 @@
 #define ONRSPGENUSERCAPTCHA 9
 #define ONRSPGENUSERTEXT 10
 #define ONRSPORDERINSERT 11
-#define ONRSPPARKEDORDERINSERT 12
-#define ONRSPPARKEDORDERACTION 13
+#define ONRSPPARKEDORDERINSERT 12 //预埋单报单请求响应
+#define ONRSPPARKEDORDERACTION 13 //预埋撤单请求响应
 #define ONRSPORDERACTION 14
 #define ONRSPQUERYMAXORDERVOLUME 15
 #define ONRSPSETTLEMENTINFOCONFIRM 16

@@ -7074,25 +7074,25 @@ void CTPTraderHandler::processTask()
                 this->processRspGenUserText(&task);
                 break;
             }
-
+			//报单请求
             case ONRSPORDERINSERT:
             {
                 this->processRspOrderInsert(&task);
                 break;
             }
-
+			//预埋单录入请求
             case ONRSPPARKEDORDERINSERT:
             {
                 this->processRspParkedOrderInsert(&task);
                 break;
             }
-
+			//预埋撤单
             case ONRSPPARKEDORDERACTION:
             {
                 this->processRspParkedOrderAction(&task);
                 break;
             }
-
+			//报单操作请求
             case ONRSPORDERACTION:
             {
                 this->processRspOrderAction(&task);
@@ -7104,19 +7104,19 @@ void CTPTraderHandler::processTask()
             //     this->processRspQueryMaxOrderVolume(&task);
             //     break;
             // }
-
+			//结算结果确认
             case ONRSPSETTLEMENTINFOCONFIRM:
             {
                 this->processRspSettlementInfoConfirm(&task);
                 break;
             }
-
+			//删除预埋单
             case ONRSPREMOVEPARKEDORDER:
             {
                 this->processRspRemoveParkedOrder(&task);
                 break;
             }
-
+			//删除预埋撤单
             case ONRSPREMOVEPARKEDORDERACTION:
             {
                 this->processRspRemoveParkedOrderAction(&task);
@@ -7176,25 +7176,25 @@ void CTPTraderHandler::processTask()
                 this->processRspCombActionInsert(&task);
                 break;
             }
-
+			//查询报单
             case ONRSPQRYORDER:
             {
                 this->processRspQryOrder(&task);
                 break;
             }
-
+			//查询成交
             case ONRSPQRYTRADE:
             {
                 this->processRspQryTrade(&task);
                 break;
             }
-
+			//查询持仓
             case ONRSPQRYINVESTORPOSITION:
             {
                 this->processRspQryInvestorPosition(&task);
                 break;
             }
-
+			//查询资金账户
             case ONRSPQRYTRADINGACCOUNT:
             {
                 this->processRspQryTradingAccount(&task);
@@ -7212,13 +7212,13 @@ void CTPTraderHandler::processTask()
                 this->processRspQryTradingCode(&task);
                 break;
             }
-
+			//查询合约保证金率
             case ONRSPQRYINSTRUMENTMARGINRATE:
             {
                 this->processRspQryInstrumentMarginRate(&task);
                 break;
             }
-
+			//查询合约手续费率
             case ONRSPQRYINSTRUMENTCOMMISSIONRATE:
             {
                 this->processRspQryInstrumentCommissionRate(&task);
@@ -7230,13 +7230,13 @@ void CTPTraderHandler::processTask()
                 this->processRspQryExchange(&task);
                 break;
             }
-
+			//查询产品
             case ONRSPQRYPRODUCT:
             {
                 this->processRspQryProduct(&task);
                 break;
             }
-
+			//查询合约
             case ONRSPQRYINSTRUMENT:
             {
                 this->processRspQryInstrument(&task);
@@ -7248,7 +7248,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryDepthMarketData(&task);
                 break;
             }
-
+			//查询结算结果
             case ONRSPQRYSETTLEMENTINFO:
             {
                 this->processRspQrySettlementInfo(&task);
@@ -7260,7 +7260,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryTransferBank(&task);
                 break;
             }
-
+			//投资者持仓明细
             case ONRSPQRYINVESTORPOSITIONDETAIL:
             {
                 this->processRspQryInvestorPositionDetail(&task);
@@ -7356,7 +7356,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryInstrumentOrderCommRate(&task);
                 break;
             }
-
+			//查询资金账户
             case ONRSPQRYSECAGENTTRADINGACCOUNT:
             {
                 this->processRspQrySecAgentTradingAccount(&task);
@@ -7392,13 +7392,13 @@ void CTPTraderHandler::processTask()
                 this->processRspQryExecOrder(&task);
                 break;
             }
-
+			//查询询价
             case ONRSPQRYFORQUOTE:
             {
                 this->processRspQryForQuote(&task);
                 break;
             }
-
+			//查询报价
             case ONRSPQRYQUOTE:
             {
                 this->processRspQryQuote(&task);
@@ -7590,19 +7590,19 @@ void CTPTraderHandler::processTask()
                 this->processRspQryContractBank(&task);
                 break;
             }
-
+			//查询预埋单
             case ONRSPQRYPARKEDORDER:
             {
                 this->processRspQryParkedOrder(&task);
                 break;
             }
-
+			//查询预埋撤单
             case ONRSPQRYPARKEDORDERACTION:
             {
                 this->processRspQryParkedOrderAction(&task);
                 break;
             }
-
+			//查询交易通知
             case ONRSPQRYTRADINGNOTICE:
             {
                 this->processRspQryTradingNotice(&task);

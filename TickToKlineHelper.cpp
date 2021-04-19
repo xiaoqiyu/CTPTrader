@@ -79,7 +79,7 @@ void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const s
 	std::cout << "k线生成成功" << std::endl;
 }
 
-KLineDataType* TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData)
+KLineDataType *TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
 	m_priceVec.push_back(pDepthMarketData->LastPrice);
 	m_volumeVec.push_back(pDepthMarketData->Volume);
@@ -94,16 +94,18 @@ KLineDataType* TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDat
 		// 成交量的真实的算法是当前区间最后一个成交量减去上去一个区间最后一个成交量
 		k_line_data.volume = m_volumeVec.back() - m_volumeVec.front();
 		m_KLineDataArray.push_back(k_line_data); // 此处可以存到内存
-		std::cout << "KLINE: "<<pDepthMarketData->UpdateTime << k_line_data.open_price << k_line_data.high_price << k_line_data.low_price << k_line_data.close_price << k_line_data.volume << std::endl;
-		
+		std::cout << "KLINE: " << pDepthMarketData->UpdateTime << k_line_data.open_price << "," 
+				<< k_line_data.high_price << "," << k_line_data.low_price << "," << k_line_data.close_price
+				<< "," << k_line_data.volume << std::endl;
+
 		m_priceVec.clear();
 		m_volumeVec.clear();
 		p_kline_data = &k_line_data;
 		// char filePath[100] = {'\0'};
 		// sprintf(filePath, "cache/%s_kline.txt", pDepthMarketData->TradingDay);
 		// std::ofstream outFile;
-		// outFile.open(filePath, std::ios::app); // 文件追加写入 
-		// outFile << pDepthMarketData->InstrumentID << "," 
+		// outFile.open(filePath, std::ios::app); // 文件追加写入
+		// outFile << pDepthMarketData->InstrumentID << ","
 		// 		<<pDepthMarketData->UpdateTime <<","
 		// 		<< k_line_data.open_price <<","
 		// 		<< k_line_data.high_price <<","
@@ -111,6 +113,6 @@ KLineDataType* TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDat
 		// 		<<k_line_data.close_price <<","
 		// 		<< k_line_data.volume << std::endl;
 		// outFile.close();
-	} 
+	}
 	return p_kline_data;
 }

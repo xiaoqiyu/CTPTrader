@@ -16,6 +16,9 @@ private:
 	condition_variable cond_;			//条件变量
 	bool ready_ = false;
 	bool login_ = false;
+    //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
+    
+
 public:
     CTPTraderHandler(){};
     ~CTPTraderHandler()

@@ -11,47 +11,51 @@
 #include "include/ctp_queue.h"
 #include "include/define.h"
 #include "TickToKlineHelper.h"
-#include "MktDataHandler.h"
+#include "StrategyHandler.h"
 
-extern INIReader reader;
+// INIReader reader;
 extern MktDataQueue g_dataqueue;
 
-
-
-class CTPMdHandler: public CThostFtdcMdSpi
+class CTPMdHandler : public CThostFtdcMdSpi
 {
 private:
 	CThostFtdcMdApi *g_pMdUserApi = nullptr;
-	//MktDataQueue _data_queue; 
+	//MktDataQueue _data_queue;
 	// thread  _data_thread[DATATHREADNUM];
-	unordered_map<string,MktDataHandler*> dict_mkthandler;
+	unordered_map<string, StrategyHandler *> dict_mkthandler;
 	//TODO to be added
 	bool _ready = false;
 	//TODO check this
 	// vector<thread> data_thread_lst;
-	vector<MktDataHandler*> data_handler_lst;
-	thread data_thread_lst [100];
+	vector<StrategyHandler *> strtegy_handler_lst;
+	thread data_thread_lst[100];
 	// MktDataHandler* handler_lst[100];
 	//TODO 不用作为成员变量
 	int instrumentNum = 0; //行情合约订阅数量
+	char conf_file[10] = {'\0'};
 	char *pInstrumentID[]; // 行情合约代码列表，中、上、大、郑交易所各选一种
-
-
 
 	// ---- 继承自CTP父类的回调接口并实现 ---- //
 public:
-	CTPMdHandler(){
-	
+	CTPMdHandler(const char *p_config_file)
+	{
+		std::strcpy(this->conf_file, p_config_file);
 		// std::cout<<instrumentNum<<std::endl;
 		// std::cout<<"finish constructor"<<std::endl;
+
+		// if (reader.ParseError() != 0)
+		// {
+		// 	cout << "Can't load config file in current directory.\n";
+		// }
 	};
-	~CTPMdHandler(){
-		for(vector<MktDataHandler*>::iterator iter = this->data_handler_lst.begin();  iter!=this->data_handler_lst.end();++iter)
+	~CTPMdHandler()
+	{
+		for (vector<StrategyHandler *>::iterator iter = this->strtegy_handler_lst.begin(); iter != this->strtegy_handler_lst.end(); ++iter)
 		{
 			(*iter)->release();
 		}
 		this->g_pMdUserApi->Release();
-		this->g_pMdUserApi=NULL;
+		this->g_pMdUserApi = NULL;
 	};
 	///当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
 	void OnFrontConnected();
@@ -75,58 +79,62 @@ public:
 	//TODO check param
 	void RegisterFront(char *pszFrontAddress)
 	{
-    	return this->g_pMdUserApi->RegisterFront(pszFrontAddress);
+		return this->g_pMdUserApi->RegisterFront(pszFrontAddress);
 	}
 
-	void init()
+	void init(vector<StrategyHandler *> v_strategy_handler)
 	{
-	std::cout<<"CTPMdHandler Init..."<<std::endl;
-	this->g_pMdUserApi->Init();
-	this->_ready = true;
+		std::cout << "CTPMdHandler Init..." << std::endl;
+		this->g_pMdUserApi->Init();
+		this->_ready = true;
 
-	// for(int i = 0; i < DATATHREADNUM; ++i)
-	// {
-	// 	std::cout<<"Data Thread: "<<i<<"  start"<<std::endl;
-	// 	this->_data_thread[i] = thread(&CTPMdHandler::ProcessData, this);
-	// }
-	//从conf 初始化合约代码
-	std::string strInstruments = reader.Get("md","InstrumentID","rb2110,m2109");
-	std::stringstream sstr(strInstruments);
-	std::string token;
-	int cnt = 0;
-	// std::cout<<"Subscribe Instruments are: "<<std::endl;
-	while(getline(sstr, token, ','))
-	{
-		pInstrumentID[cnt] = new char[token.length()+1];
-		strcpy(pInstrumentID[cnt], token.c_str());
-		std::cout<<"Market Data Handler "<<cnt<<" created for instrument: "<<token<<endl;
-		MktDataHandler *_p_tmp = new MktDataHandler();
-		_p_tmp->init(token.c_str());
-		dict_mkthandler.insert(pair<string,MktDataHandler*>(token,_p_tmp));
-		std::cout<<"Thread  "<<cnt<<" created for instrument: "<<token<<endl;
-		this->data_handler_lst.push_back(_p_tmp);
-		// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp); 
-		// this->data_thread_lst.push_back(t);
-		this->data_thread_lst[cnt] = thread(&CTPMdHandler::ProcessData, this, _p_tmp); 
-		cnt++;
-	}
-	instrumentNum = cnt;
-
-	//TODO check the thread
-    // this->_active = true;
-    // this->_task_thread = thread(&CTPTraderHandler::processTask, this);
-    // SubscribePrivateTopic(THOST_TERT_QUICK);
-    // SubscribePublicTopic(THOST_TERT_QUICK);
-	// std::cout<<"API version:\t";
-    // std::cout << this->_api->GetApiVersion() << std::endl;
-    // this->_api->Init();
-	// //TODO check 
-	// unique_lock<mutex> mlock(mutex_);
-	// cond_.wait(mlock, [&]() {
-	// 	return ready_;
-	// }); //�ȴ���������֪ͨ
+		// for(int i = 0; i < DATATHREADNUM; ++i)
+		// {
+		// 	std::cout<<"Data Thread: "<<i<<"  start"<<std::endl;
+		// 	this->_data_thread[i] = thread(&CTPMdHandler::ProcessData, this);
+		// }
+		//从conf 初始化合约代码
+		INIReader reader(this->conf_file);
+		std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
+		std::cout << "test for instrument ----------------------------------------------------" << std::endl;
+		std::cout << strInstruments << std::endl;
+		std::stringstream sstr(strInstruments);
+		std::string token;
+		int cnt = 0;
+		// std::cout<<"Subscribe Instruments are: "<<std::endl;
+		vector<StrategyHandler *>::iterator iter = v_strategy_handler.begin();
+		while (getline(sstr, token, ','))
+		{
+			std::cout << "process instrument； " << token << std::endl;
+			pInstrumentID[cnt] = new char[token.length() + 1];
+			strcpy(pInstrumentID[cnt], token.c_str());
+			std::cout << "Market Data Handler " << cnt << " created for instrument: " << token << endl;
+			// StrategyHandler *_p_tmp = new StrategyHandler();
+			// _p_tmp->init(token.c_str());
+			StrategyHandler *_p_tmp = *(iter + cnt);
+			dict_mkthandler.insert(pair<string, StrategyHandler *>(token, _p_tmp));
+			std::cout << "Thread  " << cnt << " created for instrument: " << token << endl;
+			this->strtegy_handler_lst.push_back(_p_tmp);
+			// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp);
+			// this->data_thread_lst.push_back(t);
+			this->data_thread_lst[cnt] = thread(&CTPMdHandler::ProcessData, this, _p_tmp);
+			cnt++;
+		}
+		instrumentNum = cnt;
+		//TODO check the thread
+		// this->_active = true;
+		// this->_task_thread = thread(&CTPTraderHandler::processTask, this);
+		// SubscribePrivateTopic(THOST_TERT_QUICK);
+		// SubscribePublicTopic(THOST_TERT_QUICK);
+		// std::cout<<"API version:\t";
+		// std::cout << this->_api->GetApiVersion() << std::endl;
+		// this->_api->Init();
+		// //TODO check
+		// unique_lock<mutex> mlock(mutex_);
+		// cond_.wait(mlock, [&]() {
+		// 	return ready_;
+		// }); //�ȴ���������֪ͨ
 	};
-
 
 	///登录请求响应
 	void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
@@ -156,6 +164,5 @@ public:
 	void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp);
 
 	///行情数据处理线程函数
-	void ProcessData(MktDataHandler *pMktDataHandler);
+	void ProcessData(StrategyHandler *pStrategyHandler);
 };
-
