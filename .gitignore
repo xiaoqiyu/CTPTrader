@@ -35,6 +35,5 @@ cache/
 conf/ctp.ini
 lib/*lib
 lib/*.dll
-draft.h
-TStrategy.h 
-TStrategy.cpp
+/draft.h
+/TStrategy.* 
