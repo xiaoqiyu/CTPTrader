@@ -52,6 +52,12 @@ class StrategyHandler
 		}
 	}
 
+	virtual bool cal_order_signal();
+
+	virtual bool prepared_order_field();
+
+	void order(){};
+	
 	void release()
 	{
 		mkt_depth_outfile.close();
@@ -69,5 +75,5 @@ class StrategyHandler
 	TickToKlineHelper *p_kline_helper = nullptr;
 	MktDataQueue *p_dataqueue = nullptr;
 	CTPTraderHandler * p_CTP_trader_handler = nullptr;
-	
+	bool _order = false;
 };
