@@ -36,3 +36,4 @@ conf/ctp.ini
 lib/*lib
 lib/*.dll
 draft.h
+TStrategy.*

@@ -10,7 +10,7 @@ class TStrategy:public StrategyHandler
     bool cal_order_signal();
 	bool prepared_order_field();
 	void order(){};
-
+    void func(){};
 
     private:
     bool ordered = false;
