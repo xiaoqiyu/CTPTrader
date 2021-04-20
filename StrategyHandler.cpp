@@ -66,6 +66,7 @@ void StrategyHandler::process_tick()
 											// << pDepthMarketData->AskVolume4 << "," //null
 											// << pDepthMarketData->AskPrice5 << "," //null
 											// << pDepthMarketData->AskVolume5 << "," //null
+											// << pDepthMarketData->AveragePrice-pDepthMarketData->LastPrice<<"," //agerage price include contract size
 											<< pDepthMarketData->PreOpenInterest << ","
 											<< pDepthMarketData->OpenInterest << ","
 											<< pDepthMarketData->PreDelta << ","
@@ -83,7 +84,7 @@ void StrategyHandler::process_tick()
 
 					if(ret)
 					{
-						std::cout << "k line:" << pDepthMarketData->InstrumentID << ":" << p_kline_data->open_price << p_kline_data->high_price << std::endl;
+						// std::cout << "k line:" << pDepthMarketData->InstrumentID << ":" << p_kline_data->open_price <<", "<< p_kline_data->high_price << std::endl;
 						this->kline_outfile << pDepthMarketData->InstrumentID << ","
 											<< pDepthMarketData->UpdateTime << ","
 											<< p_kline_data->open_price << ","

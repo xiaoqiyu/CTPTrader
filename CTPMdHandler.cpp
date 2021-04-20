@@ -188,7 +188,7 @@ void CTPMdHandler::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpe
 // 行情详情通知
 void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
-	std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
+	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
 	this->dict_mkthandler[pDepthMarketData->InstrumentID]->on_tick(pDepthMarketData);
 
 	// 取消订阅行情

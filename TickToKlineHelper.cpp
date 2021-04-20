@@ -93,7 +93,7 @@ bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 		// 成交量的真实的算法是当前区间最后一个成交量减去上去一个区间最后一个成交量
 		p_kline_data->volume = m_volumeVec.back() - m_volumeVec.front();
 		m_KLineDataArray.push_back(p_kline_data); // 此处可以存到内存
-		std::cout << "KLINE: " << pDepthMarketData->UpdateTime << p_kline_data->open_price << "," 
+		std::cout << "KLINE: " <<pDepthMarketData->InstrumentID<<","<<pDepthMarketData->UpdateTime << ","<<p_kline_data->open_price << "," 
 				<< p_kline_data->high_price << "," << p_kline_data->low_price << "," << p_kline_data->close_price
 				<< "," << p_kline_data->volume << std::endl;
 
