@@ -21,9 +21,9 @@ public:
 	// 从本地数据构建k线，并存储到本地(假定本地数据没有丢包)
 	void KLineFromLocalData(const std::string &sFilePath, const std::string &dFilePath); 
 	// 从实时数据构建k线
-	KLineDataType*  KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData);
+	bool KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData, KLineDataType* p_kline_data);
 public:
 	std::vector<double> m_priceVec; // 存储1分钟的价格
 	std::vector<int> m_volumeVec; // 存储1分钟的成交量
-	std::vector<KLineDataType> m_KLineDataArray;
+	std::vector<KLineDataType* > m_KLineDataArray;
 };

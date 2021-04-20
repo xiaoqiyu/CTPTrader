@@ -26,60 +26,51 @@ void StrategyHandler::process_tick()
 			{
 				if (data.mkt_data)
 				{
-					std::cout << "===========================Save Data==============================" << std::endl;
 					CThostFtdcDepthMarketDataField *pDepthMarketData = (CThostFtdcDepthMarketDataField *)data.mkt_data;
-					std::cout << "合约代码： " << pDepthMarketData->InstrumentID << ",";
-					// std::cout << "合约在交易所的代码： " << pDepthMarketData->ExchangeInstID << std::endl;
-					std::cout << "最新价： " << pDepthMarketData->LastPrice << ",";
-					std::cout << "数量： " << pDepthMarketData->Volume << std::endl;
-					// 如果只获取某一个合约行情，可以逐tick地存入文件或数据库
-
-					char filePath[100] = {'\0'};
-					sprintf(filePath, "cache/%s_market_data_new.txt", pDepthMarketData->TradingDay);
-					std::ofstream outFile;
-					// outFile.open(filePath, std::ios::app); // 文件追加写入
+					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					this->mkt_depth_outfile << pDepthMarketData->InstrumentID << ","
-											<< pDepthMarketData->ExchangeID << ","
-											<< pDepthMarketData->ExchangeInstID << ","
+											// << pDepthMarketData->ExchangeID << ","//null 
+											// << pDepthMarketData->ExchangeInstID << "," //null
 											<< pDepthMarketData->ActionDay << ","
 											<< pDepthMarketData->UpdateTime << "." << pDepthMarketData->UpdateMillisec << ","
 											<< pDepthMarketData->LastPrice << ","
 											<< pDepthMarketData->PreSettlementPrice << ","
 											<< pDepthMarketData->PreClosePrice << ","
-											<< pDepthMarketData->PreOpenInterest << ","
 											<< pDepthMarketData->OpenPrice << ","
 											<< pDepthMarketData->HighestPrice << ","
 											<< pDepthMarketData->LowestPrice << ","
+											<< pDepthMarketData->AveragePrice << ","
+											<< pDepthMarketData->ClosePrice << ","
 											<< pDepthMarketData->Volume << ","
 											<< pDepthMarketData->Turnover << ","
-											<< pDepthMarketData->OpenInterest << ","
-											<< pDepthMarketData->ClosePrice << ","
 											<< pDepthMarketData->SettlementPrice << ","
 											<< pDepthMarketData->UpperLimitPrice << ","
-											<< pDepthMarketData->LowestPrice << ","
-											<< pDepthMarketData->AveragePrice << ","
-											<< pDepthMarketData->PreDelta << ","
-											<< pDepthMarketData->CurrDelta << ","
+											<< pDepthMarketData->LowerLimitPrice << ","
 											<< pDepthMarketData->BidPrice1 << ","
 											<< pDepthMarketData->BidVolume1 << ","
-											<< pDepthMarketData->BidPrice2 << ","
-											<< pDepthMarketData->BidVolume2 << ","
-											<< pDepthMarketData->BidPrice3 << ","
-											<< pDepthMarketData->BidVolume3 << ","
-											<< pDepthMarketData->BidPrice4 << ","
-											<< pDepthMarketData->BidVolume4 << ","
-											<< pDepthMarketData->BidPrice5 << ","
-											<< pDepthMarketData->BidVolume5 << ","
+											// << pDepthMarketData->BidPrice2 << "," //null
+											// << pDepthMarketData->BidVolume2 << "," //null
+											// << pDepthMarketData->BidPrice3 << "," //null
+											// << pDepthMarketData->BidVolume3 << "," //null
+											// << pDepthMarketData->BidPrice4 << "," //null
+											// << pDepthMarketData->BidVolume4 << "," //null
+											// << pDepthMarketData->BidPrice5 << "," //null
+											// << pDepthMarketData->BidVolume5 << "," //null
 											<< pDepthMarketData->AskPrice1 << ","
 											<< pDepthMarketData->AskVolume1 << ","
-											<< pDepthMarketData->AskPrice2 << ","
-											<< pDepthMarketData->AskVolume2 << ","
-											<< pDepthMarketData->AskPrice3 << ","
-											<< pDepthMarketData->AskVolume3 << ","
-											<< pDepthMarketData->AskPrice4 << ","
-											<< pDepthMarketData->AskVolume4 << ","
-											<< pDepthMarketData->AskPrice5 << ","
-											<< pDepthMarketData->AskVolume5 << "," << std::endl;
+											// << pDepthMarketData->AskPrice2 << "," //null
+											// << pDepthMarketData->AskVolume2 << "," //null
+											// << pDepthMarketData->AskPrice3 << ","//null
+											// << pDepthMarketData->AskVolume3 << ","//null
+											// << pDepthMarketData->AskPrice4 << "," //null 
+											// << pDepthMarketData->AskVolume4 << "," //null
+											// << pDepthMarketData->AskPrice5 << "," //null
+											// << pDepthMarketData->AskVolume5 << "," //null
+											<< pDepthMarketData->PreOpenInterest << ","
+											<< pDepthMarketData->OpenInterest << ","
+											<< pDepthMarketData->PreDelta << ","
+											<< pDepthMarketData->CurrDelta << ","
+											<< std::endl;
 					// outFile.close();
 
 					// 计算实时k线
@@ -87,16 +78,10 @@ void StrategyHandler::process_tick()
 					// if (g_KlineHash.find(instrumentKey) == g_KlineHash.end())
 					// 	g_KlineHash[instrumentKey] = TickToKlineHelper();
 					// g_KlineHash[instrumentKey].KLineFromRealtimeData(pDepthMarketData);
-					KLineDataType *p_kline_data = this->p_kline_helper->KLineFromRealtimeData(pDepthMarketData);
-					// char filePath[100] = {'\0'};
-					// sprintf(filePath, "cache/%s_kline.txt", pDepthMarketData->TradingDay);
-					// std::ofstream outFile;
-					// this->kline_outfile.open(filePath, std::ios::app); // 文件追加写入
-					if (NULL == p_kline_data)
-					{
-						// std::cout<<"No K line return"<<std::endl;
-					}
-					else
+					KLineDataType *p_kline_data = new KLineDataType();
+					bool ret = this->p_kline_helper->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
+
+					if(ret)
 					{
 						std::cout << "k line:" << pDepthMarketData->InstrumentID << ":" << p_kline_data->open_price << p_kline_data->high_price << std::endl;
 						this->kline_outfile << pDepthMarketData->InstrumentID << ","

@@ -68,7 +68,8 @@ int main(int argc, char *argv[])
     ctp.ReqUserLogin(&reqUserLogin, nRequestID++);
     sleep(5);
 
-    std::cout << "Trading date is: " << ctp.getTradingDay() << endl;
+    std::string trading_date = ctp.getTradingDay();
+    std::cout << "Trading date is: " << trading_date << endl;
 
     vector<StrategyHandler* > vStrategyHandler;
     //init strategyhandler
@@ -80,7 +81,7 @@ int main(int argc, char *argv[])
     while (getline(sstr, token, ','))
     {
         StrategyHandler *_p_instrategy = new StrategyHandler();
-        _p_instrategy->init(token.c_str(), &ctp);
+        _p_instrategy->init(token.c_str(), &ctp, trading_date.c_str());
         vStrategyHandler.push_back(_p_instrategy);
     }
 

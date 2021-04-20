@@ -19,18 +19,19 @@ class StrategyHandler
 	public:
 	StrategyHandler(){};
 	~StrategyHandler(){};
-	void init(const char *p_instrumentID, CTPTraderHandler* p_ctp_handler)
+	void init(const char *p_instrumentID, CTPTraderHandler* p_ctp_handler, const char *p_trading_date)
 	{
 		//初始化
 		this->p_CTP_trader_handler = p_ctp_handler;
 		std::strcpy(this->instrumentID, p_instrumentID);
-		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data.txt", p_instrumentID);
-		sprintf(kline_file_name, "cache/%s_kline_market_data.txt", p_instrumentID);
+		//HACK 
+		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.txt", p_instrumentID, p_trading_date);
+		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.txt", p_instrumentID, p_trading_date);
 		p_kline_helper = new TickToKlineHelper();
 		p_dataqueue = new MktDataQueue();
 		//std::ofstream outFile;
-		mkt_depth_outfile.open(mkt_depth_file_name, std::ios::out); // 新开文件
-		kline_outfile.open(kline_file_name,std::ios::out);
+		mkt_depth_outfile.open(mkt_depth_file_name, std::ios::app); // 追加
+		kline_outfile.open(kline_file_name,std::ios::app);
 	};
 
 	void on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData);
@@ -52,9 +53,6 @@ class StrategyHandler
 		}
 	}
 
-	virtual bool cal_order_signal();
-
-	virtual bool prepared_order_field();
 
 	void order(){};
 	

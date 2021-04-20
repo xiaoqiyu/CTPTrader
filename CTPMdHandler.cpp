@@ -188,25 +188,8 @@ void CTPMdHandler::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpe
 // 行情详情通知
 void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
-	// 打印行情，字段较多，截取部分
-	// std::cout << "=====获得深度行情=====" << std::endl;
-	//std::cout << "交易日： " << pDepthMarketData->TradingDay << std::endl;
-	//std::cout << "交易所代码： " << pDepthMarketData->ExchangeID << std::endl;
-	// std::cout << "合约代码： " << pDepthMarketData->InstrumentID << ",";
-	// std::cout << "合约在交易所的代码： " << pDepthMarketData->ExchangeInstID << std::endl;
-	// std::cout << "最新价： " << pDepthMarketData->LastPrice << ",";
-	// std::cout << "数量： " << pDepthMarketData->Volume << std::endl;
 	std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
-	// MktData data = MktData();
-	// data.data_type = FDEPTHMKT;
-	// CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
-	// *mkt_data = *pDepthMarketData;
-	// data.mkt_data = mkt_data;
-	// g_dataqueue.push(data);
 	this->dict_mkthandler[pDepthMarketData->InstrumentID]->on_tick(pDepthMarketData);
-
-
-
 
 	// 取消订阅行情
 	//int rt = g_pMdUserApi->UnSubscribeMarketData(g_pInstrumentID, instrumentNum);
@@ -231,101 +214,8 @@ void CTPMdHandler::ProcessData(StrategyHandler* p_strategy)
 {
 	char * p_instrument = new char[11];
 	p_instrument = p_strategy->getInstrumentID();
-	std::cout<<"============================Start Process Data for Instrument: "<<p_instrument<<std::endl;
+	// std::cout<<"============================Start Process Data for Instrument: "<<p_instrument<<std::endl;
 	p_strategy->process_tick();
-	// try
-	// {
-	// 	while(true)
-	// 	{
-	// 	MktData data = g_dataqueue.pop();
-	// 	switch (data.data_type)
-	// 	{
-	// 		case FDEPTHMKT: //期货深度行情数据
-	// 		{
-	// 			if(data.mkt_data)
-	// 			{
-	// 				std::cout<<"===========================Save Data=============================="<<std::endl;
-	// 				CThostFtdcDepthMarketDataField *pDepthMarketData = (CThostFtdcDepthMarketDataField*)data.mkt_data;
-	// 				std::cout << "合约代码： " << pDepthMarketData->InstrumentID << ",";
-	// 				// std::cout << "合约在交易所的代码： " << pDepthMarketData->ExchangeInstID << std::endl;
-	// 				std::cout << "最新价： " << pDepthMarketData->LastPrice << ",";
-	// 				std::cout << "数量： " << pDepthMarketData->Volume << std::endl;
-	// 				// 如果只获取某一个合约行情，可以逐tick地存入文件或数据库
-					
-	// 				char filePath[100] = {'\0'};
-	// 				sprintf(filePath, "cache/%s_market_data_new.txt", pDepthMarketData->TradingDay);
-	// 				std::ofstream outFile;
-	// 				outFile.open(filePath, std::ios::app); // 文件追加写入 
-	// 				outFile << pDepthMarketData->InstrumentID << "," 
-	// 					<<pDepthMarketData->ExchangeID<<","
-	// 					<<pDepthMarketData->ExchangeInstID<<","
-	// 					<<pDepthMarketData->ActionDay<<","
-	// 					<< pDepthMarketData->UpdateTime << "." << pDepthMarketData->UpdateMillisec << "," 
-	// 					<< pDepthMarketData->LastPrice << "," 
-	// 					<<pDepthMarketData->PreSettlementPrice<<","
-	// 					<<pDepthMarketData->PreClosePrice<<","
-	// 					<<pDepthMarketData->PreOpenInterest<<","
-	// 					<<pDepthMarketData->OpenPrice<<","
-	// 					<<pDepthMarketData->HighestPrice<<","
-	// 					<<pDepthMarketData->LowestPrice<<","
-	// 					<<pDepthMarketData->Volume<<","
-	// 					<<pDepthMarketData->Turnover<<","
-	// 					<<pDepthMarketData->OpenInterest<<","
-	// 					<<pDepthMarketData->ClosePrice<<","
-	// 					<<pDepthMarketData->SettlementPrice<<","
-	// 					<<pDepthMarketData->UpperLimitPrice<<","
-	// 					<<pDepthMarketData->LowestPrice<<","
-	// 					<<pDepthMarketData->AveragePrice<<","
-	// 					<<pDepthMarketData->PreDelta<<","
-	// 					<<pDepthMarketData->CurrDelta<<","
-	// 					<<pDepthMarketData->BidPrice1<<","
-	// 					<<pDepthMarketData->BidVolume1<<","
-	// 					<<pDepthMarketData->BidPrice2<<","
-	// 					<<pDepthMarketData->BidVolume2<<","
-	// 					<<pDepthMarketData->BidPrice3<<","
-	// 					<<pDepthMarketData->BidVolume3<<","
-	// 					<<pDepthMarketData->BidPrice4<<","
-	// 					<<pDepthMarketData->BidVolume4<<","
-	// 					<<pDepthMarketData->BidPrice5<<","
-	// 					<<pDepthMarketData->BidVolume5<<","
-	// 					<<pDepthMarketData->AskPrice1<<","
-	// 					<<pDepthMarketData->AskVolume1<<","
-	// 					<<pDepthMarketData->AskPrice2<<","
-	// 					<<pDepthMarketData->AskVolume2<<","
-	// 					<<pDepthMarketData->AskPrice3<<","
-	// 					<<pDepthMarketData->AskVolume3<<","
-	// 					<<pDepthMarketData->AskPrice4<<","
-	// 					<<pDepthMarketData->AskVolume4<<","
-	// 					<<pDepthMarketData->AskPrice5<<","
-	// 					<<pDepthMarketData->AskVolume5<<","<<std::endl;
-	// 				outFile.close();
-
-	// 				// 计算实时k线
-	// 				std::string instrumentKey = std::string(pDepthMarketData->InstrumentID);
-	// 				if (g_KlineHash.find(instrumentKey) == g_KlineHash.end())
-	// 					g_KlineHash[instrumentKey] = TickToKlineHelper();
-	// 				g_KlineHash[instrumentKey].KLineFromRealtimeData(pDepthMarketData);
-					
-	// 			}
-	// 			if(data.error)
-	// 			{
-	// 				std::cout<<"handle error in market data subscribe"<<std::endl;
-	// 			}
-				
-	// 			break;
-
-	// 		}
-	// 		default:
-	// 			break;
-	// 		}
-			
-	// 	}
-	// }
-	// catch(const TerminatedError &)
-	// {
-
-	// }
-
 };
 
 
