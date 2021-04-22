@@ -1368,7 +1368,7 @@ struct CThostFtdcInputOrderField
 	TThostFtdcOrderRefType	OrderRef;
 	///用户代码
 	TThostFtdcUserIDType	UserID;
-	///报单价格条件
+	///报单价格条件 开仓 ’0‘， 平仓’1‘， 平今 ’3‘
 	TThostFtdcOrderPriceTypeType	OrderPriceType;
 	///买卖方向
 	TThostFtdcDirectionType	Direction;

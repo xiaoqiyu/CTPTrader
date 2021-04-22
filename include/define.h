@@ -134,3 +134,7 @@
 #define FDEPTHMKT 125
 #define INSTRUMENTNUM 1
 #define KLINENUM 120
+
+//Strategyy Handler 
+#define LONGOPEN 1
+#define SHORTOPEN 2

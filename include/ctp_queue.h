@@ -21,10 +21,10 @@ struct Task
     bool task_last;   //是否为最后返回
 };
 
-struct MktData
+struct DataField
 {
-    int data_type; //行情数据类别
-    void *mkt_data; //数据指针
+    int data_type; //数据类别
+    void *_data; //数据指针
     void *error; //错误指针
 };
 
@@ -71,17 +71,17 @@ public:
     }
 };
 
-class MktDataQueue
+class DataQueue
 {
 private:
-    queue<MktData> queue_;       //标准库队列
+    queue<DataField> queue_;       //标准库队列
     mutex mutex_;             //互斥锁
     condition_variable cond_; //条件变量
     bool _terminate = false;
 
 public:
     //存入新的数据
-    void push(const MktData &data)
+    void push(const DataField &data)
     {
         unique_lock<mutex> mlock(mutex_);
         queue_.push(data);  //向队列中存入数据
@@ -90,7 +90,7 @@ public:
     }
 
     //取出老的任务
-    MktData pop()
+    DataField pop()
     {
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
@@ -98,7 +98,7 @@ public:
         }); //等待条件变量通知
         if (_terminate)
             throw TerminatedError();
-        MktData data = queue_.front(); //获取队列中的最后一个数据
+        DataField data = queue_.front(); //获取队列中的最后一个数据
         queue_.pop();               //删除该数据
         return data;                //返回该数据
     }
@@ -109,6 +109,7 @@ public:
         cond_.notify_all(); //通知正在阻塞等待的线程
     }
 };
+
 
 
 //将GBK编码的字符串转换为UTF8

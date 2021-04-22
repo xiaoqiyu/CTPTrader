@@ -9,8 +9,12 @@
 #include <unordered_map>
 #include "TickToKlineHelper.h"
 #include "StrategyHandler.h"
+#include "helper.h"
+
 //ldd main
 // export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
+
+int nRequestID = 0;
 
 
 //TODO hack for testing, should be member of CTPMdHandler.
@@ -21,7 +25,7 @@ std::string _conf_file_name = "ctp";
 int main(int argc, char *argv[])
 {
 
-    //HACK for debug    
+    //HACK for debug
     if (argc <= 1)
     {
         std::cout << "Please enter a config name" << std::endl;
@@ -30,17 +34,18 @@ int main(int argc, char *argv[])
 
     char _conf_file[100] = {'\0'};
     // snprintf(_conf_file, 100, "conf/%s.ini", argv[1]);
-    
+
     snprintf(_conf_file, 100, "conf/%s.ini", _conf_file_name.c_str());
+
     INIReader reader(_conf_file);
     if (reader.ParseError() != 0)
     {
-        std::cout << "Can't load config file in current directory:"<<_conf_file<<std::endl;
+        std::cout << "Can't load config file in current directory:" << _conf_file << std::endl;
         return 1;
     }
 
     char mdAddr[40];
-    int nRequestID = 0;
+
     char ch[40];
 
     CTPTraderHandler ctp;
@@ -49,6 +54,7 @@ int main(int argc, char *argv[])
     ctp.init();
     sleep(5);
 
+    std::cout << "Start Authenticate----------------------------" << std::endl;
     CThostFtdcReqAuthenticateField reqAuth = {0};
     strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
     strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
@@ -58,6 +64,7 @@ int main(int argc, char *argv[])
     ctp.ReqAuthenticate(&reqAuth, nRequestID++);
     sleep(5);
 
+    std::cout << "Start ----------------------------" << std::endl;
     CThostFtdcReqUserLoginField reqUserLogin = {0};
     strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
     strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
@@ -71,13 +78,33 @@ int main(int argc, char *argv[])
     std::string trading_date = ctp.getTradingDay();
     std::cout << "Trading date is: " << trading_date << endl;
 
-    vector<StrategyHandler* > vStrategyHandler;
-    //init strategyhandler
 
-	std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
-	std::stringstream sstr(strInstruments);
-	std::string token;
-	int cnt = 0;
+    /*
+    std::string ss = reader.Get("md", "ProductID", "rb,m");
+    std::vector<std::string> vv = split_str(ss, ',');
+    ctp.GetMainInstrumentID(vv, nRequestID++);
+
+    sleep(60);
+    std::cout<<"check instrument results---------------------------"<<std::endl;
+    std::vector<std::string> vv_instr = ctp.GetFutureInstrumentID();
+    std::cout<<vv_instr.size()<<std::endl;
+	for(std::vector<std::string>::iterator iter=vv_instr.begin(); iter!=vv_instr.end();iter++)
+	{
+		std::cout<<(*iter)<<std::endl;
+	}
+    */
+
+   CThostFtdcQryOrderField qry_order = {0};
+   strcpy(qry_order.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+   strcpy(qry_order.InvestorID, reader.Get("user", "UserID", "123456").c_str());
+   ctp.ReqQryOrder(&qry_order, nRequestID++);
+    
+    vector<StrategyHandler *> vStrategyHandler;
+    //init strategyhandler
+    std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
+    std::stringstream sstr(strInstruments);
+    std::string token;
+    int cnt = 0;
     while (getline(sstr, token, ','))
     {
         StrategyHandler *_p_instrategy = new StrategyHandler();
@@ -90,27 +117,16 @@ int main(int argc, char *argv[])
     ctpMd.RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
     ctpMd.init(vStrategyHandler);
 
-
-
-    //cout << reader.Get("td", "FrontAddr", "127.0.0.1:1234") << endl;
-
-
-    // CThostFtdcUserPasswordUpdateField reqUserPasswordUpdate = { 0 };
-    // strcpy(reqUserPasswordUpdate.BrokerID, reader.Get("user","BrokerID","9999").c_str());
-    // strcpy(reqUserPasswordUpdate.UserID, reader.Get("user","UserID","123456").c_str());
-    // strcpy(reqUserPasswordUpdate.OldPassword, reader.Get("user","Password","123456").c_str());
-    // strcpy(reqUserPasswordUpdate.NewPassword, reader.Get("user","SetPasswd","").c_str());
-
-    // ctp.ReqUserPasswordUpdate(&reqUserPasswordUpdate, nRequestID++);
-    // sleep(5);
-
     sleep(3600);
 
     vector<StrategyHandler *>::iterator iter = vStrategyHandler.begin();
-    for (;iter!=vStrategyHandler.end(); iter++)
+    for (; iter != vStrategyHandler.end(); iter++)
     {
         (*iter)->release();
     }
+
+    
+    //unsubscribe market data
 
     CThostFtdcUserLogoutField reqUserLogout = {0};
     strcpy(reqUserLogout.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());

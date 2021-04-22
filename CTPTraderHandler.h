@@ -1,9 +1,16 @@
 #pragma once
 
+#include <iostream>
+#include <unistd.h>
+#include <stdio.h>
+#include <vector>
+#include <cstring>
 #include "include/ThostFtdcTraderApi.h"
 #include "include/ctp_queue.h"
 #include "include/ThostFtdcUserApiDataType.h"
 #include "include/define.h"
+
+extern int nRequestID;
 
 class CTPTraderHandler : public CThostFtdcTraderSpi
 {
@@ -17,7 +24,9 @@ private:
 	bool ready_ = false;
 	bool login_ = false;
     //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
-    
+    std::vector<std::string> future_instrumentID;
+    std::vector<std::string> main_future_instrumentID;
+    DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
 
 public:
     CTPTraderHandler(){};
@@ -30,7 +39,10 @@ public:
         cout<<"~CTPTradeHandler"<<endl;
     };
 
-
+    std::vector<std::string> GetFutureInstrumentID()
+    {
+        return this->future_instrumentID;
+    }
 
     virtual void OnFrontConnected();
 
@@ -555,9 +567,37 @@ public:
 
     int ReqAuthenticate(CThostFtdcReqAuthenticateField *pReqAuthenticateField, int nRequestID);
 
-    int ReqUserLogin(CThostFtdcReqUserLoginField *pReqUserLoginField, int nRequestID);
+    int ReqUserLogin(CThostFtdcReqUserLoginField *pReqUserLoginField, int nRequestID); 
 
     int ReqUserLogout(CThostFtdcUserLogoutField *pUserLogout, int nRequestID);
 
     int ReqUserPasswordUpdate(CThostFtdcUserPasswordUpdateField* pUserPasswordUpdate, int nRequestID);
+
+    //请求查询产品
+    int ReqQryProduct(CThostFtdcQryProductField *pQryProduct, int nRequestID);
+
+    //请求查询合约
+    int ReqQryInstrument(CThostFtdcQryInstrumentField *pQryInstrument, int nRequestID);
+
+    //请求查询深度行情
+    int ReqQryDepthMarketData(CThostFtdcQryDepthMarketDataField *pQryDepthMarketData, int nRequestID);
+
+    //请求录入报单
+    int ReqOrderInsert(CThostFtdcInputOrderField *pInputOrder, int nRequestID);
+
+    //请求查询主力合约
+    void ReqQryMainContract(std::vector<std::string> productID, int nRequestID);
+
+    ///请求查询报单
+	int ReqQryOrder(CThostFtdcQryOrderField *pQryOrder, int nRequestID);
+
+	///请求查询成交
+	int ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nRequestID);
+
+	///请求查询投资者持仓
+	int ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID);
+
+	///请求查询资金账户
+	int ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQryTradingAccount, int nRequestID);
+
 };

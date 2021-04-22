@@ -14,7 +14,7 @@
 #include "StrategyHandler.h"
 
 // INIReader reader;
-extern MktDataQueue g_dataqueue;
+extern DataQueue g_dataqueue;
 
 class CTPMdHandler : public CThostFtdcMdSpi
 {

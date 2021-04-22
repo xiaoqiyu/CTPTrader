@@ -4,12 +4,12 @@
 void StrategyHandler::on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
 	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
-	MktData data = MktData();
+	DataField data = DataField();
 	data.data_type = FDEPTHMKT;
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
 	*mkt_data = *pDepthMarketData;
-	data.mkt_data = mkt_data;
-	this->p_dataqueue->push(data);
+	data._data = mkt_data;
+	this->p_mktdata_queue->push(data);
 }
 
 void StrategyHandler::process_tick()
@@ -19,14 +19,14 @@ void StrategyHandler::process_tick()
 	{
 		while (true)
 		{
-			MktData data = this->p_dataqueue->pop();
+			DataField data = this->p_mktdata_queue->pop();
 			switch (data.data_type)
 			{
 			case FDEPTHMKT: //期货深度行情数据
 			{
-				if (data.mkt_data)
+				if (data._data)
 				{
-					CThostFtdcDepthMarketDataField *pDepthMarketData = (CThostFtdcDepthMarketDataField *)data.mkt_data;
+					CThostFtdcDepthMarketDataField *pDepthMarketData = (CThostFtdcDepthMarketDataField *)data._data;
 					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					this->mkt_depth_outfile << pDepthMarketData->InstrumentID << ","
 											// << pDepthMarketData->ExchangeID << ","//null 
