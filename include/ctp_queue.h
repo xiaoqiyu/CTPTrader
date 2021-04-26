@@ -19,6 +19,8 @@ struct Task
     void *task_error; //错误指针
     int task_id;      //请求id
     bool task_last;   //是否为最后返回
+    Task(){};
+    ~Task(){};
 };
 
 struct DataField

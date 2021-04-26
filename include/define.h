@@ -132,9 +132,10 @@
 
 // Market Handler task, FXXX for future, OXXX for options. 
 #define FDEPTHMKT 125
-#define INSTRUMENTNUM 1
-#define KLINENUM 120
+#define INSTRUMENTNUM 126
+#define KLINENUM 127
 
 //Strategyy Handler 
-#define LONGOPEN 1
-#define SHORTOPEN 2
+#define LONGOPEN 128
+#define SHORTOPEN 129
+#define ORDERFIELD 130

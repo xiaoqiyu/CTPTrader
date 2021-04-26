@@ -37,7 +37,6 @@ void CTPTraderHandler::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAut
     }
     if (pRspInfo)
     {
-		
         CThostFtdcRspInfoField *task_error = new CThostFtdcRspInfoField();
         *task_error = *pRspInfo;
         task.task_error = task_error;
@@ -555,6 +554,7 @@ void CTPTraderHandler::OnRspCombActionInsert(CThostFtdcInputCombActionField *pIn
 
 void CTPTraderHandler::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+	std::cout<<"on response qry order----------------"<<std::endl;
     Task task = Task();
     task.task_name = ONRSPQRYORDER;
     if (pOrder)
@@ -2364,7 +2364,7 @@ void CTPTraderHandler::processRspAuthenticate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRspAuthenticateField* task_data = (CThostFtdcRspAuthenticateField*)task->task_data;
+		CThostFtdcRspAuthenticateField* task_data = reinterpret_cast<CThostFtdcRspAuthenticateField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("UserID = %s\n", (task_data->UserID));
 		printf("UserProductInfo = %s\n", (task_data->UserProductInfo));
@@ -2374,7 +2374,7 @@ void CTPTraderHandler::processRspAuthenticate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in Authenticate = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in Authenticate = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2385,7 +2385,7 @@ void CTPTraderHandler::processRspUserLogin(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRspUserLoginField* task_data = (CThostFtdcRspUserLoginField*)task->task_data;
+		CThostFtdcRspUserLoginField* task_data = reinterpret_cast<CThostFtdcRspUserLoginField*>(task->task_data);
 		printf("TradingDay = %s\n", (task_data->TradingDay));
 		printf("LoginTime = %s\n", (task_data->LoginTime));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
@@ -2403,7 +2403,7 @@ void CTPTraderHandler::processRspUserLogin(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in User Login = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in User Login = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2416,14 +2416,14 @@ void CTPTraderHandler::processRspUserLogout(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcUserLogoutField* task_data = (CThostFtdcUserLogoutField*)task->task_data;
+		CThostFtdcUserLogoutField* task_data = reinterpret_cast<CThostFtdcUserLogoutField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("UserID = %s\n", (task_data->UserID));
 		delete task_data;
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in User Logout = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in User Logout = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2434,7 +2434,7 @@ void CTPTraderHandler::processRspUserPasswordUpdate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcUserPasswordUpdateField* task_data = (CThostFtdcUserPasswordUpdateField*)task->task_data;
+		CThostFtdcUserPasswordUpdateField* task_data = reinterpret_cast<CThostFtdcUserPasswordUpdateField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("UserID = %s\n", (task_data->UserID));
 		printf("OldPassword = %s\n", (task_data->OldPassword));
@@ -2443,7 +2443,7 @@ void CTPTraderHandler::processRspUserPasswordUpdate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in Password Update = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in Password Update = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2454,7 +2454,7 @@ void CTPTraderHandler::processRspTradingAccountPasswordUpdate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcTradingAccountPasswordUpdateField* task_data = (CThostFtdcTradingAccountPasswordUpdateField*)task->task_data;
+		CThostFtdcTradingAccountPasswordUpdateField* task_data = reinterpret_cast<CThostFtdcTradingAccountPasswordUpdateField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("AccountID = %s\n", (task_data->AccountID));
 		printf("OldPassword = %s\n", (task_data->OldPassword));
@@ -2464,7 +2464,7 @@ void CTPTraderHandler::processRspTradingAccountPasswordUpdate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in TradingAccountPasswordUpdate= %d\n", task_error->ErrorID);
 		printf("ErrorMsg in TradingAccountPasswordUpdate = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2475,13 +2475,13 @@ void CTPTraderHandler::processRspUserAuthMethod(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRspUserAuthMethodField* task_data = (CThostFtdcRspUserAuthMethodField*)task->task_data;
+		CThostFtdcRspUserAuthMethodField* task_data = reinterpret_cast<CThostFtdcRspUserAuthMethodField*>(task->task_data);
 		printf("UsableAuthMethod = %d\n", task_data->UsableAuthMethod);
 		delete task_data;
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in UserAuthMethod = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in UserAuthMethod = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2492,7 +2492,7 @@ void CTPTraderHandler::processRspGenUserCaptcha(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRspGenUserCaptchaField* task_data = (CThostFtdcRspGenUserCaptchaField*)task->task_data;
+		CThostFtdcRspGenUserCaptchaField* task_data = reinterpret_cast<CThostFtdcRspGenUserCaptchaField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("UserID = %s\n", (task_data->UserID));
 		printf("CaptchaInfoLen = %d\n", task_data->CaptchaInfoLen);
@@ -2501,7 +2501,7 @@ void CTPTraderHandler::processRspGenUserCaptcha(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2512,13 +2512,13 @@ void CTPTraderHandler::processRspGenUserText(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRspGenUserTextField* task_data = (CThostFtdcRspGenUserTextField*)task->task_data;
+		CThostFtdcRspGenUserTextField* task_data = reinterpret_cast<CThostFtdcRspGenUserTextField*>(task->task_data);
 		printf("UserTextSeq = %d\n", task_data->UserTextSeq);
 		delete task_data;
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2529,7 +2529,7 @@ void CTPTraderHandler::processRspOrderInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputOrderField* task_data = (CThostFtdcInputOrderField*)task->task_data;
+		CThostFtdcInputOrderField* task_data = reinterpret_cast<CThostFtdcInputOrderField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -2564,7 +2564,7 @@ void CTPTraderHandler::processRspOrderInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2575,7 +2575,7 @@ void CTPTraderHandler::processRspParkedOrderInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcParkedOrderField* task_data = (CThostFtdcParkedOrderField*)task->task_data;
+		CThostFtdcParkedOrderField* task_data = reinterpret_cast<CThostFtdcParkedOrderField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -2615,7 +2615,7 @@ void CTPTraderHandler::processRspParkedOrderInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2626,7 +2626,7 @@ void CTPTraderHandler::processRspParkedOrderAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcParkedOrderActionField* task_data = (CThostFtdcParkedOrderActionField*)task->task_data;
+		CThostFtdcParkedOrderActionField* task_data = reinterpret_cast<CThostFtdcParkedOrderActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("OrderActionRef = %d\n", task_data->OrderActionRef);
@@ -2653,7 +2653,7 @@ void CTPTraderHandler::processRspParkedOrderAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2664,7 +2664,7 @@ void CTPTraderHandler::processRspOrderAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputOrderActionField* task_data = (CThostFtdcInputOrderActionField*)task->task_data;
+		CThostFtdcInputOrderActionField* task_data = reinterpret_cast<CThostFtdcInputOrderActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("OrderActionRef = %d\n", task_data->OrderActionRef);
@@ -2686,7 +2686,7 @@ void CTPTraderHandler::processRspOrderAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2723,7 +2723,7 @@ void CTPTraderHandler::processRspSettlementInfoConfirm(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcSettlementInfoConfirmField* task_data = (CThostFtdcSettlementInfoConfirmField*)task->task_data;
+		CThostFtdcSettlementInfoConfirmField* task_data = reinterpret_cast<CThostFtdcSettlementInfoConfirmField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("ConfirmDate = %s\n", (task_data->ConfirmDate));
@@ -2735,7 +2735,7 @@ void CTPTraderHandler::processRspSettlementInfoConfirm(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2746,7 +2746,7 @@ void CTPTraderHandler::processRspRemoveParkedOrder(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRemoveParkedOrderField* task_data = (CThostFtdcRemoveParkedOrderField*)task->task_data;
+		CThostFtdcRemoveParkedOrderField* task_data = reinterpret_cast<CThostFtdcRemoveParkedOrderField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("ParkedOrderID = %s\n", (task_data->ParkedOrderID));
@@ -2755,7 +2755,7 @@ void CTPTraderHandler::processRspRemoveParkedOrder(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2766,7 +2766,7 @@ void CTPTraderHandler::processRspRemoveParkedOrderAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcRemoveParkedOrderActionField* task_data = (CThostFtdcRemoveParkedOrderActionField*)task->task_data;
+		CThostFtdcRemoveParkedOrderActionField* task_data = reinterpret_cast<CThostFtdcRemoveParkedOrderActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("ParkedOrderActionID = %s\n", (task_data->ParkedOrderActionID));
@@ -2775,7 +2775,7 @@ void CTPTraderHandler::processRspRemoveParkedOrderAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2786,7 +2786,7 @@ void CTPTraderHandler::processRspExecOrderInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputExecOrderField* task_data = (CThostFtdcInputExecOrderField*)task->task_data;
+		CThostFtdcInputExecOrderField* task_data = reinterpret_cast<CThostFtdcInputExecOrderField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -2812,7 +2812,7 @@ void CTPTraderHandler::processRspExecOrderInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2823,7 +2823,7 @@ void CTPTraderHandler::processRspExecOrderAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputExecOrderActionField* task_data = (CThostFtdcInputExecOrderActionField*)task->task_data;
+		CThostFtdcInputExecOrderActionField* task_data = reinterpret_cast<CThostFtdcInputExecOrderActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("ExecOrderActionRef = %d\n", task_data->ExecOrderActionRef);
@@ -2843,7 +2843,7 @@ void CTPTraderHandler::processRspExecOrderAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2854,7 +2854,7 @@ void CTPTraderHandler::processRspForQuoteInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputForQuoteField* task_data = (CThostFtdcInputForQuoteField*)task->task_data;
+		CThostFtdcInputForQuoteField* task_data = reinterpret_cast<CThostFtdcInputForQuoteField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -2868,7 +2868,7 @@ void CTPTraderHandler::processRspForQuoteInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2879,7 +2879,7 @@ void CTPTraderHandler::processRspQuoteInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputQuoteField* task_data = (CThostFtdcInputQuoteField*)task->task_data;
+		CThostFtdcInputQuoteField* task_data = reinterpret_cast<CThostFtdcInputQuoteField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -2907,7 +2907,7 @@ void CTPTraderHandler::processRspQuoteInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2918,7 +2918,7 @@ void CTPTraderHandler::processRspQuoteAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputQuoteActionField* task_data = (CThostFtdcInputQuoteActionField*)task->task_data;
+		CThostFtdcInputQuoteActionField* task_data = reinterpret_cast<CThostFtdcInputQuoteActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("QuoteActionRef = %d\n", task_data->QuoteActionRef);
@@ -2939,7 +2939,7 @@ void CTPTraderHandler::processRspQuoteAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2950,7 +2950,7 @@ void CTPTraderHandler::processRspBatchOrderAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputBatchOrderActionField* task_data = (CThostFtdcInputBatchOrderActionField*)task->task_data;
+		CThostFtdcInputBatchOrderActionField* task_data = reinterpret_cast<CThostFtdcInputBatchOrderActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("OrderActionRef = %d\n", task_data->OrderActionRef);
@@ -2966,7 +2966,7 @@ void CTPTraderHandler::processRspBatchOrderAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -2977,7 +2977,7 @@ void CTPTraderHandler::processRspOptionSelfCloseInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputOptionSelfCloseField* task_data = (CThostFtdcInputOptionSelfCloseField*)task->task_data;
+		CThostFtdcInputOptionSelfCloseField* task_data = reinterpret_cast<CThostFtdcInputOptionSelfCloseField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -2999,7 +2999,7 @@ void CTPTraderHandler::processRspOptionSelfCloseInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3010,7 +3010,7 @@ void CTPTraderHandler::processRspOptionSelfCloseAction(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputOptionSelfCloseActionField* task_data = (CThostFtdcInputOptionSelfCloseActionField*)task->task_data;
+		CThostFtdcInputOptionSelfCloseActionField* task_data = reinterpret_cast<CThostFtdcInputOptionSelfCloseActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("OptionSelfCloseActionRef = %d\n", task_data->OptionSelfCloseActionRef);
@@ -3030,7 +3030,7 @@ void CTPTraderHandler::processRspOptionSelfCloseAction(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3041,7 +3041,7 @@ void CTPTraderHandler::processRspCombActionInsert(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInputCombActionField* task_data = (CThostFtdcInputCombActionField*)task->task_data;
+		CThostFtdcInputCombActionField* task_data = reinterpret_cast<CThostFtdcInputCombActionField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3059,7 +3059,7 @@ void CTPTraderHandler::processRspCombActionInsert(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3070,7 +3070,7 @@ void CTPTraderHandler::processRspQryOrder(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcOrderField* task_data = (CThostFtdcOrderField*)task->task_data;
+		CThostFtdcOrderField* task_data = reinterpret_cast<CThostFtdcOrderField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3138,7 +3138,7 @@ void CTPTraderHandler::processRspQryOrder(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in QryOrder = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in QryOrder = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3149,7 +3149,7 @@ void CTPTraderHandler::processRspQryTrade(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcTradeField* task_data = (CThostFtdcTradeField*)task->task_data;
+		CThostFtdcTradeField* task_data = reinterpret_cast<CThostFtdcTradeField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3185,7 +3185,7 @@ void CTPTraderHandler::processRspQryTrade(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3196,7 +3196,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInvestorPositionField* task_data = (CThostFtdcInvestorPositionField*)task->task_data;
+		CThostFtdcInvestorPositionField* task_data = reinterpret_cast<CThostFtdcInvestorPositionField*>(task->task_data);
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
@@ -3248,7 +3248,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3259,7 +3259,7 @@ void CTPTraderHandler::processRspQryTradingAccount(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcTradingAccountField* task_data = (CThostFtdcTradingAccountField*)task->task_data;
+		CThostFtdcTradingAccountField* task_data = reinterpret_cast<CThostFtdcTradingAccountField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("AccountID = %s\n", (task_data->AccountID));
 		printf("PreMortgage = %f\n", task_data->PreMortgage);
@@ -3313,7 +3313,7 @@ void CTPTraderHandler::processRspQryTradingAccount(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3324,7 +3324,7 @@ void CTPTraderHandler::processRspQryInvestor(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInvestorField* task_data = (CThostFtdcInvestorField*)task->task_data;
+		CThostFtdcInvestorField* task_data = reinterpret_cast<CThostFtdcInvestorField*>(task->task_data);
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorGroupID = %s\n", (task_data->InvestorGroupID));
@@ -3342,7 +3342,7 @@ void CTPTraderHandler::processRspQryInvestor(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3353,7 +3353,7 @@ void CTPTraderHandler::processRspQryTradingCode(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcTradingCodeField* task_data = (CThostFtdcTradingCodeField*)task->task_data;
+		CThostFtdcTradingCodeField* task_data = reinterpret_cast<CThostFtdcTradingCodeField*>(task->task_data);
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("ExchangeID = %s\n", (task_data->ExchangeID));
@@ -3367,7 +3367,7 @@ void CTPTraderHandler::processRspQryTradingCode(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3378,7 +3378,7 @@ void CTPTraderHandler::processRspQryInstrumentMarginRate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInstrumentMarginRateField* task_data = (CThostFtdcInstrumentMarginRateField*)task->task_data;
+		CThostFtdcInstrumentMarginRateField* task_data = reinterpret_cast<CThostFtdcInstrumentMarginRateField*>(task->task_data);
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("InvestorRange = %d\n", task_data->InvestorRange);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
@@ -3395,7 +3395,7 @@ void CTPTraderHandler::processRspQryInstrumentMarginRate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3406,7 +3406,7 @@ void CTPTraderHandler::processRspQryInstrumentCommissionRate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInstrumentCommissionRateField* task_data = (CThostFtdcInstrumentCommissionRateField*)task->task_data;
+		CThostFtdcInstrumentCommissionRateField* task_data = reinterpret_cast<CThostFtdcInstrumentCommissionRateField*>(task->task_data);
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("InvestorRange = %d\n", task_data->InvestorRange);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
@@ -3424,7 +3424,7 @@ void CTPTraderHandler::processRspQryInstrumentCommissionRate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3435,7 +3435,7 @@ void CTPTraderHandler::processRspQryExchange(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcExchangeField* task_data = (CThostFtdcExchangeField*)task->task_data;
+		CThostFtdcExchangeField* task_data = reinterpret_cast<CThostFtdcExchangeField*>(task->task_data);
 		printf("ExchangeID = %s\n", (task_data->ExchangeID));
 		printf("ExchangeName = %s\n", (task_data->ExchangeName));
 		printf("ExchangeProperty = %d\n", task_data->ExchangeProperty);
@@ -3443,7 +3443,7 @@ void CTPTraderHandler::processRspQryExchange(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3454,7 +3454,7 @@ void CTPTraderHandler::processRspQryProduct(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcProductField* task_data = (CThostFtdcProductField*)task->task_data;
+		CThostFtdcProductField* task_data = reinterpret_cast<CThostFtdcProductField*>(task->task_data);
 		printf("ProductID = %s\n", (task_data->ProductID));
 		printf("ProductName = %s\n", (task_data->ProductName));
 		printf("ExchangeID = %s\n", (task_data->ExchangeID));
@@ -3476,7 +3476,7 @@ void CTPTraderHandler::processRspQryProduct(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3489,7 +3489,7 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 	//ProductID: "cu_o":option,"cu":future
 	if (task->task_data)
 	{
-		CThostFtdcInstrumentField* task_data = (CThostFtdcInstrumentField*)task->task_data;
+		CThostFtdcInstrumentField* task_data = reinterpret_cast<CThostFtdcInstrumentField*>(task->task_data);
 		if(task_data->ProductClass == '1')
 		{
 			CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
@@ -3533,7 +3533,7 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3544,7 +3544,7 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcDepthMarketDataField* task_data = (CThostFtdcDepthMarketDataField*)task->task_data;
+		CThostFtdcDepthMarketDataField* task_data = reinterpret_cast<CThostFtdcDepthMarketDataField*>(task->task_data);
 		std::cout<<"depth market data result: "<<task_data->InstrumentID<<","<<task_data->PreOpenInterest<<std::endl;
 		// printf("TradingDay = %s\n", (task_data->TradingDay));
 		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3594,7 +3594,7 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID in processRspQryDepthMarketData = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in processRspQryDepthMarketData = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3605,7 +3605,7 @@ void CTPTraderHandler::processRspQrySettlementInfo(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcSettlementInfoField* task_data = (CThostFtdcSettlementInfoField*)task->task_data;
+		CThostFtdcSettlementInfoField* task_data = reinterpret_cast<CThostFtdcSettlementInfoField*>(task->task_data);
 		printf("TradingDay = %s\n", (task_data->TradingDay));
 		printf("SettlementID = %d\n", task_data->SettlementID);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
@@ -3618,7 +3618,7 @@ void CTPTraderHandler::processRspQrySettlementInfo(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3629,7 +3629,7 @@ void CTPTraderHandler::processRspQryTransferBank(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcTransferBankField* task_data = (CThostFtdcTransferBankField*)task->task_data;
+		CThostFtdcTransferBankField* task_data = reinterpret_cast<CThostFtdcTransferBankField*>(task->task_data);
 		printf("BankID = %s\n", (task_data->BankID));
 		printf("BankBrchID = %s\n", (task_data->BankBrchID));
 		printf("BankName = %s\n", (task_data->BankName));
@@ -3638,7 +3638,7 @@ void CTPTraderHandler::processRspQryTransferBank(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3649,7 +3649,7 @@ void CTPTraderHandler::processRspQryInvestorPositionDetail(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInvestorPositionDetailField* task_data = (CThostFtdcInvestorPositionDetailField*)task->task_data;
+		CThostFtdcInvestorPositionDetailField* task_data = reinterpret_cast<CThostFtdcInvestorPositionDetailField*>(task->task_data);
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
@@ -3682,7 +3682,7 @@ void CTPTraderHandler::processRspQryInvestorPositionDetail(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3693,7 +3693,7 @@ void CTPTraderHandler::processRspQryNotice(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcNoticeField* task_data = (CThostFtdcNoticeField*)task->task_data;
+		CThostFtdcNoticeField* task_data = reinterpret_cast<CThostFtdcNoticeField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("Content = %s\n", (task_data->Content));
 		printf("SequenceLabel = %s\n", (task_data->SequenceLabel));
@@ -3701,7 +3701,7 @@ void CTPTraderHandler::processRspQryNotice(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3712,7 +3712,7 @@ void CTPTraderHandler::processRspQrySettlementInfoConfirm(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcSettlementInfoConfirmField* task_data = (CThostFtdcSettlementInfoConfirmField*)task->task_data;
+		CThostFtdcSettlementInfoConfirmField* task_data = reinterpret_cast<CThostFtdcSettlementInfoConfirmField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("ConfirmDate = %s\n", (task_data->ConfirmDate));
@@ -3724,7 +3724,7 @@ void CTPTraderHandler::processRspQrySettlementInfoConfirm(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3735,7 +3735,7 @@ void CTPTraderHandler::processRspQryInvestorPositionCombineDetail(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInvestorPositionCombineDetailField* task_data = (CThostFtdcInvestorPositionCombineDetailField*)task->task_data;
+		CThostFtdcInvestorPositionCombineDetailField* task_data = reinterpret_cast<CThostFtdcInvestorPositionCombineDetailField*>(task->task_data);
 		printf("TradingDay = %s\n", (task_data->TradingDay));
 		printf("OpenDate = %s\n", (task_data->OpenDate));
 		printf("ExchangeID = %s\n", (task_data->ExchangeID));
@@ -3761,7 +3761,7 @@ void CTPTraderHandler::processRspQryInvestorPositionCombineDetail(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3772,7 +3772,7 @@ void CTPTraderHandler::processRspQryCFMMCTradingAccountKey(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcCFMMCTradingAccountKeyField* task_data = (CThostFtdcCFMMCTradingAccountKeyField*)task->task_data;
+		CThostFtdcCFMMCTradingAccountKeyField* task_data = reinterpret_cast<CThostFtdcCFMMCTradingAccountKeyField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("ParticipantID = %s\n", (task_data->ParticipantID));
 		printf("AccountID = %s\n", (task_data->AccountID));
@@ -3782,7 +3782,7 @@ void CTPTraderHandler::processRspQryCFMMCTradingAccountKey(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3793,7 +3793,7 @@ void CTPTraderHandler::processRspQryEWarrantOffset(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcEWarrantOffsetField* task_data = (CThostFtdcEWarrantOffsetField*)task->task_data;
+		CThostFtdcEWarrantOffsetField* task_data = reinterpret_cast<CThostFtdcEWarrantOffsetField*>(task->task_data);
 		printf("TradingDay = %s\n", (task_data->TradingDay));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
@@ -3807,7 +3807,7 @@ void CTPTraderHandler::processRspQryEWarrantOffset(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3818,7 +3818,7 @@ void CTPTraderHandler::processRspQryInvestorProductGroupMargin(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcInvestorProductGroupMarginField* task_data = (CThostFtdcInvestorProductGroupMarginField*)task->task_data;
+		CThostFtdcInvestorProductGroupMarginField* task_data = reinterpret_cast<CThostFtdcInvestorProductGroupMarginField*>(task->task_data);
 		printf("ProductGroupID = %s\n", (task_data->ProductGroupID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
@@ -3852,7 +3852,7 @@ void CTPTraderHandler::processRspQryInvestorProductGroupMargin(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3863,7 +3863,7 @@ void CTPTraderHandler::processRspQryExchangeMarginRate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcExchangeMarginRateField* task_data = (CThostFtdcExchangeMarginRateField*)task->task_data;
+		CThostFtdcExchangeMarginRateField* task_data = reinterpret_cast<CThostFtdcExchangeMarginRateField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("HedgeFlag = %d\n", task_data->HedgeFlag);
@@ -3876,7 +3876,7 @@ void CTPTraderHandler::processRspQryExchangeMarginRate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3887,7 +3887,7 @@ void CTPTraderHandler::processRspQryExchangeMarginRateAdjust(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcExchangeMarginRateAdjustField* task_data = (CThostFtdcExchangeMarginRateAdjustField*)task->task_data;
+		CThostFtdcExchangeMarginRateAdjustField* task_data = reinterpret_cast<CThostFtdcExchangeMarginRateAdjustField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("HedgeFlag = %d\n", task_data->HedgeFlag);
@@ -3907,7 +3907,7 @@ void CTPTraderHandler::processRspQryExchangeMarginRateAdjust(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -3918,7 +3918,7 @@ void CTPTraderHandler::processRspQryExchangeRate(Task* task)
 {
 	if (task->task_data)
 	{
-		CThostFtdcExchangeRateField* task_data = (CThostFtdcExchangeRateField*)task->task_data;
+		CThostFtdcExchangeRateField* task_data = reinterpret_cast<CThostFtdcExchangeRateField*>(task->task_data);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("FromCurrencyID = %s\n", (task_data->FromCurrencyID));
 		printf("FromCurrencyUnit = %f\n", task_data->FromCurrencyUnit);
@@ -3928,7 +3928,7 @@ void CTPTraderHandler::processRspQryExchangeRate(Task* task)
 	}
 	if (task->task_error)
 	{
-		CThostFtdcRspInfoField* task_error = (CThostFtdcRspInfoField*)task->task_error;
+		CThostFtdcRspInfoField* task_error = reinterpret_cast<CThostFtdcRspInfoField*>(task->task_error);
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
@@ -7803,7 +7803,7 @@ void CTPTraderHandler::init()
 	//TODO check 
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
-		return ready_;
+		return ready_; //调用了onfrontconnected时候才会将ready_设置为true，没有调用onfrontconnected,就会一直wait.
 	}); //�ȴ���������֪ͨ
 	std::cout<<"complete api init"<<std::endl;
 };

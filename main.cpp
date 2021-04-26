@@ -10,11 +10,13 @@
 #include "TickToKlineHelper.h"
 #include "StrategyHandler.h"
 #include "helper.h"
+#include "draft.h"
 
 //ldd main
 // export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:.
 
 int nRequestID = 0;
+int DEBUG = 0;
 
 
 //TODO hack for testing, should be member of CTPMdHandler.
@@ -24,6 +26,12 @@ std::string _conf_file_name = "ctp";
 
 int main(int argc, char *argv[])
 {
+
+#if false
+    std::cout<<"run draft"<<std::endl;
+    // test_ptr();
+    return 0;
+#endif
 
     //HACK for debug
     if (argc <= 1)
@@ -94,11 +102,17 @@ int main(int argc, char *argv[])
 	}
     */
 
+
    CThostFtdcQryOrderField qry_order = {0};
    strcpy(qry_order.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
    strcpy(qry_order.InvestorID, reader.Get("user", "UserID", "123456").c_str());
+   std::string _str = "rb2110";
+   strcpy(qry_order.InstrumentID, _str.c_str());
    ctp.ReqQryOrder(&qry_order, nRequestID++);
     
+
+#if true 
+    //create strategy handler and subscribe market data
     vector<StrategyHandler *> vStrategyHandler;
     //init strategyhandler
     std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
@@ -126,13 +140,15 @@ int main(int argc, char *argv[])
     }
 
     
-    //unsubscribe market data
+#endif
 
+    //unsubscribe market data
     CThostFtdcUserLogoutField reqUserLogout = {0};
     strcpy(reqUserLogout.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
     strcpy(reqUserLogout.UserID, reader.Get("user", "UserID", "123456").c_str());
     ctp.ReqUserLogout(&reqUserLogout, nRequestID++);
     sleep(5);
+
 
     ctp.exit();
     return 0;

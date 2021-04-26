@@ -28,6 +28,7 @@ public:
 		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.txt", p_instrumentID, p_trading_date);
 		p_kline_helper = new TickToKlineHelper();
 		p_mktdata_queue = new DataQueue();
+		p_order_queue = new DataQueue();
 		//std::ofstream outFile;
 		mkt_depth_outfile.open(mkt_depth_file_name, std::ios::app); // 追加
 		kline_outfile.open(kline_file_name, std::ios::app);
@@ -86,7 +87,9 @@ private:
 	std::ofstream kline_outfile;
 	TickToKlineHelper *p_kline_helper = nullptr;
 	DataQueue *p_mktdata_queue = nullptr;
+	DataQueue *p_order_queue = nullptr;	
 	CTPTraderHandler *p_CTP_trader_handler = nullptr;
 	bool _long = false;
 	bool _short = false;
+	bool _order = false;
 };

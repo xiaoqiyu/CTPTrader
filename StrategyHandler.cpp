@@ -4,12 +4,25 @@
 void StrategyHandler::on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
 	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
-	DataField data = DataField();
+	DataField data =  DataField();
 	data.data_type = FDEPTHMKT;
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
 	*mkt_data = *pDepthMarketData;
 	data._data = mkt_data;
 	this->p_mktdata_queue->push(data);
+	//TODO update order logic
+	if(this->_short || this->_long)
+	{
+		DataField order_data = DataField();
+		order_data.data_type = ORDERFIELD;
+		CThostFtdcInputOrderField *_order_data = new CThostFtdcInputOrderField();
+		// add order filed value
+		_order_data->OrderPriceType = '0';
+
+		order_data._data = _order_data;
+		this->p_order_queue->push(order_data);
+
+	}
 }
 
 void StrategyHandler::process_tick()
@@ -26,7 +39,8 @@ void StrategyHandler::process_tick()
 			{
 				if (data._data)
 				{
-					CThostFtdcDepthMarketDataField *pDepthMarketData = (CThostFtdcDepthMarketDataField *)data._data;
+					// CThostFtdcDepthMarketDataField *pDepthMarketData = (CThostFtdcDepthMarketDataField *)data._data;
+					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
 					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					this->mkt_depth_outfile << pDepthMarketData->InstrumentID << ","
 											// << pDepthMarketData->ExchangeID << ","//null 
@@ -79,6 +93,7 @@ void StrategyHandler::process_tick()
 					// if (g_KlineHash.find(instrumentKey) == g_KlineHash.end())
 					// 	g_KlineHash[instrumentKey] = TickToKlineHelper();
 					// g_KlineHash[instrumentKey].KLineFromRealtimeData(pDepthMarketData);
+					delete pDepthMarketData;
 					KLineDataType *p_kline_data = new KLineDataType();
 					bool ret = this->p_kline_helper->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
 
@@ -93,14 +108,15 @@ void StrategyHandler::process_tick()
 											<< p_kline_data->close_price << ","
 											<< p_kline_data->volume << std::endl;
 					}
-
+					delete p_kline_data;
 					//计算因子和下单信号
 					
 
 				}
 				if (data.error)
 				{
-					std::cout << "handle error in market data subscribe" << std::endl;
+					std::cout <<"handle error in market data subscribe" << std::endl;
+					// delete data.error;
 				}
 
 				break;
