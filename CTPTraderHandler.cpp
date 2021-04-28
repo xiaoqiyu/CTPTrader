@@ -2409,6 +2409,7 @@ void CTPTraderHandler::processRspUserLogin(Task* task)
 		delete task_error;
 	}
 	login_ = true;
+	available_ = true;
 	cond_.notify_one(); //֪ͨ���������ȴ����߳�
 };
 
@@ -3143,6 +3144,7 @@ void CTPTraderHandler::processRspQryOrder(Task* task)
 		printf("ErrorMsg in QryOrder = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
+	this->available_ = true;
 };
 
 void CTPTraderHandler::processRspQryTrade(Task* task)
@@ -3190,6 +3192,7 @@ void CTPTraderHandler::processRspQryTrade(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
+	this->available_ = true;
 };
 
 void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
@@ -3253,6 +3256,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
+	this->available_ = true;
 };
 
 void CTPTraderHandler::processRspQryTradingAccount(Task* task)
@@ -3318,6 +3322,7 @@ void CTPTraderHandler::processRspQryTradingAccount(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
+	this->available_ = true;
 };
 
 void CTPTraderHandler::processRspQryInvestor(Task* task)
@@ -7914,23 +7919,49 @@ void CTPTraderHandler::ReqQryMainContract(vector<std::string> productID, int nRe
 ///请求查询报单
 int CTPTraderHandler::ReqQryOrder(CThostFtdcQryOrderField *pQryOrder, int nRequestID)
 {
-	return _api->ReqQryOrder(pQryOrder, nRequestID);
+	this->available_ = false;
+	int ret = _api->ReqQryOrder(pQryOrder, nRequestID);
+		unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&this->available_;
+	}); 
+	return ret;
+
+	 
 }
 
 ///请求查询成交
 int CTPTraderHandler::ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nRequestID)
 {
-	return _api->ReqQryTrade(pQryTrade, nRequestID);
+	this->available_ = false;
+	int ret = _api->ReqQryTrade(pQryTrade, nRequestID);
+		unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&this->available_;
+	}); 
+	return ret;
 }
 
 ///请求查询投资者持仓
 int CTPTraderHandler::ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID)
 {
-	return _api->ReqQryInvestorPosition(pQryInvestorPosition, nRequestID);
+	this->available_ = false;
+	int ret =  _api->ReqQryInvestorPosition(pQryInvestorPosition, nRequestID);
+	unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&this->available_;
+	}); 
+	return ret;
 }
 
 ///请求查询资金账户
 int CTPTraderHandler::ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQryTradingAccount, int nRequestID)
 {
-	return _api->ReqQryTradingAccount(pQryTradingAccount, nRequestID);
+	this->available_ = false;
+	int ret = _api->ReqQryTradingAccount(pQryTradingAccount, nRequestID);
+	unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&this->available_;
+	}); 
+	return ret;
 }

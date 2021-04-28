@@ -23,6 +23,7 @@ private:
 	condition_variable cond_;			//条件变量
 	bool ready_ = false;
 	bool login_ = false;
+    bool available_ = false; //用于交易查询的流控
     //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
     std::vector<std::string> future_instrumentID;
     std::vector<std::string> main_future_instrumentID;

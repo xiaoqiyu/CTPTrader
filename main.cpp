@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	}
     */
 
-#if false
+#if true
    CThostFtdcQryOrderField qry_order = {0};
    strcpy(qry_order.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
    strcpy(qry_order.InvestorID, reader.Get("user", "UserID", "123456").c_str());
