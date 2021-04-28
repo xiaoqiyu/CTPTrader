@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 	}
     */
 
-
+#if false
    CThostFtdcQryOrderField qry_order = {0};
    strcpy(qry_order.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
    strcpy(qry_order.InvestorID, reader.Get("user", "UserID", "123456").c_str());
@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
    strcpy(qry_order.InstrumentID, _str.c_str());
    ctp.ReqQryOrder(&qry_order, nRequestID++);
     
+#endif 
 
 #if true 
     //create strategy handler and subscribe market data
