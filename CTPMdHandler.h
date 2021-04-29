@@ -8,10 +8,10 @@
 
 #include "include/ThostFtdcMdApi.h"
 #include "include/INIReader.h"
-#include "include/ctp_queue.h"
+#include "include/UserStruct.h"
 #include "include/define.h"
 #include "TickToKlineHelper.h"
-#include "StrategyHandler.h"
+#include "QTStrategyBase.h"
 
 // INIReader reader;
 extern DataQueue g_dataqueue;
@@ -22,12 +22,12 @@ private:
 	CThostFtdcMdApi *g_pMdUserApi = nullptr;
 	//MktDataQueue _data_queue;
 	// thread  _data_thread[DATATHREADNUM];
-	unordered_map<string, StrategyHandler *> dict_mkthandler;
+	unordered_map<string, QTStrategyBase *> dict_mkthandler;
 	//TODO to be added
 	bool _ready = false;
 	//TODO check this
 	// vector<thread> data_thread_lst;
-	vector<StrategyHandler *> strtegy_handler_lst;
+	vector<QTStrategyBase *> strtegy_handler_lst;
 	thread data_thread_lst[100];
 	// MktDataHandler* handler_lst[100];
 	//TODO 不用作为成员变量
@@ -50,7 +50,7 @@ public:
 	};
 	~CTPMdHandler()
 	{
-		for (vector<StrategyHandler *>::iterator iter = this->strtegy_handler_lst.begin(); iter != this->strtegy_handler_lst.end(); ++iter)
+		for (vector<QTStrategyBase *>::iterator iter = this->strtegy_handler_lst.begin(); iter != this->strtegy_handler_lst.end(); ++iter)
 		{
 			(*iter)->release();
 		}
@@ -82,7 +82,7 @@ public:
 		return this->g_pMdUserApi->RegisterFront(pszFrontAddress);
 	}
 
-	void init(vector<StrategyHandler *> v_strategy_handler)
+	void init(vector<QTStrategyBase *> v_strategy_handler)
 	{
 		std::cout << "CTPMdHandler Init..." << std::endl;
 		this->g_pMdUserApi->Init();
@@ -102,7 +102,7 @@ public:
 		std::string token;
 		int cnt = 0;
 		// std::cout<<"Subscribe Instruments are: "<<std::endl;
-		vector<StrategyHandler *>::iterator iter = v_strategy_handler.begin();
+		vector<QTStrategyBase *>::iterator iter = v_strategy_handler.begin();
 		while (getline(sstr, token, ','))
 		{
 			std::cout << "process instrument； " << token << std::endl;
@@ -111,8 +111,8 @@ public:
 			std::cout << "Market Data Handler " << cnt << " created for instrument: " << token << endl;
 			// StrategyHandler *_p_tmp = new StrategyHandler();
 			// _p_tmp->init(token.c_str());
-			StrategyHandler *_p_tmp = *(iter + cnt);
-			dict_mkthandler.insert(pair<string, StrategyHandler *>(token, _p_tmp));
+			QTStrategyBase *_p_tmp = *(iter + cnt);
+			dict_mkthandler.insert(pair<string, QTStrategyBase *>(token, _p_tmp));
 			std::cout << "Thread  " << cnt << " created for instrument: " << token << endl;
 			this->strtegy_handler_lst.push_back(_p_tmp);
 			// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp);
@@ -164,5 +164,5 @@ public:
 	void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp);
 
 	///行情数据处理线程函数
-	void ProcessData(StrategyHandler *pStrategyHandler);
+	void ProcessData(QTStrategyBase *pStrategyHandler);
 };

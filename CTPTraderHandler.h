@@ -6,7 +6,7 @@
 #include <vector>
 #include <cstring>
 #include "include/ThostFtdcTraderApi.h"
-#include "include/ctp_queue.h"
+#include "include/UserStruct.h"
 #include "include/ThostFtdcUserApiDataType.h"
 #include "include/define.h"
 

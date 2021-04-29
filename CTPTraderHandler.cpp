@@ -7904,7 +7904,7 @@ int CTPTraderHandler::ReqOrderInsert(CThostFtdcInputOrderField *pInputOrder, int
 
 void CTPTraderHandler::ReqQryMainContract(vector<std::string> productID, int nRequestID)
 {
-	for (std::vector<std::string>::iterator iter = productID.begin(); iter != productID.end(); iter++)
+	for (auto iter = productID.begin(); iter != productID.end(); iter++)
 	{
 
 		std::cout<<"Query Instrument for productID:"<<(*iter)<<std::endl;

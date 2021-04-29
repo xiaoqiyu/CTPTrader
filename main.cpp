@@ -1,14 +1,14 @@
 #include "CTPTraderHandler.h"
 #include "CTPMdHandler.h"
 #include "include/INIReader.h"
-#include "include/ctp_queue.h"
+#include "include/UserStruct.h"
 #include <iostream>
 #include <unistd.h>
 #include <stdio.h>
 #include <vector>
 #include <unordered_map>
 #include "TickToKlineHelper.h"
-#include "StrategyHandler.h"
+#include "QTStrategyBase.h"
 #include "helper.h"
 #include "draft.h"
 
@@ -18,7 +18,6 @@
 int nRequestID = 0;
 int DEBUG = 0;
 
-
 //TODO hack for testing, should be member of CTPMdHandler.
 // MktDataQueue g_dataqueue;
 // std::unordered_map<std::string, TickToKlineHelper> g_KlineHash; // k线存储表
@@ -27,8 +26,8 @@ std::string _conf_file_name = "ctp";
 int main(int argc, char *argv[])
 {
 
-#if false
-    std::cout<<"run draft"<<std::endl;
+#if true
+    std::cout << "run draft" << std::endl;
     // test_ptr();
     return 0;
 #endif
@@ -86,7 +85,6 @@ int main(int argc, char *argv[])
     std::string trading_date = ctp.getTradingDay();
     std::cout << "Trading date is: " << trading_date << endl;
 
-
     /*
     std::string ss = reader.Get("md", "ProductID", "rb,m");
     std::vector<std::string> vv = split_str(ss, ',');
@@ -102,19 +100,19 @@ int main(int argc, char *argv[])
 	}
     */
 
-#if true
+#if false
    CThostFtdcQryOrderField qry_order = {0};
    strcpy(qry_order.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
    strcpy(qry_order.InvestorID, reader.Get("user", "UserID", "123456").c_str());
    std::string _str = "rb2110";
    strcpy(qry_order.InstrumentID, _str.c_str());
    ctp.ReqQryOrder(&qry_order, nRequestID++);
-    
-#endif 
 
-#if true 
+#endif
+
+#if true
     //create strategy handler and subscribe market data
-    vector<StrategyHandler *> vStrategyHandler;
+    vector<QTStrategyBase *> vStrategyHandler;
     //init strategyhandler
     std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
     std::stringstream sstr(strInstruments);
@@ -122,7 +120,7 @@ int main(int argc, char *argv[])
     int cnt = 0;
     while (getline(sstr, token, ','))
     {
-        StrategyHandler *_p_instrategy = new StrategyHandler();
+        QTStrategyBase *_p_instrategy = new QTStrategyBase("ctp_test");
         _p_instrategy->init(token.c_str(), &ctp, trading_date.c_str());
         vStrategyHandler.push_back(_p_instrategy);
     }
@@ -134,13 +132,12 @@ int main(int argc, char *argv[])
 
     sleep(3600);
 
-    vector<StrategyHandler *>::iterator iter = vStrategyHandler.begin();
-    for (; iter != vStrategyHandler.end(); iter++)
+    // vector<StrategyHandler *>::iterator iter = vStrategyHandler.begin();
+    for (auto iter = vStrategyHandler.begin(); iter != vStrategyHandler.end(); iter++)
     {
         (*iter)->release();
     }
 
-    
 #endif
 
     //unsubscribe market data
@@ -149,7 +146,6 @@ int main(int argc, char *argv[])
     strcpy(reqUserLogout.UserID, reader.Get("user", "UserID", "123456").c_str());
     ctp.ReqUserLogout(&reqUserLogout, nRequestID++);
     sleep(5);
-
 
     ctp.exit();
     return 0;

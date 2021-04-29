@@ -26,4 +26,5 @@ public:
 	std::vector<double> m_priceVec; // 存储1分钟的价格
 	std::vector<int> m_volumeVec; // 存储1分钟的成交量
 	std::vector<KLineDataType* > m_KLineDataArray;
+	
 };

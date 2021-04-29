@@ -210,7 +210,7 @@ void CTPMdHandler::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp)
 	std::cout << "询价编号： " << pForQuoteRsp->ForQuoteSysID << std::endl;
 }
 
-void CTPMdHandler::ProcessData(StrategyHandler* p_strategy)
+void CTPMdHandler::ProcessData(QTStrategyBase* p_strategy)
 {
 	char * p_instrument = new char[11];
 	p_instrument = p_strategy->getInstrumentID();
