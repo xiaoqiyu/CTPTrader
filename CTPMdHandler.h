@@ -11,7 +11,6 @@
 #include "include/UserStruct.h"
 #include "include/define.h"
 #include "TickToKlineHelper.h"
-#include "QTStrategyBase.h"
 
 // INIReader reader;
 extern DataQueue g_dataqueue;
@@ -22,24 +21,30 @@ private:
 	CThostFtdcMdApi *g_pMdUserApi = nullptr;
 	//MktDataQueue _data_queue;
 	// thread  _data_thread[DATATHREADNUM];
-	unordered_map<string, QTStrategyBase *> dict_mkthandler;
+	// unordered_map<string, QTStrategyBase *> dict_mkthandler;
 	//TODO to be added
 	bool _ready = false;
 	//TODO check this
 	// vector<thread> data_thread_lst;
-	vector<QTStrategyBase *> strtegy_handler_lst;
-	thread data_thread_lst[100];
+	// vector<QTStrategyBase *> strtegy_handler_lst;
+	// thread data_thread_lst[100];
 	// MktDataHandler* handler_lst[100];
 	//TODO 不用作为成员变量
-	int instrumentNum = 0; //行情合约订阅数量
-	char conf_file[10] = {'\0'};
-	char *pInstrumentID[]; // 行情合约代码列表，中、上、大、郑交易所各选一种
+	mutex mutex_;
+	condition_variable cond_;			//条件变量
+	int instrumentNum = 1; //行情合约订阅数量
+	FileName _conf_file_name = {'\0'};
+	// char *pInstrumentID[]; // 行情合约代码列表，中、上、大、郑交易所各选一种
+	TThostFtdcInstrumentIDType	InstrumentID  = {'\0'};
+	// thread data_thread;
+	data_queue_ptr p_mktdata_queue = nullptr;
+
 
 	// ---- 继承自CTP父类的回调接口并实现 ---- //
 public:
-	CTPMdHandler(const char *p_config_file)
+	CTPMdHandler()
 	{
-		std::strcpy(this->conf_file, p_config_file);
+		
 		// std::cout<<instrumentNum<<std::endl;
 		// std::cout<<"finish constructor"<<std::endl;
 
@@ -48,15 +53,15 @@ public:
 		// 	cout << "Can't load config file in current directory.\n";
 		// }
 	};
-	~CTPMdHandler()
+	~CTPMdHandler(){};
+
+	//TODO check friend
+	data_queue_ptr get_data_queue(){return this->p_mktdata_queue;}
+
+	void set_config(FileName _config_file)
 	{
-		for (vector<QTStrategyBase *>::iterator iter = this->strtegy_handler_lst.begin(); iter != this->strtegy_handler_lst.end(); ++iter)
-		{
-			(*iter)->release();
-		}
-		this->g_pMdUserApi->Release();
-		this->g_pMdUserApi = NULL;
-	};
+		std::strcpy(this->_conf_file_name, _config_file);
+	}
 	///当客户端与交易后台建立起通信连接时（还未登录前），该方法被调用。
 	void OnFrontConnected();
 
@@ -82,45 +87,51 @@ public:
 		return this->g_pMdUserApi->RegisterFront(pszFrontAddress);
 	}
 
-	void init(vector<QTStrategyBase *> v_strategy_handler)
+	void init(TThostFtdcInstrumentIDType instrument_id)
 	{
 		std::cout << "CTPMdHandler Init..." << std::endl;
 		this->g_pMdUserApi->Init();
 		this->_ready = true;
-
+		// this->data_thread = thread(&CTPMdHandler::ProcessData, this, p_strategy_base);
+		this->p_mktdata_queue = new DataQueue();
+		strcpy(this->InstrumentID, instrument_id);
+		
+	
+		cond_.notify_one(); 
+		
 		// for(int i = 0; i < DATATHREADNUM; ++i)
 		// {
 		// 	std::cout<<"Data Thread: "<<i<<"  start"<<std::endl;
 		// 	this->_data_thread[i] = thread(&CTPMdHandler::ProcessData, this);
 		// }
 		//从conf 初始化合约代码
-		INIReader reader(this->conf_file);
-		std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
-		std::cout << "test for instrument ----------------------------------------------------" << std::endl;
-		std::cout << strInstruments << std::endl;
-		std::stringstream sstr(strInstruments);
-		std::string token;
-		int cnt = 0;
-		// std::cout<<"Subscribe Instruments are: "<<std::endl;
-		vector<QTStrategyBase *>::iterator iter = v_strategy_handler.begin();
-		while (getline(sstr, token, ','))
-		{
-			std::cout << "process instrument； " << token << std::endl;
-			pInstrumentID[cnt] = new char[token.length() + 1];
-			strcpy(pInstrumentID[cnt], token.c_str());
-			std::cout << "Market Data Handler " << cnt << " created for instrument: " << token << endl;
-			// StrategyHandler *_p_tmp = new StrategyHandler();
-			// _p_tmp->init(token.c_str());
-			QTStrategyBase *_p_tmp = *(iter + cnt);
-			dict_mkthandler.insert(pair<string, QTStrategyBase *>(token, _p_tmp));
-			std::cout << "Thread  " << cnt << " created for instrument: " << token << endl;
-			this->strtegy_handler_lst.push_back(_p_tmp);
-			// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp);
-			// this->data_thread_lst.push_back(t);
-			this->data_thread_lst[cnt] = thread(&CTPMdHandler::ProcessData, this, _p_tmp);
-			cnt++;
-		}
-		instrumentNum = cnt;
+		// INIReader reader(this->conf_file);
+		// std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
+		// std::cout << "test for instrument ----------------------------------------------------" << std::endl;
+		// std::cout << strInstruments << std::endl;
+		// std::stringstream sstr(strInstruments);
+		// std::string token;
+		// int cnt = 0;
+		// // std::cout<<"Subscribe Instruments are: "<<std::endl;
+		// vector<QTStrategyBase *>::iterator iter = v_strategy_handler.begin();
+		// while (getline(sstr, token, ','))
+		// {
+		// 	std::cout << "process instrument； " << token << std::endl;
+		// 	pInstrumentID[cnt] = new char[token.length() + 1];
+		// 	strcpy(pInstrumentID[cnt], token.c_str());
+		// 	std::cout << "Market Data Handler " << cnt << " created for instrument: " << token << endl;
+		// 	// StrategyHandler *_p_tmp = new StrategyHandler();
+		// 	// _p_tmp->init(token.c_str());
+		// 	QTStrategyBase *_p_tmp = *(iter + cnt);
+		// 	dict_mkthandler.insert(pair<string, QTStrategyBase *>(token, _p_tmp));
+		// 	std::cout << "Thread  " << cnt << " created for instrument: " << token << endl;
+		// 	this->strtegy_handler_lst.push_back(_p_tmp);
+		// 	// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp);
+		// 	// this->data_thread_lst.push_back(t);
+		// 	this->data_thread_lst[cnt] = thread(&CTPMdHandler::ProcessData, this, _p_tmp);
+		// 	cnt++;
+		// }
+		// instrumentNum = cnt;
 		//TODO check the thread
 		// this->_active = true;
 		// this->_task_thread = thread(&CTPTraderHandler::processTask, this);
@@ -135,6 +146,10 @@ public:
 		// 	return ready_;
 		// }); //�ȴ���������֪ͨ
 	};
+
+	void SubscribeMarketData();
+
+	void release();
 
 	///登录请求响应
 	void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
@@ -163,6 +178,6 @@ public:
 	///询价通知
 	void OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp);
 
-	///行情数据处理线程函数
-	void ProcessData(QTStrategyBase *pStrategyHandler);
+	// ///行情数据处理线程函数
+	// void ProcessData(QTStrategyBase *pStrategyHandler);
 };

@@ -12,7 +12,7 @@ void CTPMdHandler::OnFrontConnected()
 {
 	std::cout << "=====建立网络连接成功=====" << std::endl;
 	// 开始登录
-	INIReader reader(this->conf_file);
+	INIReader reader(this->_conf_file_name);
     CThostFtdcReqUserLoginField reqUserLogin = { 0 };
     strcpy(reqUserLogin.BrokerID,reader.Get("user","BrokerID","9999").c_str());
     strcpy(reqUserLogin.UserID,reader.Get("user","UserID","123456").c_str());
@@ -64,18 +64,62 @@ void CTPMdHandler::OnRspUserLogin(
 		std::cout << "交易日： " << pRspUserLogin->TradingDay << std::endl;
 		std::cout << "登录时间： " << pRspUserLogin->LoginTime << std::endl;
 		std::cout << "经纪商： " << pRspUserLogin->BrokerID << std::endl;
-		std::cout << "帐户名： " << pRspUserLogin->UserID << std::endl;;
-		// 开始订阅行情
-		int rt = this->g_pMdUserApi->SubscribeMarketData(this->pInstrumentID, this->instrumentNum);
+		std::cout << "帐户名： " << pRspUserLogin->UserID << std::endl;
+					char *p_InstrumentID[1];
+
+		p_InstrumentID[0] = new char[82];
+		strcpy(p_InstrumentID[0], this->InstrumentID);
+	
+		std::cout<<"subscribe detail----------------------------"<<std::endl;
+		std::cout<<p_InstrumentID[0][1]<<","<<this->instrumentNum<<std::endl;
+
+		int rt = this->g_pMdUserApi->SubscribeMarketData(p_InstrumentID, 1);
 		if (!rt)
 			std::cout << ">>>>>>发送订阅行情请求成功" << std::endl;
 		else
+		{
+			std::cout<<rt<<std::endl;
 			std::cerr << "--->>>发送订阅行情请求失败" << std::endl;
-		
+		}
 	}
 	else
 		std::cerr << "返回错误--->>> ErrorID=" << pRspInfo->ErrorID << ", ErrorMsg=" << pRspInfo->ErrorMsg << std::endl;
 	std::cout<<"end of on rspuserlogin"<<std::endl;
+}
+
+void CTPMdHandler::SubscribeMarketData()
+{
+	unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return this->_ready;
+	}); 
+	// 开始订阅行情
+	char *p_InstrumentID[1];
+
+	p_InstrumentID[0] = new char[82];
+	strcpy(p_InstrumentID[0], this->InstrumentID);
+	
+	std::cout<<"subscribe detail----------------------------"<<std::endl;
+	std::cout<<p_InstrumentID[0][1]<<","<<this->instrumentNum<<std::endl;
+	int rt = this->g_pMdUserApi->SubscribeMarketData(p_InstrumentID, this->instrumentNum);
+	if (!rt)
+		std::cout << ">>>>>>发送订阅行情请求成功" << std::endl;
+	else
+		std::cerr << "--->>>发送订阅行情请求失败" << std::endl;
+}
+
+void CTPMdHandler::release()
+{
+	// 取消订阅行情
+	char *p_InstrumentID[1];
+	p_InstrumentID[0] = this->InstrumentID;
+	int rt = g_pMdUserApi->UnSubscribeMarketData(p_InstrumentID, instrumentNum);
+	if (!rt)
+		std::cout << ">>>>>>发送取消订阅行情请求成功" << std::endl;
+	else
+		std::cerr << "--->>>发送取消订阅行情请求失败" << std::endl;
+	this->g_pMdUserApi->Release();
+	this->g_pMdUserApi = NULL;
 }
 
 // 登出应答
@@ -189,14 +233,17 @@ void CTPMdHandler::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpe
 void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
 	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
-	this->dict_mkthandler[pDepthMarketData->InstrumentID]->on_tick(pDepthMarketData);
+	// this->dict_mkthandler[pDepthMarketData->InstrumentID]->on_tick(pDepthMarketData);
 
-	// 取消订阅行情
-	//int rt = g_pMdUserApi->UnSubscribeMarketData(g_pInstrumentID, instrumentNum);
-	//if (!rt)
-	//	std::cout << ">>>>>>发送取消订阅行情请求成功" << std::endl;
-	//else
-	//	std::cerr << "--->>>发送取消订阅行情请求失败" << std::endl;
+	DataField data =  DataField();
+	data.data_type = FDEPTHMKT;
+	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
+	*mkt_data = *pDepthMarketData;
+	data._data = mkt_data;
+	// std::cout<<mkt_data->InstrumentID<<","<<endl;
+	// std::cout<<p_mktdata_queue<<std::endl;
+	this->p_mktdata_queue->push(data);
+
 }
 
 // 询价详情通知
@@ -210,13 +257,13 @@ void CTPMdHandler::OnRtnForQuoteRsp(CThostFtdcForQuoteRspField *pForQuoteRsp)
 	std::cout << "询价编号： " << pForQuoteRsp->ForQuoteSysID << std::endl;
 }
 
-void CTPMdHandler::ProcessData(QTStrategyBase* p_strategy)
-{
-	char * p_instrument = new char[11];
-	p_instrument = p_strategy->getInstrumentID();
-	// std::cout<<"============================Start Process Data for Instrument: "<<p_instrument<<std::endl;
-	p_strategy->process_tick();
-};
+// void CTPMdHandler::ProcessData(QTStrategyBase* p_strategy)
+// {
+// 	char * p_instrument = new char[11];
+// 	p_instrument = p_strategy->getInstrumentID();
+// 	// std::cout<<"============================Start Process Data for Instrument: "<<p_instrument<<std::endl;
+// 	p_strategy->process_tick();
+// };
 
 
 

@@ -559,18 +559,21 @@ void CTPTraderHandler::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRsp
     task.task_name = ONRSPQRYORDER;
     if (pOrder)
     {
+		std::cout<<"new task data for order field"<<std::endl;
         CThostFtdcOrderField *task_data = new CThostFtdcOrderField();
         *task_data = *pOrder;
         task.task_data = task_data;
     }
     if (pRspInfo)
     {
+		std::cout<<"new error field for rsp order"<<std::endl;
         CThostFtdcRspInfoField *task_error = new CThostFtdcRspInfoField();
         *task_error = *pRspInfo;
         task.task_error = task_error;
     }
     task.task_id = nRequestID;
     task.task_last = bIsLast;
+	std::cout<<"push task for on rsp qry order"<<std::endl;
     this->_task_queue.push(task);
 };
 
@@ -7831,8 +7834,16 @@ int CTPTraderHandler::exit()
     this->_task_queue.terminate();
     this->_task_thread.join();
 
+	CThostFtdcUserLogoutField reqUserLogout = {0};
+    strcpy(reqUserLogout.BrokerID, this->broker_id.c_str());
+    strcpy(reqUserLogout.UserID, this->user_id.c_str());
+
+    this->ReqUserLogout(&reqUserLogout, nRequestID++);
+    sleep(5);
+
     this->_api->RegisterSpi(NULL);
-    this->_api->Release();
+    // this->_api->Release();
+	this->release();
     this->_api = NULL;
     return 1;
 };
@@ -7921,7 +7932,7 @@ int CTPTraderHandler::ReqQryOrder(CThostFtdcQryOrderField *pQryOrder, int nReque
 {
 	this->available_ = false;
 	int ret = _api->ReqQryOrder(pQryOrder, nRequestID);
-		unique_lock<mutex> mlock(mutex_);
+	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_&this->available_;
 	}); 

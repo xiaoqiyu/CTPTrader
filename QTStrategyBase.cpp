@@ -1,29 +1,17 @@
 #include <iostream>
 #include "QTStrategyBase.h"
 
-void QTStrategyBase::on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData)
-{
-	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
-	DataField data =  DataField();
-	data.data_type = FDEPTHMKT;
-	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
-	*mkt_data = *pDepthMarketData;
-	data._data = mkt_data;
-	this->p_mktdata_queue->push(data);
-	//TODO update order logic
-	if(this->_short || this->_long)
-	{
-		DataField order_data = DataField();
-		order_data.data_type = ORDERFIELD;
-		CThostFtdcInputOrderField *_order_data = new CThostFtdcInputOrderField();
-		// add order filed value
-		_order_data->OrderPriceType = '0';
+// void QTStrategyBase::on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData)
+// {
+// 	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
+// 	DataField data =  DataField();
+// 	data.data_type = FDEPTHMKT;
+// 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
+// 	*mkt_data = *pDepthMarketData;
+// 	data._data = mkt_data;
+// 	this->mktdata_queue.push(data);
 
-		order_data._data = _order_data;
-		this->p_order_queue->push(order_data);
-
-	}
-}
+// }
 
 void QTStrategyBase::process_tick()
 {
@@ -32,7 +20,8 @@ void QTStrategyBase::process_tick()
 	{
 		while (true)
 		{
-			DataField data = this->p_mktdata_queue->pop();
+			// DataField data = this->mktdata_queue.pop();
+			DataField data = this->p_md_handler->get_data_queue()->pop();
 			switch (data.data_type)
 			{
 			case FDEPTHMKT: //期货深度行情数据
@@ -62,24 +51,8 @@ void QTStrategyBase::process_tick()
 											<< pDepthMarketData->LowerLimitPrice << ","
 											<< pDepthMarketData->BidPrice1 << ","
 											<< pDepthMarketData->BidVolume1 << ","
-											// << pDepthMarketData->BidPrice2 << "," //null
-											// << pDepthMarketData->BidVolume2 << "," //null
-											// << pDepthMarketData->BidPrice3 << "," //null
-											// << pDepthMarketData->BidVolume3 << "," //null
-											// << pDepthMarketData->BidPrice4 << "," //null
-											// << pDepthMarketData->BidVolume4 << "," //null
-											// << pDepthMarketData->BidPrice5 << "," //null
-											// << pDepthMarketData->BidVolume5 << "," //null
 											<< pDepthMarketData->AskPrice1 << ","
 											<< pDepthMarketData->AskVolume1 << ","
-											// << pDepthMarketData->AskPrice2 << "," //null
-											// << pDepthMarketData->AskVolume2 << "," //null
-											// << pDepthMarketData->AskPrice3 << ","//null
-											// << pDepthMarketData->AskVolume3 << ","//null
-											// << pDepthMarketData->AskPrice4 << "," //null 
-											// << pDepthMarketData->AskVolume4 << "," //null
-											// << pDepthMarketData->AskPrice5 << "," //null
-											// << pDepthMarketData->AskVolume5 << "," //null
 											// << pDepthMarketData->AveragePrice-pDepthMarketData->LastPrice<<"," //agerage price include contract size
 											<< pDepthMarketData->PreOpenInterest << ","
 											<< pDepthMarketData->OpenInterest << ","
@@ -110,8 +83,6 @@ void QTStrategyBase::process_tick()
 					}
 					delete p_kline_data;
 					//计算因子和下单信号
-					
-
 				}
 				if (data.error)
 				{
@@ -131,8 +102,29 @@ void QTStrategyBase::process_tick()
 	}
 }
 
-void calculate_kline();
+void QTStrategyBase::calculate_kline(){};
 
-void QTStrategyBase::calculate_kline()
+
+void QTStrategyBase::start()
 {
+	this->data_thread.join();
+}
+void QTStrategyBase::stop()
+{
+	CThostFtdcUserLogoutField reqUserLogout = {0};
+    strcpy(reqUserLogout.BrokerID, this->broker_id.c_str());
+    strcpy(reqUserLogout.UserID, this->user_id.c_str());
+    this->p_trader_handler->ReqUserLogout(&reqUserLogout, nRequestID++);
+    sleep(5);
+}
+
+void QTStrategyBase::release()
+{
+	mkt_depth_outfile.close();
+	kline_outfile.close();
+	delete p_kline_helper;
+	// delete mktdata_queue;
+	delete p_order_queue;
+	this->p_md_handler->release();
+	this->p_trader_handler->exit();
 }

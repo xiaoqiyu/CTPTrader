@@ -28,6 +28,8 @@ private:
     std::vector<std::string> future_instrumentID;
     std::vector<std::string> main_future_instrumentID;
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
+    std::string broker_id;
+	std::string user_id;
 
 public:
     CTPTraderHandler(){};
