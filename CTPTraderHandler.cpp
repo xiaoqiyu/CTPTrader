@@ -7879,7 +7879,7 @@ int CTPTraderHandler::ReqUserLogin(CThostFtdcReqUserLoginField *pReqUserLoginFie
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_;
-	}); //�ȴ���������֪ͨ
+	}); 
 	return ret;
 }
 

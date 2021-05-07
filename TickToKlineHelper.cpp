@@ -6,6 +6,7 @@
 #include "include/ThostFtdcUserApiStruct.h"
 #include "TickToKlineHelper.h"
 
+//TODO to be updated
 void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const std::string &dFilePath)
 {
 	// 先清理残留数据
@@ -82,10 +83,12 @@ bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 {
 	m_priceVec.push_back(pDepthMarketData->LastPrice);
 	m_volumeVec.push_back(pDepthMarketData->Volume);
+	std::string curr_tme = pDepthMarketData->UpdateTime;
+	// std::cout<<"in k line calculation:"<<this->last_update_time.substr(0,5)<<","<<curr_tme.substr(0,5)<<std::endl;
 	// KLineDataType *p_kline_data;
-	if (m_priceVec.size() == KLINENUM)
+	if (!this->last_update_time.empty() and this->last_update_time.substr(0,5)!= curr_tme.substr(0,5))
 	{
-		// KLineDataType k_line_data;
+		// std::cout<<"cache k line:"<<this->last_update_time.substr(0,5)<<","<<curr_tme.substr(0,5)<<std::endl;
 		p_kline_data->open_price = m_priceVec.front();
 		p_kline_data->high_price = *std::max_element(m_priceVec.cbegin(), m_priceVec.cend());
 		p_kline_data->low_price = *std::min_element(m_priceVec.cbegin(), m_priceVec.cend());
@@ -99,20 +102,9 @@ bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 
 		m_priceVec.clear();
 		m_volumeVec.clear();
-		// p_kline_data = &k_line_data;
-		// char filePath[100] = {'\0'};
-		// sprintf(filePath, "cache/%s_kline.txt", pDepthMarketData->TradingDay);
-		// std::ofstream outFile;
-		// outFile.open(filePath, std::ios::app); // 文件追加写入
-		// outFile << pDepthMarketData->InstrumentID << ","
-		// 		<<pDepthMarketData->UpdateTime <<","
-		// 		<< k_line_data.open_price <<","
-		// 		<< k_line_data.high_price <<","
-		// 		<< k_line_data.low_price << ","
-		// 		<<k_line_data.close_price <<","
-		// 		<< k_line_data.volume << std::endl;
-		// outFile.close();
+		this->last_update_time = curr_tme;
 		return true;
 	}
+	this->last_update_time = curr_tme;
 	return false;
 }
