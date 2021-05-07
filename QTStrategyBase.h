@@ -15,22 +15,23 @@
 #include "CTPTraderHandler.h"
 #include "CTPMdHandler.h"
 
-typedef CTPTraderHandler*  trader_util_ptr;
-typedef CTPMdHandler* md_ptr;
+typedef CTPTraderHandler *trader_util_ptr;
+typedef CTPMdHandler *md_ptr;
 
 class QTStrategyBase
 {
 public: //strategy function
-	// void on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData);
-	 int get_signal();
+		// void on_tick(CThostFtdcDepthMarketDataField *pDepthMarketData);
+	int get_signal();
 	void process_tick();
+
 public:
-	QTStrategyBase(const string &name){this->name=name;};
+	QTStrategyBase(const string &name) { this->name = name; };
 	~QTStrategyBase(){};
 	int init(TThostFtdcInstrumentIDType instrumentID, const std::string _conf_file_name)
 	{
 		//初始
-		FileName _conf_file = {'\0'}; 
+		FileName _conf_file = {'\0'};
 		// snprintf(_conf_file, 100, "conf/%s.ini", argv[1]);
 
 		snprintf(_conf_file, 100, "conf/%s.ini", _conf_file_name.c_str());
@@ -63,7 +64,7 @@ public:
 
 		this->p_trader_handler->ReqAuthenticate(&reqAuth, nRequestID++);
 		sleep(5);
-	
+
 		std::cout << "Start ----------------------------" << std::endl;
 		CThostFtdcReqUserLoginField reqUserLogin = {0};
 		strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
@@ -77,7 +78,6 @@ public:
 
 		std::string trading_date = this->p_trader_handler->getTradingDay();
 		std::cout << "Trading date is: " << trading_date << endl;
-
 
 		//CTP MD init
 		this->p_md_handler = new CTPMdHandler();
@@ -104,14 +104,11 @@ public:
 	void stop();
 	void release();
 
-
-public://order function
-	void insert_limit_order();
-	void insert_market_order();
-	void order(int stop_loss_percents=0, int stop_profit_percent=0);
-
-
-
+public: //order function
+	//TThostFtdcDirectionType：char,'0':buy,'1':sell
+	void insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
+	void insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcOrderPriceTypeType OrderPriceType, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
+	void order(int stop_loss_percents = 0, int stop_profit_percent = 0);
 
 	void calculate_kline();
 	char *getInstrumentID()
@@ -127,10 +124,9 @@ public://order function
 		}
 	}
 
-
 private:
 	// char instrumentID[10] = {'\0'};
-	TThostFtdcInstrumentIDType	instrumentID = {'\0'};
+	TThostFtdcInstrumentIDType instrumentID = {'\0'};
 	// char mkt_depth_file_name[100] = {'\0'};
 	// char kline_file_name[100] = {'\0'};
 	FileName mkt_depth_file_name = {'\0'};
@@ -140,7 +136,7 @@ private:
 	TickToKlineHelper *p_kline_helper = nullptr;
 	// data_queue_ptr p_mktdata_queue = nullptr;
 	// DataQueue mktdata_queue = DataQueue();
-	data_queue_ptr p_order_queue = nullptr;	
+	data_queue_ptr p_order_queue = nullptr;
 	bool _long = false;
 	bool _short = false;
 	bool _order = false;
@@ -148,11 +144,8 @@ private:
 	std::string user_id;
 	std::string name;
 
-
 protected:
 	trader_util_ptr p_trader_handler = nullptr;
 	md_ptr p_md_handler = nullptr;
 	thread data_thread;
-
-
 };

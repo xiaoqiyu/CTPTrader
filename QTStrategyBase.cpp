@@ -107,7 +107,7 @@ void QTStrategyBase::calculate_kline(){};
 
 void QTStrategyBase::start()
 {
-	this->data_thread.join();
+	// this->data_thread.join();
 }
 void QTStrategyBase::stop()
 {
@@ -116,6 +116,30 @@ void QTStrategyBase::stop()
     strcpy(reqUserLogout.UserID, this->user_id.c_str());
     this->p_trader_handler->ReqUserLogout(&reqUserLogout, nRequestID++);
     sleep(5);
+}
+
+
+void QTStrategyBase::insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType order_ref,  TThostFtdcDirectionType direction,TThostFtdcInstrumentIDType instrumentID)
+{
+	CThostFtdcInputOrderField input_order_field = {0};
+	strcpy(input_order_field.InstrumentID, instrumentID);
+	strcpy(input_order_field.OrderRef, order_ref);
+	input_order_field.VolumeTotalOriginal = volume;
+	input_order_field.LimitPrice = limit_price;
+	input_order_field.Direction = direction;
+	input_order_field.OrderPriceType = '2';
+	this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
+}
+void QTStrategyBase::insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType order_ref, TThostFtdcOrderPriceTypeType order_price_type, TThostFtdcDirectionType direction, TThostFtdcInstrumentIDType instrumentID)
+{
+	CThostFtdcInputOrderField input_order_field = {0};
+	strcpy(input_order_field.InstrumentID, instrumentID);
+	strcpy(input_order_field.OrderRef, order_ref);
+	input_order_field.VolumeTotalOriginal = volume;
+	input_order_field.LimitPrice = limit_price;
+	input_order_field.Direction = direction;
+	input_order_field.OrderPriceType = order_price_type;
+	this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 
 void QTStrategyBase::release()
@@ -128,3 +152,5 @@ void QTStrategyBase::release()
 	this->p_md_handler->release();
 	this->p_trader_handler->exit();
 }
+
+

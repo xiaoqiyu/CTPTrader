@@ -7910,6 +7910,7 @@ int CTPTraderHandler::ReqQryDepthMarketData(CThostFtdcQryDepthMarketDataField *p
 
 int CTPTraderHandler::ReqOrderInsert(CThostFtdcInputOrderField *pInputOrder, int nRequestID)
 {
+	//TODO:check status
 	return _api->ReqOrderInsert(pInputOrder, nRequestID);
 }
 
