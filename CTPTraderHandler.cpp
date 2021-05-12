@@ -600,6 +600,7 @@ void CTPTraderHandler::OnRspQryTrade(CThostFtdcTradeField *pTrade, CThostFtdcRsp
 
 void CTPTraderHandler::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *pInvestorPosition, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+	std::cout<<"OnRspQryInvestorPosition"<<std::endl;
     Task task = Task();
     task.task_name = ONRSPQRYINVESTORPOSITION;
     if (pInvestorPosition)
@@ -770,10 +771,8 @@ void CTPTraderHandler::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument
 {
     Task task = Task();
     task.task_name = ONRSPQRYINSTRUMENT;
-	std::cout<<"OnRspQryInstrument-----------------------------"<<std::endl;
     if (pInstrument)
     {
-		std::cout<<"OnRspQryInstrument process-----------------------------"<<std::endl;
         CThostFtdcInstrumentField *task_data = new CThostFtdcInstrumentField();
         *task_data = *pInstrument;
         task.task_data = task_data;
@@ -784,6 +783,7 @@ void CTPTraderHandler::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument
         *task_error = *pRspInfo;
         task.task_error = task_error;
     }
+	// std::cout<<"instrument query last:"<<bIsLast<<std::endl;
     task.task_id = nRequestID;
     task.task_last = bIsLast;
     this->_task_queue.push(task);
@@ -2350,9 +2350,9 @@ void CTPTraderHandler::OnRtnChangeAccountByBank(CThostFtdcChangeAccountField *pC
 };
 void CTPTraderHandler::processFrontConnected(Task* task)
 {
-	std:cout<<"process front connect\n";
 	ready_ = true;
-	cond_.notify_one(); //֪ͨ���������ȴ����߳�
+	cond_.notify_one();
+	std::cout<<"ctp trader complete front connected"<<std::endl;
 };
 
 void CTPTraderHandler::processFrontDisconnected(Task* task)
@@ -2389,6 +2389,7 @@ void CTPTraderHandler::processRspUserLogin(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcRspUserLoginField* task_data = reinterpret_cast<CThostFtdcRspUserLoginField*>(task->task_data);
+		std::cout<<"******************Complete Login**********************"<<std::endl;
 		printf("TradingDay = %s\n", (task_data->TradingDay));
 		printf("LoginTime = %s\n", (task_data->LoginTime));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
@@ -2413,7 +2414,7 @@ void CTPTraderHandler::processRspUserLogin(Task* task)
 	}
 	login_ = true;
 	available_ = true;
-	cond_.notify_one(); //֪ͨ���������ȴ����߳�
+	cond_.notify_one(); 
 };
 
 void CTPTraderHandler::processRspUserLogout(Task* task)
@@ -3200,6 +3201,7 @@ void CTPTraderHandler::processRspQryTrade(Task* task)
 
 void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 {
+	std::cout<<"processRspQryInvestorPosition"<<std::endl;
 	if (task->task_data)
 	{
 		CThostFtdcInvestorPositionField* task_data = reinterpret_cast<CThostFtdcInvestorPositionField*>(task->task_data);
@@ -3259,7 +3261,11 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
-	this->available_ = true;
+	if(task->task_id)
+	{
+		this->available_ = true;
+		cond_.notify_one();
+	}
 };
 
 void CTPTraderHandler::processRspQryTradingAccount(Task* task)
@@ -3495,15 +3501,22 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 {
 	//ProductClass:,"1":期货单一合约；"2":期权单一合约
 	//ProductID: "cu_o":option,"cu":future
+	// std::cout<<"in processRspQryInstrument---------"<<std::endl;
 	if (task->task_data)
 	{
+		// std::cout<<"in processRspQryInstrument, task_data---------"<<std::endl;
+
 		CThostFtdcInstrumentField* task_data = reinterpret_cast<CThostFtdcInstrumentField*>(task->task_data);
 		if(task_data->ProductClass == '1')
 		{
-			CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
-    		strcpy(qryDepthMktDataField.InstrumentID, task_data->InstrumentID);
-    		this->ReqQryDepthMarketData(&qryDepthMktDataField, nRequestID++);
+			// CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
+    		// strcpy(qryDepthMktDataField.InstrumentID, task_data->InstrumentID);
+    		// this->ReqQryDepthMarketData(&qryDepthMktDataField, nRequestID++);
+			std::cout<<task_data->InstrumentID<<std::endl;
 			this->future_instrumentID.push_back(task_data->InstrumentID);
+		}else if(task_data->ProductClass == '2'){
+			// std::cout<<task_data->InstrumentID<<std::endl;
+			this->option_instrumentID.push_back(task_data->InstrumentID);
 		}
 		// std::cout<<"outside"<<task_data->InstrumentID<<","<<task_data->ProductID<<","<<task_data->ProductClass<<std::endl;
 		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3545,6 +3558,12 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
+	}
+	if(task->task_last)
+	{
+		std::cout<<"reset avaible_"<<std::endl;
+		available_ = true;
+		cond_.notify_one();
 	}
 };
 
@@ -4854,14 +4873,15 @@ void CTPTraderHandler::processRtnInstrumentStatus(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcInstrumentStatusField* task_data = reinterpret_cast<CThostFtdcInstrumentStatusField*>(task->task_data);
-		printf("ExchangeID = %s\n", (task_data->ExchangeID));
-		printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
-		printf("SettlementGroupID = %s\n", (task_data->SettlementGroupID));
-		printf("InstrumentID = %s\n", (task_data->InstrumentID));
-		printf("InstrumentStatus = %d\n", task_data->InstrumentStatus);
-		printf("TradingSegmentSN = %d\n", task_data->TradingSegmentSN);
-		printf("EnterTime = %s\n", (task_data->EnterTime));
-		printf("EnterReason = %d\n", task_data->EnterReason);
+		std::cout<<"Instrument Status:"<<task_data->InstrumentID<< std::endl;
+		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
+		// printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
+		// printf("SettlementGroupID = %s\n", (task_data->SettlementGroupID));
+		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
+		// printf("InstrumentStatus = %d\n", task_data->InstrumentStatus);
+		// printf("TradingSegmentSN = %d\n", task_data->TradingSegmentSN);
+		// printf("EnterTime = %s\n", (task_data->EnterTime));
+		// printf("EnterReason = %d\n", task_data->EnterReason);
 		delete task_data;
 	}
 };
@@ -7807,13 +7827,13 @@ void CTPTraderHandler::init()
 	std::cout<<"API version:\t";
     std::cout << this->_api->GetApiVersion() << std::endl;
     this->_api->Init();
-	std::cout<<"complete api call"<<std::endl;
+	std::cout<<"wait for front connected api call"<<std::endl;
 	//TODO check 
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return ready_; //调用了onfrontconnected时候才会将ready_设置为true，没有调用onfrontconnected,就会一直wait.
-	}); //�ȴ���������֪ͨ
-	std::cout<<"complete api init"<<std::endl;
+	}); 
+
 };
 
 void CTPTraderHandler::release()
@@ -7843,6 +7863,7 @@ int CTPTraderHandler::exit()
 
     this->_api->RegisterSpi(NULL);
     // this->_api->Release();
+	this->join();
 	this->release();
     this->_api = NULL;
     return 1;
@@ -7900,7 +7921,13 @@ int CTPTraderHandler::ReqQryProduct(CThostFtdcQryProductField *pQryProduct, int 
 
 int CTPTraderHandler::ReqQryInstrument(CThostFtdcQryInstrumentField *pQryInstrument, int nRequestID)
 {
-	return _api->ReqQryInstrument(pQryInstrument, nRequestID);
+	this->available_ = false;
+	int ret = _api->ReqQryInstrument(pQryInstrument, nRequestID); 
+	unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&available_;
+	}); 	
+	return ret;
 }
 
 int CTPTraderHandler::ReqQryDepthMarketData(CThostFtdcQryDepthMarketDataField *pQryDepthMarketData, int nRequestID)
@@ -7914,6 +7941,7 @@ int CTPTraderHandler::ReqOrderInsert(CThostFtdcInputOrderField *pInputOrder, int
 	return _api->ReqOrderInsert(pInputOrder, nRequestID);
 }
 
+//TODO to be commpleted
 void CTPTraderHandler::ReqQryMainContract(vector<std::string> productID, int nRequestID)
 {
 	for (auto iter = productID.begin(); iter != productID.end(); iter++)
@@ -7957,8 +7985,10 @@ int CTPTraderHandler::ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nReque
 ///请求查询投资者持仓
 int CTPTraderHandler::ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID)
 {
+	std::cout<<"send req for position"<<std::endl;
 	this->available_ = false;
 	int ret =  _api->ReqQryInvestorPosition(pQryInvestorPosition, nRequestID);
+	
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_&this->available_;

@@ -83,7 +83,7 @@ private:
     queue<DataField> queue_;       //标准库队列
     mutex mutex_;             //互斥锁
     condition_variable cond_; //条件变量
-    // bool _terminate = false;
+    bool _terminate = false;
 
 public:
     DataQueue(){};
@@ -104,18 +104,18 @@ public:
         cond_.wait(mlock, [&]() {
             return !queue_.empty() ;
         }); //等待条件变量通知
-        // if (_terminate)
-        //     throw TerminatedError();
+        if (_terminate)
+            throw TerminatedError();
         DataField data = queue_.front(); //获取队列中的最后一个数据
         queue_.pop();               //删除该数据
         return data;                //返回该数据
     }
 
-    // void terminate()
-    // {
-    //     _terminate = true;
-    //     cond_.notify_all(); //通知正在阻塞等待的线程
-    // }
+    void terminate()
+    {
+        _terminate = true;
+        cond_.notify_all(); //通知正在阻塞等待的线程
+    }
 };
 
 

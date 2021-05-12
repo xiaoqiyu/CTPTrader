@@ -13,7 +13,7 @@
 #include "TickToKlineHelper.h"
 
 // INIReader reader;
-extern DataQueue g_dataqueue;
+extern int nRequestID;
 
 class CTPMdHandler : public CThostFtdcMdSpi
 {
@@ -23,7 +23,9 @@ private:
 	// thread  _data_thread[DATATHREADNUM];
 	// unordered_map<string, QTStrategyBase *> dict_mkthandler;
 	//TODO to be added
-	bool _ready = false;
+	bool ready_ = false;
+	bool login_ = false;
+	bool active_ = false;
 	//TODO check this
 	// vector<thread> data_thread_lst;
 	// vector<QTStrategyBase *> strtegy_handler_lst;
@@ -35,25 +37,23 @@ private:
 	int instrumentNum = 1; //行情合约订阅数量
 	FileName _conf_file_name = {'\0'};
 	// char *pInstrumentID[]; // 行情合约代码列表，中、上、大、郑交易所各选一种
-	TThostFtdcInstrumentIDType	InstrumentID  = {'\0'};
+	// TThostFtdcInstrumentIDType	InstrumentID  = {'\0'};
+	std::vector<std::string> v_instrumentID;
 	// thread data_thread;
 	data_queue_ptr p_mktdata_queue = nullptr;
+	std::string broker_id;
+	std::string user_id;
 
 
 	// ---- 继承自CTP父类的回调接口并实现 ---- //
 public:
-	CTPMdHandler()
-	{
-		
-		// std::cout<<instrumentNum<<std::endl;
-		// std::cout<<"finish constructor"<<std::endl;
-
-		// if (reader.ParseError() != 0)
-		// {
-		// 	cout << "Can't load config file in current directory.\n";
-		// }
+	CTPMdHandler(){};
+	~CTPMdHandler(){
+		if(this->active_)
+		{
+			this->exit();
+		}
 	};
-	~CTPMdHandler(){};
 
 	//TODO check friend
 	data_queue_ptr get_data_queue(){return this->p_mktdata_queue;}
@@ -87,69 +87,30 @@ public:
 		return this->g_pMdUserApi->RegisterFront(pszFrontAddress);
 	}
 
-	void init(TThostFtdcInstrumentIDType instrument_id)
+	void init(std::vector<std::string>& v_instrumentid)
 	{
 		std::cout << "CTPMdHandler Init..." << std::endl;
+		std::cout<<v_instrumentID.size();
 		this->g_pMdUserApi->Init();
-		this->_ready = true;
-		// this->data_thread = thread(&CTPMdHandler::ProcessData, this, p_strategy_base);
+		this->active_ = true;
 		this->p_mktdata_queue = new DataQueue();
-		strcpy(this->InstrumentID, instrument_id);
-		
-	
+		for(auto iter=v_instrumentid.begin();iter!=v_instrumentid.end();++iter)
+		{
+			std::cout<<"push in instrument:"<<*iter<<std::endl;
+			this->v_instrumentID.push_back(*iter);
+		}
+		// strcpy(this->InstrumentID, instrument_id);
+
 		cond_.notify_one(); 
-		
-		// for(int i = 0; i < DATATHREADNUM; ++i)
-		// {
-		// 	std::cout<<"Data Thread: "<<i<<"  start"<<std::endl;
-		// 	this->_data_thread[i] = thread(&CTPMdHandler::ProcessData, this);
-		// }
-		//从conf 初始化合约代码
-		// INIReader reader(this->conf_file);
-		// std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
-		// std::cout << "test for instrument ----------------------------------------------------" << std::endl;
-		// std::cout << strInstruments << std::endl;
-		// std::stringstream sstr(strInstruments);
-		// std::string token;
-		// int cnt = 0;
-		// // std::cout<<"Subscribe Instruments are: "<<std::endl;
-		// vector<QTStrategyBase *>::iterator iter = v_strategy_handler.begin();
-		// while (getline(sstr, token, ','))
-		// {
-		// 	std::cout << "process instrument； " << token << std::endl;
-		// 	pInstrumentID[cnt] = new char[token.length() + 1];
-		// 	strcpy(pInstrumentID[cnt], token.c_str());
-		// 	std::cout << "Market Data Handler " << cnt << " created for instrument: " << token << endl;
-		// 	// StrategyHandler *_p_tmp = new StrategyHandler();
-		// 	// _p_tmp->init(token.c_str());
-		// 	QTStrategyBase *_p_tmp = *(iter + cnt);
-		// 	dict_mkthandler.insert(pair<string, QTStrategyBase *>(token, _p_tmp));
-		// 	std::cout << "Thread  " << cnt << " created for instrument: " << token << endl;
-		// 	this->strtegy_handler_lst.push_back(_p_tmp);
-		// 	// std::thread t = std::thread(&CTPMdHandler::ProcessData, this, _p_tmp);
-		// 	// this->data_thread_lst.push_back(t);
-		// 	this->data_thread_lst[cnt] = thread(&CTPMdHandler::ProcessData, this, _p_tmp);
-		// 	cnt++;
-		// }
-		// instrumentNum = cnt;
-		//TODO check the thread
-		// this->_active = true;
-		// this->_task_thread = thread(&CTPTraderHandler::processTask, this);
-		// SubscribePrivateTopic(THOST_TERT_QUICK);
-		// SubscribePublicTopic(THOST_TERT_QUICK);
-		// std::cout<<"API version:\t";
-		// std::cout << this->_api->GetApiVersion() << std::endl;
-		// this->_api->Init();
-		// //TODO check
-		// unique_lock<mutex> mlock(mutex_);
-		// cond_.wait(mlock, [&]() {
-		// 	return ready_;
-		// }); //�ȴ���������֪ͨ
 	};
 
 	void SubscribeMarketData();
 
+	int join();
+
 	void release();
+
+	int exit();
 
 	///登录请求响应
 	void OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);

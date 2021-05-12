@@ -26,6 +26,7 @@ private:
     bool available_ = false; //用于交易查询的流控
     //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
     std::vector<std::string> future_instrumentID;
+    std::vector<std::string> option_instrumentID;
     std::vector<std::string> main_future_instrumentID;
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
     std::string broker_id;
@@ -45,6 +46,11 @@ public:
     std::vector<std::string> GetFutureInstrumentID()
     {
         return this->future_instrumentID;
+    }
+
+    std::vector<std::string> GetOptionInstrumentID()
+    {
+        return this->option_instrumentID;
     }
 
     virtual void OnFrontConnected();

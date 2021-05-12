@@ -10,6 +10,9 @@ with open('../cache/rb2110_depth_market_data_20210507.txt') as f:
     avg_price_lst = [float(item.split(',')[9])/10 for item in lines]
     bid_price_lst = [float(item.split(',')[-9]) for item in lines]
     ask_price_lst = [float(item.split(',')[-7]) for item in lines]
+    k1 = 0.2
+    k2 = 0.5
+    
     print(ask_price_lst[:10])
     print(bid_price_lst[:10])
     plt.plot(last_price_lst)

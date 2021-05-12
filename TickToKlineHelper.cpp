@@ -12,7 +12,7 @@ void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const s
 	// 先清理残留数据
 	m_priceVec.clear();
 	m_volumeVec.clear();
-	m_KLineDataArray.clear();
+	m_KLineDataVec.clear();
 
 	std::cout << "开始转换tick到k线..." << std::endl;
 	// 默认读取的tick数据表有4个字段：合约代码、更新时间、最新价、成交量
@@ -95,7 +95,7 @@ bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 		p_kline_data->close_price = m_priceVec.back();
 		// 成交量的真实的算法是当前区间最后一个成交量减去上去一个区间最后一个成交量
 		p_kline_data->volume = m_volumeVec.back() - m_volumeVec.front();
-		m_KLineDataArray.push_back(p_kline_data); // 此处可以存到内存
+		m_KLineDataVec.push_back(p_kline_data); // 此处可以存到内存
 		std::cout << "KLINE: " <<pDepthMarketData->InstrumentID<<","<<pDepthMarketData->UpdateTime << ","<<p_kline_data->open_price << "," 
 				<< p_kline_data->high_price << "," << p_kline_data->low_price << "," << p_kline_data->close_price
 				<< "," << p_kline_data->volume << std::endl;

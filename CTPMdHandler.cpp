@@ -11,6 +11,7 @@
 void CTPMdHandler::OnFrontConnected()
 {
 	std::cout << "=====建立网络连接成功=====" << std::endl;
+	ready_ = true;
 	// 开始登录
 	INIReader reader(this->_conf_file_name);
     CThostFtdcReqUserLoginField reqUserLogin = { 0 };
@@ -19,8 +20,9 @@ void CTPMdHandler::OnFrontConnected()
     strcpy(reqUserLogin.Password,reader.Get("user","Password","123456").c_str());
     strcpy(reqUserLogin.MacAddress,reader.Get("user","MacAddress","123456").c_str());
     strcpy(reqUserLogin.UserProductInfo,reader.Get("user","UserProductInfo","123456").c_str());
-	static int requestID = 0; // 请求编号
-	int rt = this->g_pMdUserApi->ReqUserLogin(&reqUserLogin, requestID);
+	this->broker_id = reader.Get("user","BrokerID","9999");
+	this->user_id = reader.Get("user","UserID","123456");
+	int rt = this->g_pMdUserApi->ReqUserLogin(&reqUserLogin, nRequestID);
 	if (!rt)
 		std::cout << ">>>>>>发送登录请求成功" << std::endl;
 	else
@@ -65,22 +67,9 @@ void CTPMdHandler::OnRspUserLogin(
 		std::cout << "登录时间： " << pRspUserLogin->LoginTime << std::endl;
 		std::cout << "经纪商： " << pRspUserLogin->BrokerID << std::endl;
 		std::cout << "帐户名： " << pRspUserLogin->UserID << std::endl;
-					char *p_InstrumentID[1];
 
-		p_InstrumentID[0] = new char[82];
-		strcpy(p_InstrumentID[0], this->InstrumentID);
-	
-		std::cout<<"subscribe detail----------------------------"<<std::endl;
-		std::cout<<p_InstrumentID[0][1]<<","<<this->instrumentNum<<std::endl;
-
-		int rt = this->g_pMdUserApi->SubscribeMarketData(p_InstrumentID, 1);
-		if (!rt)
-			std::cout << ">>>>>>发送订阅行情请求成功" << std::endl;
-		else
-		{
-			std::cout<<rt<<std::endl;
-			std::cerr << "--->>>发送订阅行情请求失败" << std::endl;
-		}
+		login_ = true;
+		cond_.notify_one(); 
 	}
 	else
 		std::cerr << "返回错误--->>> ErrorID=" << pRspInfo->ErrorID << ", ErrorMsg=" << pRspInfo->ErrorMsg << std::endl;
@@ -89,37 +78,79 @@ void CTPMdHandler::OnRspUserLogin(
 
 void CTPMdHandler::SubscribeMarketData()
 {
+	std::cout<<"start sub market data=========="<<std::endl;
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
-		return this->_ready;
+		return this->login_;
 	}); 
 	// 开始订阅行情
-	char *p_InstrumentID[1];
-
-	p_InstrumentID[0] = new char[82];
-	strcpy(p_InstrumentID[0], this->InstrumentID);
-	
-	std::cout<<"subscribe detail----------------------------"<<std::endl;
-	std::cout<<p_InstrumentID[0][1]<<","<<this->instrumentNum<<std::endl;
-	int rt = this->g_pMdUserApi->SubscribeMarketData(p_InstrumentID, this->instrumentNum);
+	std::cout<<"insrument size"<<this->v_instrumentID.size()<<std::endl;
+	int instrument_len = this->v_instrumentID.size();
+	char *p_InstrumentID[instrument_len];
+	int cnt = 0;
+	std::cout<<"sub instruments-----------"<<std::endl;
+	for(auto iter=this->v_instrumentID.begin();iter!=this->v_instrumentID.end();++iter)
+	{
+		std::string _ins = *iter;
+		std::cout<<_ins<<std::endl;
+		p_InstrumentID[cnt] = new TThostFtdcInstrumentIDType;
+		strcpy(p_InstrumentID[cnt], _ins.c_str());	
+		cnt ++;
+	}
+	for(int i=0; i<instrument_len; ++i)
+	{
+		std::cout<<p_InstrumentID[i]<<std::endl;
+	}
+	int rt = this->g_pMdUserApi->SubscribeMarketData(p_InstrumentID, cnt);
 	if (!rt)
 		std::cout << ">>>>>>发送订阅行情请求成功" << std::endl;
 	else
 		std::cerr << "--->>>发送订阅行情请求失败" << std::endl;
 }
+int CTPMdHandler::join(){
+	return this->g_pMdUserApi->Join();
+}
 
 void CTPMdHandler::release()
 {
+	this->g_pMdUserApi->Release();
+	this->g_pMdUserApi = NULL;
+	this->ready_ = false;
+}
+
+int CTPMdHandler::exit()
+{
+	this->active_ = false;
 	// 取消订阅行情
-	char *p_InstrumentID[1];
-	p_InstrumentID[0] = this->InstrumentID;
-	int rt = g_pMdUserApi->UnSubscribeMarketData(p_InstrumentID, instrumentNum);
+	int instrument_len = this->v_instrumentID.size();
+	char *p_InstrumentID[instrument_len];
+	int cnt = 0;
+	for(auto iter=this->v_instrumentID.begin();iter!=this->v_instrumentID.end();++iter)
+	{
+		std::string _ins = *iter;
+		p_InstrumentID[cnt] = new TThostFtdcInstrumentIDType;
+		strcpy(p_InstrumentID[cnt], _ins.c_str());	
+		cnt ++;
+	}
+	int rt = g_pMdUserApi->UnSubscribeMarketData(p_InstrumentID, cnt);
 	if (!rt)
 		std::cout << ">>>>>>发送取消订阅行情请求成功" << std::endl;
 	else
 		std::cerr << "--->>>发送取消订阅行情请求失败" << std::endl;
-	this->g_pMdUserApi->Release();
+	this->p_mktdata_queue->terminate();
+
+	//logout
+	CThostFtdcUserLogoutField user_logout_fields = {0};
+	std::strcpy(user_logout_fields.BrokerID, this->broker_id.c_str());
+	std::strcpy(user_logout_fields.UserID, this->user_id.c_str());
+	this->g_pMdUserApi->ReqUserLogout(&user_logout_fields, ++nRequestID);
+	
+	//todo join here?
+	this->join();
+	this->release();
+	this->g_pMdUserApi->RegisterSpi(NULL);
 	this->g_pMdUserApi = NULL;
+	return 0;
 }
 
 // 登出应答
@@ -160,23 +191,6 @@ void CTPMdHandler::OnRspSubMarketData(
 	{
 		std::cout << "=====订阅行情成功=====" << std::endl;
 		std::cout << "合约代码： " << pSpecificInstrument->InstrumentID << std::endl;
-		// 如果需要存入文件或者数据库，在这里创建表头,不同的合约单独存储
-		// char filePath[100] = {'\0'};
-		// sprintf(filePath, "%s_market_data.csv", pSpecificInstrument->InstrumentID);
-		// std::ofstream outFile;
-		// outFile.open(filePath, std::ios::out); // 新开文件
-		// outFile << "合约代码" << ","
-		// 	<< "更新时间" << ","
-		// 	<< "最新价" << ","
-		// 	<< "成交量" << ","
-		// 	<< "买价一" << ","
-		// 	<< "买量一" << ","
-		// 	<< "卖价一" << ","
-		// 	<< "卖量一" << ","
-		// 	<< "持仓量" << ","
-		// 	<< "换手率"
-		// 	<< std::endl;
-		// outFile.close();
 	}
 	else
 		std::cerr << "返回错误--->>> ErrorID=" << pRspInfo->ErrorID << ", ErrorMsg=" << pRspInfo->ErrorMsg << std::endl;
@@ -234,7 +248,7 @@ void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMa
 {
 	// std::cout<<"Push data to queue: "<<pDepthMarketData->InstrumentID<<std::endl;
 	// this->dict_mkthandler[pDepthMarketData->InstrumentID]->on_tick(pDepthMarketData);
-
+	// std::cout<<"on return depth market data:"<<pDepthMarketData->InstrumentID<<std::endl;
 	DataField data =  DataField();
 	data.data_type = FDEPTHMKT;
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
