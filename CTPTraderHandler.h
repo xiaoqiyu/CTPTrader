@@ -19,10 +19,10 @@ private:
     thread _task_thread;                 //工作线程指针
     TaskQueue _task_queue;               //任务队列
     bool _active = false;                //工作状态
-	mutex mutex_;
-	condition_variable cond_;			//条件变量
-	bool ready_ = false;
-	bool login_ = false;
+    mutex mutex_;
+    condition_variable cond_; //条件变量
+    bool ready_ = false;
+    bool login_ = false;
     bool available_ = false; //用于交易查询的流控
     //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
     std::vector<std::string> future_instrumentID;
@@ -30,7 +30,7 @@ private:
     std::vector<std::string> main_future_instrumentID;
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
     std::string broker_id;
-	std::string user_id;
+    std::string user_id;
 
 public:
     CTPTraderHandler(){};
@@ -40,7 +40,7 @@ public:
         {
             this->exit();
         }
-        cout<<"~CTPTradeHandler"<<endl;
+        cout << "~CTPTradeHandler" << endl;
     };
 
     std::vector<std::string> GetFutureInstrumentID()
@@ -82,7 +82,7 @@ public:
     virtual void OnRspParkedOrderAction(CThostFtdcParkedOrderActionField *pParkedOrderAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
     virtual void OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOrderAction, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
-    
+
     //TODO REMOVVE?
     //virtual void OnRspQueryMaxOrderVolume(CThostFtdcQueryMaxOrderVolumeField *pQueryMaxOrderVolume, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
 
@@ -576,11 +576,11 @@ public:
 
     int ReqAuthenticate(CThostFtdcReqAuthenticateField *pReqAuthenticateField, int nRequestID);
 
-    int ReqUserLogin(CThostFtdcReqUserLoginField *pReqUserLoginField, int nRequestID); 
+    int ReqUserLogin(CThostFtdcReqUserLoginField *pReqUserLoginField, int nRequestID);
 
     int ReqUserLogout(CThostFtdcUserLogoutField *pUserLogout, int nRequestID);
 
-    int ReqUserPasswordUpdate(CThostFtdcUserPasswordUpdateField* pUserPasswordUpdate, int nRequestID);
+    int ReqUserPasswordUpdate(CThostFtdcUserPasswordUpdateField *pUserPasswordUpdate, int nRequestID);
 
     //请求查询产品
     int ReqQryProduct(CThostFtdcQryProductField *pQryProduct, int nRequestID);
@@ -598,15 +598,14 @@ public:
     void ReqQryMainContract(std::vector<std::string> productID, int nRequestID);
 
     ///请求查询报单
-	int ReqQryOrder(CThostFtdcQryOrderField *pQryOrder, int nRequestID);
+    int ReqQryOrder(CThostFtdcQryOrderField *pQryOrder, int nRequestID);
 
-	///请求查询成交
-	int ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nRequestID);
+    ///请求查询成交
+    int ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nRequestID);
 
-	///请求查询投资者持仓
-	int ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID);
+    ///请求查询投资者持仓
+    int ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID);
 
-	///请求查询资金账户
-	int ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQryTradingAccount, int nRequestID);
-
+    ///请求查询资金账户
+    int ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQryTradingAccount, int nRequestID);
 };

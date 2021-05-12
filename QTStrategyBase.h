@@ -20,14 +20,14 @@ typedef CTPTraderHandler *trader_util_ptr;
 typedef CTPMdHandler *md_ptr;
 typedef bool order_signal;
 extern int nRequestID;
- 
+
 class Signal
 {
 public:
 	Signal();
 	~Signal();
-	virtual void update_signal()=0;
-	
+	virtual void update_signal() = 0;
+
 private:
 	order_signal _signal = LONGOPEN;
 };
@@ -39,9 +39,9 @@ public: //strategy function
 	void on_tick();
 
 public: //stategy management
-	QTStrategyBase(const string &name) { this->name = name; };
+	QTStrategyBase(const std::string &name) : name(name){};
 	~QTStrategyBase(){};
-	int init(std::vector<std::string>&  _v_ins, const std::string _conf_file_name);
+	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
 	//start subscrible market data, and strategy
 	void start();
 	//stop datathread that subscribe market data and calculate signal, still login
@@ -54,7 +54,6 @@ public: //order function
 	void insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcOrderPriceTypeType OrderPriceType, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void order(int stop_loss_percents = 0, int stop_profit_percent = 0);
-
 
 public: //qry for product/instrument/account
 	int get_instrument_by_product(std::string product_id);
@@ -69,10 +68,11 @@ protected:
 	trader_util_ptr p_trader_handler = nullptr;
 	md_ptr p_md_handler = nullptr;
 	thread data_thread;
+	thread order_thread;
 	std::vector<std::vector<float>> v_factor; //cached factor list
-	Signal* p_signal = nullptr; //derived in subclass
-	virtual void cal_signal()=0; //overwrite in subclass
-	void cal_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
+	Signal *p_signal = nullptr;				  //derived in subclass
+	virtual void calculate_signal() = 0;	  //overwrite in subclass
+	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
 
 private:
@@ -80,9 +80,9 @@ private:
 	unordered_map<std::string, int> m_filename_idx;
 	unordered_map<std::string, std::string> m_depth_filename;
 	unordered_map<std::string, std::string> m_kline_filename;
-	vector<std::ofstream*> v_depth_outfile;
-	vector<std::ofstream*> v_kline_outfile;
-	vector<TickToKlineHelper*> v_t2k_helper;
+	vector<std::ofstream *> v_depth_outfile;
+	vector<std::ofstream *> v_kline_outfile;
+	vector<TickToKlineHelper *> v_t2k_helper;
 	// FileName mkt_depth_file_name = {'\0'};
 	// FileName kline_file_name = {'\0'};
 	// std::ofstream mkt_depth_outfile;
@@ -91,7 +91,7 @@ private:
 	// data_queue_ptr p_mktdata_queue = nullptr;
 	// DataQueue mktdata_queue = DataQueue();
 	data_queue_ptr p_order_queue = nullptr;
-	bool start_ = false; 
+	bool start_ = false;
 	bool active_ = false;
 	std::string broker_id;
 	std::string user_id;

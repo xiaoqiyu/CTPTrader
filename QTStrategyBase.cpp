@@ -117,8 +117,8 @@ void QTStrategyBase::on_tick()
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					this->cal_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
-					this->cal_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
+					this->calculate_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
+					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
 					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					// std::cout<<"get fstream index:"<<std::endl;
 					int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
@@ -314,7 +314,7 @@ void QTStrategyBase::release()
 }
 
 //this could be overwritten by subclass, this is the basic factor
-void QTStrategyBase::cal_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len)
+void QTStrategyBase::calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len)
 {
 	if (this->v_factor.size()>=cache_len)
 	{
@@ -328,3 +328,18 @@ void QTStrategyBase::cal_factors(CThostFtdcDepthMarketDataField *pDepthMarketDat
 }
 
 
+std::vector<std::string> QTStrategyBase::getInstrumentID()
+{
+	return this->v_instrummentID;
+}
+
+void QTStrategyBase::setInstrumentID(std::vector<std::string> v_instrumentid)
+{
+	if (!v_instrummentID.empty())
+	{
+		for(auto iter=v_instrummentID.begin(); iter!=v_instrummentID.end(); ++iter)
+		{
+			this->v_instrummentID.push_back(*iter);
+		}
+	}
+}

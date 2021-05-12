@@ -33,8 +33,8 @@ private:
 	// MktDataHandler* handler_lst[100];
 	//TODO 不用作为成员变量
 	mutex mutex_;
-	condition_variable cond_;			//条件变量
-	int instrumentNum = 1; //行情合约订阅数量
+	condition_variable cond_; //条件变量
+	int instrumentNum = 1;	  //行情合约订阅数量
 	FileName _conf_file_name = {'\0'};
 	// char *pInstrumentID[]; // 行情合约代码列表，中、上、大、郑交易所各选一种
 	// TThostFtdcInstrumentIDType	InstrumentID  = {'\0'};
@@ -44,19 +44,19 @@ private:
 	std::string broker_id;
 	std::string user_id;
 
-
 	// ---- 继承自CTP父类的回调接口并实现 ---- //
 public:
 	CTPMdHandler(){};
-	~CTPMdHandler(){
-		if(this->active_)
+	~CTPMdHandler()
+	{
+		if (this->active_)
 		{
 			this->exit();
 		}
 	};
 
 	//TODO check friend
-	data_queue_ptr get_data_queue(){return this->p_mktdata_queue;}
+	data_queue_ptr get_data_queue() { return this->p_mktdata_queue; }
 
 	void set_config(FileName _config_file)
 	{
@@ -87,21 +87,21 @@ public:
 		return this->g_pMdUserApi->RegisterFront(pszFrontAddress);
 	}
 
-	void init(std::vector<std::string>& v_instrumentid)
+	void init(std::vector<std::string> &v_instrumentid)
 	{
 		std::cout << "CTPMdHandler Init..." << std::endl;
-		std::cout<<v_instrumentID.size();
+		std::cout << v_instrumentID.size();
 		this->g_pMdUserApi->Init();
 		this->active_ = true;
 		this->p_mktdata_queue = new DataQueue();
-		for(auto iter=v_instrumentid.begin();iter!=v_instrumentid.end();++iter)
+		for (auto iter = v_instrumentid.begin(); iter != v_instrumentid.end(); ++iter)
 		{
-			std::cout<<"push in instrument:"<<*iter<<std::endl;
+			std::cout << "push in instrument:" << *iter << std::endl;
 			this->v_instrumentID.push_back(*iter);
 		}
 		// strcpy(this->InstrumentID, instrument_id);
 
-		cond_.notify_one(); 
+		cond_.notify_one();
 	};
 
 	void SubscribeMarketData();

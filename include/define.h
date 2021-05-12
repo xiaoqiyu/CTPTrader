@@ -139,4 +139,9 @@
 #define LONGOPEN 128
 #define SHORTOPEN 129
 #define LONGCLOSE 130
-#define SHORTCLOSE
+#define SHORTCLOSE 131
+
+//Strategy Name
+#define BASESTRATEGY 132
+#define DATASTRATEGY 133
+#define TSTRATEGY 134
