@@ -100,7 +100,6 @@ public:
 			this->v_instrumentID.push_back(*iter);
 		}
 		// strcpy(this->InstrumentID, instrument_id);
-
 		cond_.notify_one();
 	};
 

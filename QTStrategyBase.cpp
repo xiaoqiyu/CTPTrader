@@ -60,8 +60,9 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 	std::cout<<"in qt strategy:"<<_v_ins.size()<<std::endl;
 	this->p_md_handler->init(_v_ins);
 
-	//data thread init
+	//data/order thread init
 	this->data_thread = thread(&QTStrategyBase::on_tick, this);
+	this->order_thread = thread(&QTStrategyBase::process_order, this);
 
 	int cnt = 0;
 	//private varilbe init
@@ -94,8 +95,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 	
 	// p_kline_helper = new TickToKlineHelper();
 	// p_mktdata_queue = new DataQueue();
-	p_order_queue = new DataQueue();
-
+	this->p_order_queue = new DataQueue();
 	this->active_ = true;
 	return 0;
 };
@@ -105,7 +105,7 @@ void QTStrategyBase::on_tick()
 {
 	try
 	{
-		while (true)
+		while (this->active_)
 		{
 			DataField data = this->p_md_handler->get_data_queue()->pop();
 			switch (data.data_type)
@@ -246,25 +246,33 @@ void QTStrategyBase::start()
 
 void QTStrategyBase::insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType order_ref,  TThostFtdcDirectionType direction,TThostFtdcInstrumentIDType instrumentID)
 {
-	CThostFtdcInputOrderField input_order_field = {0};
-	strcpy(input_order_field.InstrumentID, instrumentID);
-	strcpy(input_order_field.OrderRef, order_ref);
-	input_order_field.VolumeTotalOriginal = volume;
-	input_order_field.LimitPrice = limit_price;
-	input_order_field.Direction = direction;
-	input_order_field.OrderPriceType = '2';
-	this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
+	CThostFtdcInputOrderField * p_input_order_field = new CThostFtdcInputOrderField();
+	strcpy(p_input_order_field->InstrumentID, instrumentID);
+	strcpy(p_input_order_field->OrderRef, order_ref);
+	p_input_order_field->VolumeTotalOriginal = volume;
+	p_input_order_field->LimitPrice = limit_price;
+	p_input_order_field->Direction = direction;
+	p_input_order_field->OrderPriceType = '2';
+	DataField data = DataField();
+	data.data_type = ORDERFIELD;
+	data._data = p_input_order_field;
+	this->p_order_queue->push(data);
+	// this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 void QTStrategyBase::insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType order_ref, TThostFtdcOrderPriceTypeType order_price_type, TThostFtdcDirectionType direction, TThostFtdcInstrumentIDType instrumentID)
 {
-	CThostFtdcInputOrderField input_order_field = {0};
-	strcpy(input_order_field.InstrumentID, instrumentID);
-	strcpy(input_order_field.OrderRef, order_ref);
-	input_order_field.VolumeTotalOriginal = volume;
-	input_order_field.LimitPrice = limit_price;
-	input_order_field.Direction = direction;
-	input_order_field.OrderPriceType = order_price_type;
-	this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
+	CThostFtdcInputOrderField * p_input_order_field = new CThostFtdcInputOrderField();
+	strcpy(p_input_order_field->InstrumentID, instrumentID);
+	strcpy(p_input_order_field->OrderRef, order_ref);
+	p_input_order_field->VolumeTotalOriginal = volume;
+	p_input_order_field->LimitPrice = limit_price;
+	p_input_order_field->Direction = direction;
+	p_input_order_field->OrderPriceType = order_price_type;
+	DataField data = DataField();
+	data.data_type = ORDERFIELD;
+	data._data = p_input_order_field;
+	this->p_order_queue->push(data);
+	// this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 
 int QTStrategyBase::get_instrument_by_product(std::string product_id)
@@ -285,10 +293,10 @@ int QTStrategyBase::get_investor_position(std::string investor_id, std::string b
 
 void QTStrategyBase::stop()
 {
-	//TODO thread management
-	this->data_thread.join(); //stop data_thread, but the ctp instance is still active
-	// this->data_thread.termininate();
-    // sleep(5);
+	//TODO stop data_thread, but the ctp instance is still active
+	this->data_thread.join();
+	this->order_thread.join();
+    sleep(3);
 }
 
 
@@ -343,3 +351,29 @@ void QTStrategyBase::setInstrumentID(std::vector<std::string> v_instrumentid)
 		}
 	}
 }
+
+//TODO to add the check logic
+bool QTStrategyBase::verify_order_condition()
+{
+	return true;
+}
+
+void QTStrategyBase::process_order()
+{
+	while(this->active_)
+	{
+		DataField data = this->p_order_queue->pop();
+		switch (data.data_type)
+			{
+			case ORDERFIELD:
+				if (data._data)
+				{
+					CThostFtdcInputOrderField *p_order_field_ = reinterpret_cast<CThostFtdcInputOrderField *>(data._data);
+					//TODO: verify account status and check order condition
+					this->verify_order_condition();
+					this->p_trader_handler->ReqOrderInsert(p_order_field_, nRequestID);
+				}
+			}
+	}
+}
+

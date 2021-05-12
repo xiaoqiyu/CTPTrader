@@ -12,9 +12,6 @@
 #include "TickToKlineHelper.h"
 #include "TStrategy.h"
 #include "DataStrategy.h"
-#include "draft.h"
-
-
 
 int nRequestID = 0;
 int DEBUG = 0;

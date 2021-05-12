@@ -145,3 +145,6 @@
 #define BASESTRATEGY 132
 #define DATASTRATEGY 133
 #define TSTRATEGY 134
+
+//datatype
+#define ORDERFIELD 135

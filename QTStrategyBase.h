@@ -54,6 +54,8 @@ public: //order function
 	void insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcOrderPriceTypeType OrderPriceType, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void order(int stop_loss_percents = 0, int stop_profit_percent = 0);
+	void process_order();
+	bool verify_order_condition();
 
 public: //qry for product/instrument/account
 	int get_instrument_by_product(std::string product_id);
