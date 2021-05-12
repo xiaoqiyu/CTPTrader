@@ -1,6 +1,105 @@
 #include <iostream>
 #include "QTStrategyBase.h"
 
+int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _conf_file_name)
+{
+	//初始
+	FileName _conf_file = {'\0'};
+	// snprintf(_conf_file, 100, "conf/%s.ini", argv[1]);
+
+	snprintf(_conf_file, 100, "conf/%s.ini", _conf_file_name.c_str());
+	INIReader reader(_conf_file);
+	if (reader.ParseError() != 0)
+	{
+		std::cout << "Can't load config file in current directory:" << _conf_file << std::endl;
+		return 1;
+	}
+
+	char mdAddr[40];
+	char ch[40];
+
+	//CTP Trader handler init
+	this->p_trader_handler = new CTPTraderHandler();
+	this->p_trader_handler->CreateFtdcTraderApi();
+	this->p_trader_handler->RegisterFront(strcpy(ch, reader.Get("td", "FrontAddr", "127.0.0.1:1234").c_str()));
+	this->p_trader_handler->init();
+	sleep(5);
+
+	this->broker_id = reader.Get("user", "BrokerID", "9999");
+	this->user_id = reader.Get("user", "UserID", "123456");
+
+	std::cout << "===============Start CTP Authenticate================" << std::endl;
+	CThostFtdcReqAuthenticateField reqAuth = {0};
+	strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+	strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
+	strcpy(reqAuth.AuthCode, reader.Get("user", "AuthCode", "!@#$%^&*").c_str());
+	strcpy(reqAuth.AppID, reader.Get("user", "AppID", "MyProgram").c_str());
+
+	this->p_trader_handler->ReqAuthenticate(&reqAuth, nRequestID++);
+	sleep(5);
+
+	std::cout << "==================Start CTP Login====================" << std::endl;
+	CThostFtdcReqUserLoginField reqUserLogin = {0};
+	strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+	strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
+	strcpy(reqUserLogin.Password, reader.Get("user", "Password", "123456").c_str());
+	strcpy(reqUserLogin.MacAddress, reader.Get("user", "MacAddress", "123456").c_str());
+	strcpy(reqUserLogin.UserProductInfo, reader.Get("user", "UserProductInfo", "123456").c_str());
+
+	this->p_trader_handler->ReqUserLogin(&reqUserLogin, nRequestID++);
+	sleep(5);
+
+	std::string trading_date = this->p_trader_handler->getTradingDay();
+	std::cout << "Trading date is: " << trading_date << endl;
+
+	//CTP MD init
+	this->p_md_handler = new CTPMdHandler();
+	this->p_md_handler->set_config(_conf_file);
+	this->p_md_handler->CreateFtdcMdApi();
+	this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
+	std::cout<<"in qt strategy:"<<_v_ins.size()<<std::endl;
+	this->p_md_handler->init(_v_ins);
+
+	//data thread init
+	this->data_thread = thread(&QTStrategyBase::on_tick, this);
+
+	int cnt = 0;
+	//private varilbe init
+	for(auto iter = _v_ins.begin(); iter!=_v_ins.end(); ++iter)
+	{
+		std::string _instrumentid = *iter;
+		this->v_instrummentID.push_back(_instrumentid);
+		FileName mkt_depth_file_name = {'\0'};
+		FileName kline_file_name = {'\0'};
+		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.txt", _instrumentid.c_str(), trading_date.c_str());
+		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.txt", _instrumentid.c_str(), trading_date.c_str());
+		std::ofstream mkt_depth_outfile;
+		std::ofstream  kline_outfile;
+		// mkt_depth_outfile.open(mkt_depth_file_name, std::ios::app); // append mode
+		// kline_outfile.open(kline_file_name, std::ios::app);
+		m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
+		m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
+		m_kline_filename.insert(std::pair<std::string, std::string>(_instrumentid, kline_file_name));
+		// std::cout<<"before push back mkt depth file:"<<&mkt_depth_outfile<<this->v_depth_outfile.size()<<std::endl;
+		// std::ofstream * p_finstr = &mkt_depth_outfile;
+		// std::cout<<p_finstr<<" write to file:"<<mkt_depth_file_name<<std::endl;
+		// p_finstr->write(this->user_id.c_str(), this->user_id.length()+1);
+		// v_depth_outfile.push_back(&mkt_depth_outfile);
+		// std::cout<<"after push back mkt depth file:"<<&mkt_depth_outfile<<this->v_depth_outfile.size()<<std::endl;
+		// v_kline_outfile.push_back(&kline_outfile);
+		TickToKlineHelper *p_kline_helper =  new TickToKlineHelper();
+		v_t2k_helper.push_back(p_kline_helper);
+		cnt ++;
+	}
+	
+	// p_kline_helper = new TickToKlineHelper();
+	// p_mktdata_queue = new DataQueue();
+	p_order_queue = new DataQueue();
+
+	this->active_ = true;
+	return 0;
+};
+
 
 void QTStrategyBase::on_tick()
 {
@@ -14,9 +113,12 @@ void QTStrategyBase::on_tick()
 			case FDEPTHMKT: //期货深度行情数据
 			{
 				// std::cout<<"in on_tick:"<<data.data_type<<std::endl;
+
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
+					this->cal_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
+					this->cal_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
 					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					// std::cout<<"get fstream index:"<<std::endl;
 					int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
@@ -87,14 +189,14 @@ void QTStrategyBase::on_tick()
 
 					if(ret)
 					{
-						// 	std::string str1 = formatString("%s,%s,%f,%f,%f,%f,%d\n",
-						// 								pDepthMarketData->InstrumentID,
-						// 								pDepthMarketData->UpdateTime,
-						// 								p_kline_data->open_price,
-						// 								p_kline_data->high_price,
-						// 								p_kline_data->low_price,	
-						// 								p_kline_data->close_price,
-						// 								p_kline_data->volume);
+					// 	std::string str1 = formatString("%s,%s,%f,%f,%f,%f,%d\n",
+					// 								pDepthMarketData->InstrumentID,
+					// 								pDepthMarketData->UpdateTime,
+					// 								p_kline_data->open_price,
+					// 								p_kline_data->high_price,
+					// 								p_kline_data->low_price,	
+					// 								p_kline_data->close_price,
+					// 								p_kline_data->volume);
 						// std::ofstream* p_ff = this->v_kline_outfile[_idx];
 						// std::cout<<"f stream pointer:"<<p_ff<<std::endl;
 						// p_ff->write(str1.c_str(), str1.length());
@@ -109,15 +211,16 @@ void QTStrategyBase::on_tick()
 													<<p_kline_data->close_price << ","
 													<<p_kline_data->volume<< std::endl;
 						_kline_file.close();
+
 					}
 					delete p_kline_data;
-					//计算因子和下单信号
 				}
 				if (data.error)
 				{
 					std::cout <<"handle error in market data subscribe" << std::endl;
 					// delete data.error;
 				}
+
 				break;
 			}
 			default:
@@ -196,6 +299,8 @@ void QTStrategyBase::release()
 	{
 		delete *iter;
 	}
+
+	//TODO this will be added if maintain fstream pointer when file open in init and close in exit
 	// for(auto iter=v_depth_outfile.begin(); iter!=v_depth_outfile.end();++iter)
 	// {
 	// 	(*iter)->close();
@@ -206,6 +311,20 @@ void QTStrategyBase::release()
 	// }
 	this->p_md_handler->exit();
 	this->p_trader_handler->exit();
+}
+
+//this could be overwritten by subclass, this is the basic factor
+void QTStrategyBase::cal_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len)
+{
+	if (this->v_factor.size()>=cache_len)
+	{
+		this->v_factor.clear();
+	}
+	std::vector<float> v_factor_val;
+	v_factor_val.push_back(pDepthMarketData->LastPrice);
+	v_factor_val.push_back(pDepthMarketData->AveragePrice);
+	v_factor_val.push_back(pDepthMarketData->BidPrice1-pDepthMarketData->AskPrice1);
+	this->v_factor.push_back(v_factor_val);
 }
 
 
