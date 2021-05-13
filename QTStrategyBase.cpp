@@ -57,7 +57,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 	this->p_md_handler->set_config(_conf_file);
 	this->p_md_handler->CreateFtdcMdApi();
 	this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
-	std::cout<<"in qt strategy:"<<_v_ins.size()<<std::endl;
+	// std::cout<<"in qt strategy:"<<_v_ins.size()<<std::endl;
 	this->p_md_handler->init(_v_ins);
 
 	//data/order thread init
@@ -105,7 +105,7 @@ void QTStrategyBase::on_tick()
 {
 	try
 	{
-		while (this->active_)
+		while (true)
 		{
 			DataField data = this->p_md_handler->get_data_queue()->pop();
 			switch (data.data_type)

@@ -90,7 +90,7 @@ public:
 	void init(std::vector<std::string> &v_instrumentid)
 	{
 		std::cout << "CTPMdHandler Init..." << std::endl;
-		std::cout << v_instrumentID.size();
+		std::cout << v_instrumentid.size();
 		this->g_pMdUserApi->Init();
 		this->active_ = true;
 		this->p_mktdata_queue = new DataQueue();

@@ -7,7 +7,7 @@ class DataSignal : public Signal
 public:
     DataSignal();
     ~DataSignal();
-    void update_signal() = 0;
+    
 };
 
 class DataStrategy : public QTStrategyBase
@@ -17,5 +17,4 @@ public:
     ~DataStrategy(){};
 
     void calculate_signal(){};
-    void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 };

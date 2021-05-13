@@ -26,7 +26,7 @@ class Signal
 public:
 	Signal();
 	~Signal();
-	virtual void update_signal() = 0;
+	void update_signal(){};
 
 private:
 	order_signal _signal = LONGOPEN;
@@ -73,7 +73,7 @@ protected:
 	thread order_thread;
 	std::vector<std::vector<float>> v_factor; //cached factor list
 	Signal *p_signal = nullptr;				  //derived in subclass
-	virtual void calculate_signal() = 0;	  //overwrite in subclass
+	void calculate_signal(){};	  //overwrite in subclass
 	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
 
