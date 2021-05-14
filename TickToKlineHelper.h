@@ -8,6 +8,7 @@
 // k线数据结构
 struct KLineDataType
 {
+	TThostFtdcTimeType time_stamp;
 	double open_price;   // 开
 	double high_price;   // 高
 	double low_price;    // 低

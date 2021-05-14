@@ -12,15 +12,21 @@
 #include "TickToKlineHelper.h"
 #include "TStrategy.h"
 #include "DataStrategy.h"
+#include "models/data_analysis.h"
+// #include "draft.h"
 
 int nRequestID = 0;
 int DEBUG = 0;
 
+
+
 int main(int argc, char *argv[])
 {
+    // get_depth_market();
+    // return 0;
     std::string _conf_file_name;
     std::string _instrument_id;
-    std::string _strategy_name;
+    std::string _strategy_name = "data_strategy";
     std::vector<std::string> v_instrumentID;
     if (argc <= 1)
     {
@@ -46,18 +52,20 @@ int main(int argc, char *argv[])
         }
     }
     std::cout << "check ins in main" << v_instrumentID.size() << std::endl;
-    // QTStrategyBase *p_strtegy = nullptr;
-    // if (_strategy_name == "data_strategy")
-    // {
-    //     DataStrategy _data_strategy(_strategy_name);
-    //     p_strtegy = &_data_strategy;
-    // }
-    // else if (_strategy_name == "t_strategy")
-    // {
-    //     TStrategy _t_strategy(_strategy_name);
-    //     p_strtegy = &_t_strategy;
-    // }
-    QTStrategyBase *p_strtegy = new QTStrategyBase("ctp_demo");
+    QTStrategyBase *p_strtegy = nullptr;
+    if (_strategy_name == "data_strategy")
+    {
+        // DataStrategy _data_strategy(_strategy_name);
+        // p_strtegy = &_data_strategy;
+        p_strtegy = new DataStrategy("data_strategy");
+    }
+    else if (_strategy_name == "t_strategy")
+    {
+        p_strtegy = new TStrategy("t_strategy");
+        // TStrategy _t_strategy(_strategy_name);
+        // p_strtegy = &_t_strategy;
+    }
+    // QTStrategyBase *p_strtegy = new QTStrategyBase("ctp_demo");
     // QTStrategyBase *p_strtegy = new DataStrategy("ctp_demo");
     int ret = p_strtegy->init(v_instrumentID, _conf_file_name);
     std::string _str = "cu";

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <unordered_map>
 #include <fstream>
+#include <stdio.h>
 
 #include "include/ThostFtdcMdApi.h"
 #include "include/INIReader.h"
@@ -40,7 +41,7 @@ public: //strategy function
 
 public: //stategy management
 	QTStrategyBase(const std::string &name) : name(name){};
-	~QTStrategyBase(){};
+	virtual ~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
 	//start subscrible market data, and strategy
 	void start();
@@ -73,7 +74,7 @@ protected:
 	thread order_thread;
 	std::vector<std::vector<float>> v_factor; //cached factor list
 	Signal *p_signal = nullptr;				  //derived in subclass
-	void calculate_signal(){};	  //overwrite in subclass
+	virtual void calculate_signal(){std::cout<<"calbulate signal in base class"<<std::endl;};	  //overwrite in subclass
 	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
 
@@ -84,6 +85,8 @@ private:
 	unordered_map<std::string, std::string> m_kline_filename;
 	vector<std::ofstream *> v_depth_outfile;
 	vector<std::ofstream *> v_kline_outfile;
+	vector<FILE*> v_depth_file_handler;
+	vector<FILE*> v_kline_file_handler;
 	vector<TickToKlineHelper *> v_t2k_helper;
 	// FileName mkt_depth_file_name = {'\0'};
 	// FileName kline_file_name = {'\0'};

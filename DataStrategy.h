@@ -16,5 +16,5 @@ public:
     DataStrategy(const std::string &name) : QTStrategyBase(name){};
     ~DataStrategy(){};
 
-    void calculate_signal(){};
+    void calculate_signal(){std::cout<<"calculate signal in datastrategy"<<std::endl;};
 };

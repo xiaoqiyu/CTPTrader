@@ -74,20 +74,21 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 		FileName kline_file_name = {'\0'};
 		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.txt", _instrumentid.c_str(), trading_date.c_str());
 		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.txt", _instrumentid.c_str(), trading_date.c_str());
-		std::ofstream mkt_depth_outfile;
-		std::ofstream  kline_outfile;
-		// mkt_depth_outfile.open(mkt_depth_file_name, std::ios::app); // append mode
-		// kline_outfile.open(kline_file_name, std::ios::app);
+		// std::ofstream* p_mkt_depth_outfile = new std::ofstream();
+		FILE* fp_depth_mkt;
+		// std::ofstream* p_kline_outfile = new std::ofstream();
+		FILE* fp_kline; 
+		// p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app); // append mode
+		fp_depth_mkt = fopen(mkt_depth_file_name, "w");
+		fp_kline = fopen(kline_file_name, "w");
+		// p_kline_outfile->open(kline_file_name, std::ios::app);
 		m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
 		m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
 		m_kline_filename.insert(std::pair<std::string, std::string>(_instrumentid, kline_file_name));
-		// std::cout<<"before push back mkt depth file:"<<&mkt_depth_outfile<<this->v_depth_outfile.size()<<std::endl;
-		// std::ofstream * p_finstr = &mkt_depth_outfile;
-		// std::cout<<p_finstr<<" write to file:"<<mkt_depth_file_name<<std::endl;
-		// p_finstr->write(this->user_id.c_str(), this->user_id.length()+1);
-		// v_depth_outfile.push_back(&mkt_depth_outfile);
-		// std::cout<<"after push back mkt depth file:"<<&mkt_depth_outfile<<this->v_depth_outfile.size()<<std::endl;
-		// v_kline_outfile.push_back(&kline_outfile);
+		// v_depth_outfile.push_back(p_mkt_depth_outfile);
+		if (NULL != fp_depth_mkt){v_depth_file_handler.push_back(fp_depth_mkt);}
+		if(NULL != fp_kline){v_kline_file_handler.push_back(fp_kline);}
+		// v_kline_outfile.push_back(p_kline_outfile);
 		TickToKlineHelper *p_kline_helper =  new TickToKlineHelper();
 		v_t2k_helper.push_back(p_kline_helper);
 		cnt ++;
@@ -113,105 +114,22 @@ void QTStrategyBase::on_tick()
 			case FDEPTHMKT: //期货深度行情数据
 			{
 				// std::cout<<"in on_tick:"<<data.data_type<<std::endl;
-
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					this->calculate_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
+					// this->calculate_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
 					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
 					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					// std::cout<<"get fstream index:"<<std::endl;
 					int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
-					// std::cout<<"fstream index is: "<<_idx<<std::endl;
-					// std::cout<<"depth file stream pointer:"<<this->v_depth_outfile.size()<<std::endl;
-					// std::ofstream* p_f = reinterpret_cast<std::ofstream*>(this->v_depth_outfile[_idx]);
-					// std::cout<<"file stream pointer:"<<p_f<<std::endl;
-					// std::string str = formatString("%s,%s,%s.%d,%f,%f,%f,%f,%f,%f,%f,%d,%f,%f,%f,%f,%d,%f,%d,%f,%f,%f\n",
-					// 								pDepthMarketData->InstrumentID,
-					// 								pDepthMarketData->ActionDay,
-					// 								pDepthMarketData->UpdateTime,pDepthMarketData->UpdateMillisec,
-					// 								pDepthMarketData->LastPrice,
-					// 								pDepthMarketData->PreSettlementPrice,
-					// 								pDepthMarketData->PreClosePrice,
-					// 								pDepthMarketData->OpenPrice,
-					// 								pDepthMarketData->HighestPrice,
-					// 								pDepthMarketData->LowestPrice,
-					// 								pDepthMarketData->AveragePrice,		
-					// 								// pDepthMarketData->ClosePrice,
-					// 								pDepthMarketData->Volume,
-					// 								pDepthMarketData->Turnover,
-					// 								// pDepthMarketData->SettlementPrice ,
-					// 								pDepthMarketData->UpperLimitPrice ,
-					// 								pDepthMarketData->LowerLimitPrice,
-					// 								pDepthMarketData->BidPrice1 ,
-					// 								pDepthMarketData->BidVolume1 ,
-					// 								pDepthMarketData->AskPrice1 ,
-					// 								pDepthMarketData->AskVolume1 ,
-					// 								pDepthMarketData->PreOpenInterest ,
-					// 								pDepthMarketData->OpenInterest ,
-					// 								pDepthMarketData->PreDelta
-					// 								// pDepthMarketData->CurrDelta
-					// 								);
-					std::string _depth_file_name = this->m_depth_filename[pDepthMarketData->InstrumentID];
-					std::ofstream _depth_file;
-					_depth_file.open(_depth_file_name, std::ios::app);
-					_depth_file<< pDepthMarketData->InstrumentID << ","
-											<< pDepthMarketData->ActionDay << ","
-											<< pDepthMarketData->UpdateTime << "." << pDepthMarketData->UpdateMillisec << ","
-											<< pDepthMarketData->LastPrice << ","
-											<< pDepthMarketData->PreSettlementPrice << ","
-											<< pDepthMarketData->PreClosePrice << ","
-											<< pDepthMarketData->OpenPrice << ","
-											<< pDepthMarketData->HighestPrice << ","
-											<< pDepthMarketData->LowestPrice << ","
-											<< pDepthMarketData->AveragePrice << ","
-											// << pDepthMarketData->ClosePrice << ","
-											<< pDepthMarketData->Volume << ","
-											<< pDepthMarketData->Turnover << ","
-											// << pDepthMarketData->SettlementPrice << ","
-											<< pDepthMarketData->UpperLimitPrice << ","
-											<< pDepthMarketData->LowerLimitPrice << ","
-											<< pDepthMarketData->BidPrice1 << ","
-											<< pDepthMarketData->BidVolume1 << ","
-											<< pDepthMarketData->AskPrice1 << ","
-											<< pDepthMarketData->AskVolume1 << ","
-											<< pDepthMarketData->PreOpenInterest << ","
-											<< pDepthMarketData->OpenInterest << ","
-											<< pDepthMarketData->PreDelta << ","
-											// << pDepthMarketData->CurrDelta << ","
-											<< std::endl;
-
+					fwrite(pDepthMarketData, 1, sizeof(CThostFtdcDepthMarketDataField),this->v_depth_file_handler[_idx]);
 					delete pDepthMarketData;
-					_depth_file.close();
 					KLineDataType *p_kline_data = new KLineDataType();
-
 					bool ret = this->v_t2k_helper[_idx]->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
 
 					if(ret)
 					{
-					// 	std::string str1 = formatString("%s,%s,%f,%f,%f,%f,%d\n",
-					// 								pDepthMarketData->InstrumentID,
-					// 								pDepthMarketData->UpdateTime,
-					// 								p_kline_data->open_price,
-					// 								p_kline_data->high_price,
-					// 								p_kline_data->low_price,	
-					// 								p_kline_data->close_price,
-					// 								p_kline_data->volume);
-						// std::ofstream* p_ff = this->v_kline_outfile[_idx];
-						// std::cout<<"f stream pointer:"<<p_ff<<std::endl;
-						// p_ff->write(str1.c_str(), str1.length());
-						std::string _kline_file_name1 = this->m_kline_filename[pDepthMarketData->InstrumentID];
-						std::ofstream _kline_file;
-						_kline_file.open(_kline_file_name1, std::ios::app);
-						_kline_file<<pDepthMarketData->InstrumentID << ","
-													<<pDepthMarketData->UpdateTime << ","
-													<<p_kline_data->open_price << ","
-													<<p_kline_data->high_price << ","
-													<<p_kline_data->low_price << ","
-													<<p_kline_data->close_price << ","
-													<<p_kline_data->volume<< std::endl;
-						_kline_file.close();
-
+						fwrite(p_kline_data, 1, sizeof(KLineDataType), this->v_kline_file_handler[_idx]);
 					}
 					delete p_kline_data;
 				}
@@ -317,6 +235,14 @@ void QTStrategyBase::release()
 	// {
 	// 	(*iter)->close();
 	// }
+	for(auto  iter=v_depth_file_handler.begin(); iter!=v_depth_file_handler.end();++iter)
+	{
+		fclose(*iter);
+	}
+	for(auto iter=v_kline_file_handler.begin(); iter!=v_kline_file_handler.end();++iter)
+	{
+		fclose(*iter);
+	}
 	this->p_md_handler->exit();
 	this->p_trader_handler->exit();
 }

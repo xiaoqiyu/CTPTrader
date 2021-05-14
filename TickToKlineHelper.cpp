@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <stdlib.h>
+#include <cstring>
 #include <algorithm>
 #include "include/ThostFtdcUserApiStruct.h"
 #include "TickToKlineHelper.h"
@@ -95,6 +97,7 @@ bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 		p_kline_data->close_price = m_priceVec.back();
 		// 成交量的真实的算法是当前区间最后一个成交量减去上去一个区间最后一个成交量
 		p_kline_data->volume = m_volumeVec.back() - m_volumeVec.front();
+		std::strcpy(p_kline_data->time_stamp, pDepthMarketData->UpdateTime);
 		m_KLineDataVec.push_back(p_kline_data); // 此处可以存到内存
 		std::cout << "KLINE: " <<pDepthMarketData->InstrumentID<<","<<pDepthMarketData->UpdateTime << ","<<p_kline_data->open_price << "," 
 				<< p_kline_data->high_price << "," << p_kline_data->low_price << "," << p_kline_data->close_price
