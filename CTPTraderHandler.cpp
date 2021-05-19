@@ -4873,7 +4873,7 @@ void CTPTraderHandler::processRtnInstrumentStatus(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcInstrumentStatusField* task_data = reinterpret_cast<CThostFtdcInstrumentStatusField*>(task->task_data);
-		std::cout<<"Instrument Status:"<<task_data->InstrumentID<< std::endl;
+		// std::cout<<"Instrument Status:"<<task_data->InstrumentID<< std::endl;
 		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
 		// printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
 		// printf("SettlementGroupID = %s\n", (task_data->SettlementGroupID));

@@ -79,8 +79,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 		// std::ofstream* p_kline_outfile = new std::ofstream();
 		FILE* fp_kline; 
 		// p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app); // append mode
-		fp_depth_mkt = fopen(mkt_depth_file_name, "w");
-		fp_kline = fopen(kline_file_name, "w");
+		fp_depth_mkt = fopen(mkt_depth_file_name, "a");
+		fp_kline = fopen(kline_file_name, "a");
 		// p_kline_outfile->open(kline_file_name, std::ios::app);
 		m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
 		m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
@@ -123,15 +123,17 @@ void QTStrategyBase::on_tick()
 					// std::cout<<"get fstream index:"<<std::endl;
 					int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
 					fwrite(pDepthMarketData, 1, sizeof(CThostFtdcDepthMarketDataField),this->v_depth_file_handler[_idx]);
-					delete pDepthMarketData;
+
 					KLineDataType *p_kline_data = new KLineDataType();
 					bool ret = this->v_t2k_helper[_idx]->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
-
+					int w_kline;
 					if(ret)
 					{
-						fwrite(p_kline_data, 1, sizeof(KLineDataType), this->v_kline_file_handler[_idx]);
+						w_kline = fwrite(p_kline_data, 1, sizeof(KLineDataType), this->v_kline_file_handler[_idx]);
+						// std::cout<<"write k line： "<<w_kline<<std::endl;
 					}
 					delete p_kline_data;
+					delete pDepthMarketData;
 				}
 				if (data.error)
 				{

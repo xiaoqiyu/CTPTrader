@@ -83,14 +83,15 @@ void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const s
 
 bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData, KLineDataType * p_kline_data)
 {
-	m_priceVec.push_back(pDepthMarketData->LastPrice);
-	m_volumeVec.push_back(pDepthMarketData->Volume);
+
 	std::string curr_tme = pDepthMarketData->UpdateTime;
-	// std::cout<<"in k line calculation:"<<this->last_update_time.substr(0,5)<<","<<curr_tme.substr(0,5)<<std::endl;
-	// KLineDataType *p_kline_data;
-	if (!this->last_update_time.empty() and this->last_update_time.substr(0,5)!= curr_tme.substr(0,5))
+	if (this->last_update_time.empty())
 	{
-		// std::cout<<"cache k line:"<<this->last_update_time.substr(0,5)<<","<<curr_tme.substr(0,5)<<std::endl;
+		m_priceVec.push_back(pDepthMarketData->LastPrice);
+		m_volumeVec.push_back(pDepthMarketData->Volume);
+
+	}else if (this->last_update_time.substr(0,5)!= curr_tme.substr(0,5))
+	{
 		p_kline_data->open_price = m_priceVec.front();
 		p_kline_data->high_price = *std::max_element(m_priceVec.cbegin(), m_priceVec.cend());
 		p_kline_data->low_price = *std::min_element(m_priceVec.cbegin(), m_priceVec.cend());
@@ -99,14 +100,15 @@ bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pD
 		p_kline_data->volume = m_volumeVec.back() - m_volumeVec.front();
 		std::strcpy(p_kline_data->time_stamp, pDepthMarketData->UpdateTime);
 		m_KLineDataVec.push_back(p_kline_data); // 此处可以存到内存
-		std::cout << "KLINE: " <<pDepthMarketData->InstrumentID<<","<<pDepthMarketData->UpdateTime << ","<<p_kline_data->open_price << "," 
-				<< p_kline_data->high_price << "," << p_kline_data->low_price << "," << p_kline_data->close_price
-				<< "," << p_kline_data->volume << std::endl;
+		// std::cout << "KLINE: " <<pDepthMarketData->InstrumentID<<","<<pDepthMarketData->UpdateTime << ","<<p_kline_data->open_price << "," 
+		// 		<< p_kline_data->high_price << "," << p_kline_data->low_price << "," << p_kline_data->close_price
+		// 		<< "," << p_kline_data->volume << std::endl;
 
 		m_priceVec.clear();
 		m_volumeVec.clear();
 		this->last_update_time = curr_tme;
 		return true;
+
 	}
 	this->last_update_time = curr_tme;
 	return false;

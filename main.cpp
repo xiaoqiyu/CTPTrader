@@ -13,19 +13,19 @@
 #include "TStrategy.h"
 #include "DataStrategy.h"
 #include "models/data_analysis.h"
-// #include "draft.h"
+#include "draft.h"
 
 int nRequestID = 0;
 int DEBUG = 0;
 
 
+//@param main mode instrument conf/trade_date
 
 int main(int argc, char *argv[])
 {
-    // get_depth_market();
-    // return 0;
     std::string _conf_file_name;
     std::string _instrument_id;
+    std::string mode = "0";
     std::string _strategy_name = "data_strategy";
     std::vector<std::string> v_instrumentID;
     if (argc <= 1)
@@ -39,9 +39,10 @@ int main(int argc, char *argv[])
     }
     else
     {
-        _conf_file_name = argv[2];
-        _instrument_id = argv[1];
-        // _strategy_name = argv[3];
+        _conf_file_name = argv[3];
+        _instrument_id = argv[2];
+        mode = argv[1];
+        // _strategy_name = argv[4];
         std::stringstream sstr(_instrument_id);
         std::string token;
         int cnt = 0;
@@ -51,19 +52,24 @@ int main(int argc, char *argv[])
             v_instrumentID.push_back(token);
         }
     }
+    if(mode == "1")
+    {
+        std::string _trade_date = argv[3];
+        for(auto it=v_instrumentID.begin(); it != v_instrumentID.end(); ++it)
+        {
+            data_preprocessing(*it, _trade_date);
+        }
+        return 0;
+    }
     std::cout << "check ins in main" << v_instrumentID.size() << std::endl;
     QTStrategyBase *p_strtegy = nullptr;
     if (_strategy_name == "data_strategy")
     {
-        // DataStrategy _data_strategy(_strategy_name);
-        // p_strtegy = &_data_strategy;
         p_strtegy = new DataStrategy("data_strategy");
     }
     else if (_strategy_name == "t_strategy")
     {
         p_strtegy = new TStrategy("t_strategy");
-        // TStrategy _t_strategy(_strategy_name);
-        // p_strtegy = &_t_strategy;
     }
     // QTStrategyBase *p_strtegy = new QTStrategyBase("ctp_demo");
     // QTStrategyBase *p_strtegy = new DataStrategy("ctp_demo");
