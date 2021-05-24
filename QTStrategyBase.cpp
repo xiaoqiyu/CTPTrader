@@ -72,22 +72,30 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 		this->v_instrummentID.push_back(_instrumentid);
 		FileName mkt_depth_file_name = {'\0'};
 		FileName kline_file_name = {'\0'};
-		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.txt", _instrumentid.c_str(), trading_date.c_str());
-		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.txt", _instrumentid.c_str(), trading_date.c_str());
-		// std::ofstream* p_mkt_depth_outfile = new std::ofstream();
-		FILE* fp_depth_mkt;
-		// std::ofstream* p_kline_outfile = new std::ofstream();
-		FILE* fp_kline; 
-		// p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app); // append mode
-		fp_depth_mkt = fopen(mkt_depth_file_name, "a");
-		fp_kline = fopen(kline_file_name, "a");
-		// p_kline_outfile->open(kline_file_name, std::ios::app);
+		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
+		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
+		std::ofstream* p_mkt_depth_outfile = new std::ofstream();
+		// FILE* fp_depth_mkt;
+		std::ofstream* p_kline_outfile = new std::ofstream();
+		// FILE* fp_kline; 
+		p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app|std::ios::binary); // append mode
+		// fp_depth_mkt = fopen(mkt_depth_file_name, "a");
+		// fp_kline = fopen(kline_file_name, "a");
+		p_kline_outfile->open(kline_file_name, std::ios::app|std::ios::binary);
 		m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
 		m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
 		m_kline_filename.insert(std::pair<std::string, std::string>(_instrumentid, kline_file_name));
 		// v_depth_outfile.push_back(p_mkt_depth_outfile);
-		if (NULL != fp_depth_mkt){v_depth_file_handler.push_back(fp_depth_mkt);}
-		if(NULL != fp_kline){v_kline_file_handler.push_back(fp_kline);}
+
+		// std::ofstream ofs(path, std::ios::binary);
+  		recordio::RecordWriter _depth_mkt_writer(p_mkt_depth_outfile);
+		v_depth_writer.push_back(_depth_mkt_writer);
+
+		recordio::RecordWriter _kline_writer(p_kline_outfile);
+		v_kline_writer.push_back(_kline_writer);
+
+		// if (NULL != fp_depth_mkt){v_depth_file_handler.push_back(fp_depth_mkt);}
+		// if(NULL != fp_kline){v_kline_file_handler.push_back(fp_kline);}
 		// v_kline_outfile.push_back(p_kline_outfile);
 		TickToKlineHelper *p_kline_helper =  new TickToKlineHelper();
 		v_t2k_helper.push_back(p_kline_helper);
@@ -122,15 +130,16 @@ void QTStrategyBase::on_tick()
 					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
 					// std::cout<<"get fstream index:"<<std::endl;
 					int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
-					fwrite(pDepthMarketData, 1, sizeof(CThostFtdcDepthMarketDataField),this->v_depth_file_handler[_idx]);
-
+					
+					// fwrite(pDepthMarketData, 1, sizeof(CThostFtdcDepthMarketDataField),this->v_depth_file_handler[_idx]);
+					v_depth_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
 					KLineDataType *p_kline_data = new KLineDataType();
 					bool ret = this->v_t2k_helper[_idx]->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
 					int w_kline;
 					if(ret)
 					{
-						w_kline = fwrite(p_kline_data, 1, sizeof(KLineDataType), this->v_kline_file_handler[_idx]);
-						// std::cout<<"write k line： "<<w_kline<<std::endl;
+						// w_kline = fwrite(p_kline_data, 1, sizeof(KLineDataType), this->v_kline_file_handler[_idx]);
+						int ret_write_buffer = v_kline_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(p_kline_data), sizeof(KLineDataType));
 					}
 					delete p_kline_data;
 					delete pDepthMarketData;
@@ -195,12 +204,17 @@ void QTStrategyBase::insert_market_order(TThostFtdcPriceType limit_price, TThost
 	// this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 
-int QTStrategyBase::get_instrument_by_product(std::string product_id)
+
+std::tuple<std::vector<std::string>, std::vector<std::string>> QTStrategyBase::get_instrument_by_product(std::string product_id)
 {
 	std::cout<<"Query Instrument for productID:"<<product_id<<std::endl;
 	CThostFtdcQryInstrumentField pQryInstrument = {0};
 	std::strcpy(pQryInstrument.InstrumentID, product_id.c_str());
-	return this->p_trader_handler->ReqQryInstrument(&pQryInstrument, nRequestID++);
+	//TODO check return value
+	int ret = this->p_trader_handler->ReqQryInstrument(&pQryInstrument, nRequestID++);
+	return std::make_tuple(this->p_trader_handler->GetFutureInstrumentID(),this->p_trader_handler->GetOptionInstrumentID());
+	// return this->p_trader_handler->GetFutureInstrumentID();
+
 }
 
 int QTStrategyBase::get_investor_position(std::string investor_id, std::string broker_id)
@@ -209,6 +223,46 @@ int QTStrategyBase::get_investor_position(std::string investor_id, std::string b
 	std::strcpy(investor_pos_fields.InvestorID, investor_id.c_str());
 	std::strcpy(investor_pos_fields.BrokerID, broker_id.c_str());
 	return this->p_trader_handler->ReqQryInvestorPosition(&investor_pos_fields, nRequestID++);
+}
+
+int QTStrategyBase::get_account(std::string investor_id, std::string broker_id)
+{
+	CThostFtdcQryTradingAccountField trading_account_fields = {0};
+	std::strcpy(trading_account_fields.AccountID, investor_id.c_str());
+	std::strcpy(trading_account_fields.BrokerID, broker_id.c_str());
+	int ret_req = this->p_trader_handler->ReqQryTradingAccount(&trading_account_fields, nRequestID++);	
+	std::cout<<"Req return is:"<<ret_req<<std::endl;
+	return ret_req;
+}
+
+int QTStrategyBase::req_trade(std::string investor_id, std::string broker_id)
+{
+	CThostFtdcQryTradeField trade_fields = {0};
+	std::strcpy(trade_fields.InvestorID, investor_id.c_str());
+	std::strcpy(trade_fields.BrokerID, broker_id.c_str());
+	// int ret_req = this->p_trader_handler->ReqQryTradingAccount(&trade_fields, nRequestID++);	
+	int ret_req = this->p_trader_handler->ReqQryTrade(&trade_fields, nRequestID++);
+	std::cout<<"Req return is:"<<ret_req<<std::endl;
+	return ret_req;
+}
+
+int QTStrategyBase::get_depth_mkt(std::string instrument_id)
+{
+	CThostFtdcQryDepthMarketDataField mkt_fields = {0};
+	std::strcpy(mkt_fields.InstrumentID, instrument_id.c_str());
+	int ret_req = this->p_trader_handler->ReqQryDepthMarketData(&mkt_fields, nRequestID++);
+	std::cout<<"Req return in depth market is:"<<ret_req<<std::endl;
+	return ret_req;
+}
+
+int QTStrategyBase::get_position_details(std::string investor_id, std::string broker_id)
+{
+	CThostFtdcQryInvestorPositionDetailField pos_detail_fields = {0};
+	std::strcpy(pos_detail_fields.InvestorID, investor_id.c_str());
+	std::strcpy(pos_detail_fields.BrokerID, broker_id.c_str());
+	int ret_req = this->p_trader_handler->ReqQryInvestorPositionDetail(&pos_detail_fields,nRequestID++);
+	std::cout<<"Req return in position details is:"<<ret_req<<std::endl;
+	return ret_req;
 }
 
 void QTStrategyBase::stop()
@@ -244,6 +298,14 @@ void QTStrategyBase::release()
 	for(auto iter=v_kline_file_handler.begin(); iter!=v_kline_file_handler.end();++iter)
 	{
 		fclose(*iter);
+	}
+	for(auto iter=v_depth_writer.begin(); iter!=v_depth_writer.end(); ++iter)
+	{
+		(*iter).Close();
+	}
+	for(auto  iter=v_kline_writer.begin(); iter!=v_kline_writer.end(); ++iter)
+	{
+		(*iter).Close();
 	}
 	this->p_md_handler->exit();
 	this->p_trader_handler->exit();

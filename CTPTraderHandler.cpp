@@ -579,10 +579,12 @@ void CTPTraderHandler::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRsp
 
 void CTPTraderHandler::OnRspQryTrade(CThostFtdcTradeField *pTrade, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+	std::cout<<"on rsp qry trade"<<std::endl;
     Task task = Task();
     task.task_name = ONRSPQRYTRADE;
     if (pTrade)
     {
+		std::cout<<"on rsp qry trade, push trade"<<std::endl;
         CThostFtdcTradeField *task_data = new CThostFtdcTradeField();
         *task_data = *pTrade;
         task.task_data = task_data;
@@ -622,6 +624,7 @@ void CTPTraderHandler::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField 
 
 void CTPTraderHandler::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+	std::cout<<"On Rsp Trading Accounts"<<std::endl;
     Task task = Task();
     task.task_name = ONRSPQRYTRADINGACCOUNT;
     if (pTradingAccount)
@@ -793,6 +796,7 @@ void CTPTraderHandler::OnRspQryDepthMarketData(CThostFtdcDepthMarketDataField *p
 {
     Task task = Task();
     task.task_name = ONRSPQRYDEPTHMARKETDATA;
+	std::cout<<"on rsp qry depth market"<<std::endl;
     if (pDepthMarketData)
     {
         CThostFtdcDepthMarketDataField *task_data = new CThostFtdcDepthMarketDataField();
@@ -3076,6 +3080,9 @@ void CTPTraderHandler::processRspQryOrder(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcOrderField* task_data = reinterpret_cast<CThostFtdcOrderField*>(task->task_data);
+		FILE *fp = fopen("orders.txt", "a");
+		fwrite(task_data, 1, sizeof(CThostFtdcOrderField), fp);
+		fclose(fp);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3148,14 +3155,25 @@ void CTPTraderHandler::processRspQryOrder(Task* task)
 		printf("ErrorMsg in QryOrder = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
-	this->available_ = true;
+	if(task->task_last)
+	{
+		std::cout<<"complete query order"<<std::endl;
+		this->available_ = true;
+		cond_.notify_one();
+	}
+
 };
 
 void CTPTraderHandler::processRspQryTrade(Task* task)
 {
+	std::cout<<"in process qry trade,"<<task->task_data<<std::endl;
 	if (task->task_data)
 	{
+		std::cout<<"process rsp trade"<<std::endl;
 		CThostFtdcTradeField* task_data = reinterpret_cast<CThostFtdcTradeField*>(task->task_data);
+		FILE *fp = fopen("trades.txt", "a");
+		fwrite(task_data, 1, sizeof(CThostFtdcTradeField), fp);
+		fclose(fp);
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
@@ -3196,7 +3214,13 @@ void CTPTraderHandler::processRspQryTrade(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
-	this->available_ = true;
+	if(task->task_last)
+	{
+		std::cout<<"complete query trade"<<std::endl;
+		this->available_ = true;
+		cond_.notify_one();
+	}
+	
 };
 
 void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
@@ -3205,6 +3229,10 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcInvestorPositionField* task_data = reinterpret_cast<CThostFtdcInvestorPositionField*>(task->task_data);
+		std::cout<<"process trading position,"<<task_data->InstrumentID<<std::endl;
+		FILE *fp = fopen("position.txt", "a");
+		fwrite(task_data, 1, sizeof(CThostFtdcInvestorPositionField), fp);
+		fclose(fp);
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
@@ -3215,43 +3243,43 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 		printf("Position = %d\n", task_data->Position);
 		printf("LongFrozen = %d\n", task_data->LongFrozen);
 		printf("ShortFrozen = %d\n", task_data->ShortFrozen);
-		printf("LongFrozenAmount = %f\n", task_data->LongFrozenAmount);
-		printf("ShortFrozenAmount = %f\n", task_data->ShortFrozenAmount);
-		printf("OpenVolume = %d\n", task_data->OpenVolume);
-		printf("CloseVolume = %d\n", task_data->CloseVolume);
-		printf("OpenAmount = %f\n", task_data->OpenAmount);
-		printf("CloseAmount = %f\n", task_data->CloseAmount);
-		printf("PositionCost = %f\n", task_data->PositionCost);
-		printf("PreMargin = %f\n", task_data->PreMargin);
-		printf("UseMargin = %f\n", task_data->UseMargin);
-		printf("FrozenMargin = %f\n", task_data->FrozenMargin);
-		printf("FrozenCash = %f\n", task_data->FrozenCash);
-		printf("FrozenCommission = %f\n", task_data->FrozenCommission);
-		printf("CashIn = %f\n", task_data->CashIn);
-		printf("Commission = %f\n", task_data->Commission);
-		printf("CloseProfit = %f\n", task_data->CloseProfit);
-		printf("PositionProfit = %f\n", task_data->PositionProfit);
-		printf("PreSettlementPrice = %f\n", task_data->PreSettlementPrice);
-		printf("SettlementPrice = %f\n", task_data->SettlementPrice);
-		printf("TradingDay = %s\n", (task_data->TradingDay));
-		printf("SettlementID = %d\n", task_data->SettlementID);
-		printf("OpenCost = %f\n", task_data->OpenCost);
-		printf("ExchangeMargin = %f\n", task_data->ExchangeMargin);
-		printf("CombPosition = %d\n", task_data->CombPosition);
-		printf("CombLongFrozen = %d\n", task_data->CombLongFrozen);
-		printf("CombShortFrozen = %d\n", task_data->CombShortFrozen);
-		printf("CloseProfitByDate = %f\n", task_data->CloseProfitByDate);
-		printf("CloseProfitByTrade = %f\n", task_data->CloseProfitByTrade);
-		printf("TodayPosition = %d\n", task_data->TodayPosition);
-		printf("MarginRateByMoney = %f\n", task_data->MarginRateByMoney);
-		printf("MarginRateByVolume = %f\n", task_data->MarginRateByVolume);
-		printf("StrikeFrozen = %d\n", task_data->StrikeFrozen);
-		printf("StrikeFrozenAmount = %f\n", task_data->StrikeFrozenAmount);
-		printf("AbandonFrozen = %d\n", task_data->AbandonFrozen);
-		printf("ExchangeID = %s\n", (task_data->ExchangeID));
-		printf("YdStrikeFrozen = %d\n", task_data->YdStrikeFrozen);
-		printf("InvestUnitID = %s\n", (task_data->InvestUnitID));
-		printf("PositionCostOffset = %f\n", task_data->PositionCostOffset);
+		// printf("LongFrozenAmount = %f\n", task_data->LongFrozenAmount);
+		// printf("ShortFrozenAmount = %f\n", task_data->ShortFrozenAmount);
+		// printf("OpenVolume = %d\n", task_data->OpenVolume);
+		// printf("CloseVolume = %d\n", task_data->CloseVolume);
+		// printf("OpenAmount = %f\n", task_data->OpenAmount);
+		// printf("CloseAmount = %f\n", task_data->CloseAmount);
+		// printf("PositionCost = %f\n", task_data->PositionCost);
+		// printf("PreMargin = %f\n", task_data->PreMargin);
+		// printf("UseMargin = %f\n", task_data->UseMargin);
+		// printf("FrozenMargin = %f\n", task_data->FrozenMargin);
+		// printf("FrozenCash = %f\n", task_data->FrozenCash);
+		// printf("FrozenCommission = %f\n", task_data->FrozenCommission);
+		// printf("CashIn = %f\n", task_data->CashIn);
+		// printf("Commission = %f\n", task_data->Commission);
+		// printf("CloseProfit = %f\n", task_data->CloseProfit);
+		// printf("PositionProfit = %f\n", task_data->PositionProfit);
+		// printf("PreSettlementPrice = %f\n", task_data->PreSettlementPrice);
+		// printf("SettlementPrice = %f\n", task_data->SettlementPrice);
+		// printf("TradingDay = %s\n", (task_data->TradingDay));
+		// printf("SettlementID = %d\n", task_data->SettlementID);
+		// printf("OpenCost = %f\n", task_data->OpenCost);
+		// printf("ExchangeMargin = %f\n", task_data->ExchangeMargin);
+		// printf("CombPosition = %d\n", task_data->CombPosition);
+		// printf("CombLongFrozen = %d\n", task_data->CombLongFrozen);
+		// printf("CombShortFrozen = %d\n", task_data->CombShortFrozen);
+		// printf("CloseProfitByDate = %f\n", task_data->CloseProfitByDate);
+		// printf("CloseProfitByTrade = %f\n", task_data->CloseProfitByTrade);
+		// printf("TodayPosition = %d\n", task_data->TodayPosition);
+		// printf("MarginRateByMoney = %f\n", task_data->MarginRateByMoney);
+		// printf("MarginRateByVolume = %f\n", task_data->MarginRateByVolume);
+		// printf("StrikeFrozen = %d\n", task_data->StrikeFrozen);
+		// printf("StrikeFrozenAmount = %f\n", task_data->StrikeFrozenAmount);
+		// printf("AbandonFrozen = %d\n", task_data->AbandonFrozen);
+		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
+		// printf("YdStrikeFrozen = %d\n", task_data->YdStrikeFrozen);
+		// printf("InvestUnitID = %s\n", (task_data->InvestUnitID));
+		// printf("PositionCostOffset = %f\n", task_data->PositionCostOffset);
 		delete task_data;
 	}
 	if (task->task_error)
@@ -3261,8 +3289,9 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
-	if(task->task_id)
+	if(task->task_last)
 	{
+		std::cout<<"complete query position"<<std::endl;
 		this->available_ = true;
 		cond_.notify_one();
 	}
@@ -3273,6 +3302,13 @@ void CTPTraderHandler::processRspQryTradingAccount(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcTradingAccountField* task_data = reinterpret_cast<CThostFtdcTradingAccountField*>(task->task_data);
+		// FILE *fp = fopen("trading_account.txt", "a");
+		// fwrite(task_data, 1, sizeof(CThostFtdcTradingAccountField), fp);
+		// fclose(fp);
+		std::ofstream ofs("trading_account.recordio", std::ios::binary|std::ios::app);
+		recordio::RecordWriter writer(&ofs);
+		writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcTradingAccountField));
+		writer.Close();
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("AccountID = %s\n", (task_data->AccountID));
 		printf("PreMortgage = %f\n", task_data->PreMortgage);
@@ -3331,7 +3367,12 @@ void CTPTraderHandler::processRspQryTradingAccount(Task* task)
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
 	}
-	this->available_ = true;
+	if(task->task_last)
+	{
+		std::cout<<"complete query trading account"<<std::endl;
+		this->available_ = true;
+		cond_.notify_one();
+	}
 };
 
 void CTPTraderHandler::processRspQryInvestor(Task* task)
@@ -3507,12 +3548,17 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 		// std::cout<<"in processRspQryInstrument, task_data---------"<<std::endl;
 
 		CThostFtdcInstrumentField* task_data = reinterpret_cast<CThostFtdcInstrumentField*>(task->task_data);
+		std::ofstream ofs("instruments.recordio", std::ios::binary);
+		recordio::RecordWriter writer(&ofs);
+		writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInstrumentField));
+		writer.Close();
+		
 		if(task_data->ProductClass == '1')
 		{
 			// CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
     		// strcpy(qryDepthMktDataField.InstrumentID, task_data->InstrumentID);
     		// this->ReqQryDepthMarketData(&qryDepthMktDataField, nRequestID++);
-			std::cout<<task_data->InstrumentID<<std::endl;
+			// std::cout<<task_data->InstrumentID<<std::endl;
 			this->future_instrumentID.push_back(task_data->InstrumentID);
 		}else if(task_data->ProductClass == '2'){
 			// std::cout<<task_data->InstrumentID<<std::endl;
@@ -3569,15 +3615,16 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 
 void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 {
+	std::cout<<"process depth market data: data is:"<<task->task_data<<std::endl;
 	if (task->task_data)
 	{
 		CThostFtdcDepthMarketDataField* task_data = reinterpret_cast<CThostFtdcDepthMarketDataField*>(task->task_data);
 		std::cout<<"depth market data result: "<<task_data->InstrumentID<<","<<task_data->PreOpenInterest<<std::endl;
-		// printf("TradingDay = %s\n", (task_data->TradingDay));
-		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
+		printf("TradingDay = %s\n", (task_data->TradingDay));
+		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
 		// printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
-		// printf("LastPrice = %f\n", task_data->LastPrice);
+		printf("LastPrice = %f\n", task_data->LastPrice);
 		// printf("PreSettlementPrice = %f\n", task_data->PreSettlementPrice);
 		// printf("PreClosePrice = %f\n", task_data->PreClosePrice);
 		// printf("PreOpenInterest = %f\n", task_data->PreOpenInterest);
@@ -3587,13 +3634,13 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 		// printf("Volume = %d\n", task_data->Volume);
 		// printf("Turnover = %f\n", task_data->Turnover);
 		// printf("OpenInterest = %f\n", task_data->OpenInterest);
-		// printf("ClosePrice = %f\n", task_data->ClosePrice);
+		printf("ClosePrice = %f\n", task_data->ClosePrice);
 		// printf("SettlementPrice = %f\n", task_data->SettlementPrice);
 		// printf("UpperLimitPrice = %f\n", task_data->UpperLimitPrice);
 		// printf("LowerLimitPrice = %f\n", task_data->LowerLimitPrice);
 		// printf("PreDelta = %f\n", task_data->PreDelta);
 		// printf("CurrDelta = %f\n", task_data->CurrDelta);
-		// printf("UpdateTime = %s\n", (task_data->UpdateTime));
+		printf("UpdateTime = %s\n", (task_data->UpdateTime));
 		// printf("UpdateMillisec = %d\n", task_data->UpdateMillisec);
 		// printf("BidPrice1 = %f\n", task_data->BidPrice1);
 		// printf("BidVolume1 = %d\n", task_data->BidVolume1);
@@ -3617,7 +3664,8 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 		// printf("AskVolume5 = %d\n", task_data->AskVolume5);
 		// printf("AveragePrice = %f\n", task_data->AveragePrice);
 		// printf("ActionDay = %s\n", (task_data->ActionDay));
-		delete task_data;
+		v_depth_market_data.push_back(task_data);
+		// delete task_data;
 	}
 	if (task->task_error)
 	{
@@ -3625,6 +3673,12 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 		printf("ErrorID in processRspQryDepthMarketData = %d\n", task_error->ErrorID);
 		printf("ErrorMsg in processRspQryDepthMarketData = %s\n", (task_error->ErrorMsg));
 		delete task_error;
+	}
+	if(task->task_last)
+	{
+		std::cout<<"reset avaible_"<<std::endl;
+		available_ = true;
+		cond_.notify_one();
 	}
 };
 
@@ -3676,7 +3730,11 @@ void CTPTraderHandler::processRspQryInvestorPositionDetail(Task* task)
 {
 	if (task->task_data)
 	{
+
 		CThostFtdcInvestorPositionDetailField* task_data = reinterpret_cast<CThostFtdcInvestorPositionDetailField*>(task->task_data);
+		FILE *fp = fopen("position_details.txt", "a");
+		fwrite(task_data, 1, sizeof(CThostFtdcInvestorPositionDetailField), fp);
+		fclose(fp);
 		printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		printf("BrokerID = %s\n", (task_data->BrokerID));
 		printf("InvestorID = %s\n", (task_data->InvestorID));
@@ -3713,6 +3771,12 @@ void CTPTraderHandler::processRspQryInvestorPositionDetail(Task* task)
 		printf("ErrorID = %d\n", task_error->ErrorID);
 		printf("ErrorMsg = %s\n", (task_error->ErrorMsg));
 		delete task_error;
+	}
+	if(task->task_last)
+	{
+		std::cout<<"reset avaible_"<<std::endl;
+		available_ = true;
+		cond_.notify_one();
 	}
 };
 
@@ -7854,9 +7918,11 @@ int CTPTraderHandler::exit()
     this->_task_queue.terminate();
     this->_task_thread.join();
 
+
 	CThostFtdcUserLogoutField reqUserLogout = {0};
     strcpy(reqUserLogout.BrokerID, this->broker_id.c_str());
     strcpy(reqUserLogout.UserID, this->user_id.c_str());
+
 
     this->ReqUserLogout(&reqUserLogout, nRequestID++);
     sleep(5);
@@ -7866,6 +7932,10 @@ int CTPTraderHandler::exit()
 	this->join();
 	this->release();
     this->_api = NULL;
+	for(auto it = v_depth_market_data.begin(); it != v_depth_market_data.end(); ++it)
+	{
+		delete (*it);
+	}
     return 1;
 };
 
@@ -7932,7 +8002,14 @@ int CTPTraderHandler::ReqQryInstrument(CThostFtdcQryInstrumentField *pQryInstrum
 
 int CTPTraderHandler::ReqQryDepthMarketData(CThostFtdcQryDepthMarketDataField *pQryDepthMarketData, int nRequestID)
 {
-	return _api->ReqQryDepthMarketData(pQryDepthMarketData, nRequestID);
+	this->available_ = false;
+	std::cout<<"send request data in reqqrydepthmktdata in traderhandler: "<<pQryDepthMarketData->InstrumentID<<std::endl;
+	int ret = _api->ReqQryDepthMarketData(pQryDepthMarketData, nRequestID); 
+	unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&available_;
+	}); 	
+	return ret;
 }
 
 int CTPTraderHandler::ReqOrderInsert(CThostFtdcInputOrderField *pInputOrder, int nRequestID)
@@ -7946,7 +8023,6 @@ void CTPTraderHandler::ReqQryMainContract(vector<std::string> productID, int nRe
 {
 	for (auto iter = productID.begin(); iter != productID.end(); iter++)
 	{
-
 		std::cout<<"Query Instrument for productID:"<<(*iter)<<std::endl;
 		CThostFtdcQryInstrumentField pQryInstrument = {0};
     	std::strcpy(pQryInstrument.InstrumentID, (*iter).c_str());
@@ -7975,7 +8051,7 @@ int CTPTraderHandler::ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nReque
 {
 	this->available_ = false;
 	int ret = _api->ReqQryTrade(pQryTrade, nRequestID);
-		unique_lock<mutex> mlock(mutex_);
+	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_&this->available_;
 	}); 
@@ -7988,7 +8064,7 @@ int CTPTraderHandler::ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField 
 	std::cout<<"send req for position"<<std::endl;
 	this->available_ = false;
 	int ret =  _api->ReqQryInvestorPosition(pQryInvestorPosition, nRequestID);
-	
+	std::cout<<"sent req for inverstor position, ret is:"<<ret<<std::endl;
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_&this->available_;
@@ -7999,8 +8075,24 @@ int CTPTraderHandler::ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField 
 ///请求查询资金账户
 int CTPTraderHandler::ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQryTradingAccount, int nRequestID)
 {
+	std::cout<<"send req for trading account"<<std::endl;
 	this->available_ = false;
-	int ret = _api->ReqQryTradingAccount(pQryTradingAccount, nRequestID);
+	int ret = _api->ReqQryTradingAccount(pQryTradingAccount, nRequestID++);
+	std::cout<<"sent req for trading account, ret is:"<<ret<<std::endl;
+	unique_lock<mutex> mlock(mutex_);
+	cond_.wait(mlock, [&]() {
+		return login_&this->available_;
+	}); 
+	return ret;
+}
+
+//请求查询投资者持仓明细
+int CTPTraderHandler::ReqQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID)
+{
+	std::cout<<"send req for investor position detail:"<<std::endl;
+	this->available_ = false;
+	int ret = _api->ReqQryInvestorPositionDetail(pQryInvestorPositionDetail,nRequestID++);
+	std::cout<<"sent req for investor position detail, ret is:"<<ret<<std::endl;
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_&this->available_;

@@ -77,35 +77,41 @@ void get_depth_market()
     std::cout<<v_timestamp.size()<<std::endl;
 }
 
+
+
+
+
 void data_preprocessing(std::string instrument_id, std::string trade_date)
 {
-    std::string file_name = "/home/kiki/projects/CTPTrader/cache/"+instrument_id+"_depth_market_data_"+trade_date+".txt"; 
+    std::string file_name = "/home/kiki/projects/CTPTrader/cache/"+instrument_id+"_depth_market_data_"+trade_date+".recordio"; 
     std::cout<<"read file is: "<<file_name<<std::endl;
-    FILE *fp = fopen(file_name.c_str(), "r");
+    // FILE *fp = fopen(file_name.c_str(), "r");
+    std::ifstream ifs(file_name, std::ios::binary);
+    recordio::RecordReader reader(&ifs);
     std::string p_file_name = "/home/kiki/projects/CTPTrader/cache/p_"+instrument_id+"_depth_market_data_"+trade_date+".txt"; 
     std::cout<<"write file is: "<<p_file_name<<std::endl;
     int errnum;
-    if (NULL != fp)
+    std::string buffer;
+    if (true)
     {
         CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
         int _size;
         ofstream fout;
         fout.open(p_file_name,std::ios::app);
         
-        while (!feof(fp))
+        while (reader.ReadBuffer(buffer))
         {
-            _size = fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
-            std::string _s = p_mkt->UpdateTime;
-            if (_s==""){
-                std::cout<<"empty"<<std::endl;
-                continue;}
+            // _size = fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
+            assert(buffer.size()==sizeof(CThostFtdcDepthMarketDataField));
+            memcpy(p_mkt, buffer.data(), buffer.size());
+            std::cout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<std::endl;
             fout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<"."<<p_mkt->UpdateMillisec<<","
             <<p_mkt->Turnover<<","<<p_mkt->Volume<<","<<p_mkt->LastPrice<<","<<p_mkt->AveragePrice<<","
             <<p_mkt->AskPrice1<<","<<p_mkt->AskVolume1<<","<<p_mkt->BidPrice1<<","
             <<p_mkt->BidVolume1<<std::endl;
         }
         fout.close();
-        fclose(fp);
+        reader.Close();
     }
     else
     {

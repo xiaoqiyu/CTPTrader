@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
 #     subprocess.call("ls", shell=True)
     # subprocess.call("./main 1 hc2110 20210518")
-    get_data("cu2106", "20210519")
+    get_data("hc2110", "20210520")
 
 
 

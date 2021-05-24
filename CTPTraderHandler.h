@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <stdio.h>
 #include <vector>
@@ -9,6 +10,8 @@
 #include "include/UserStruct.h"
 #include "include/ThostFtdcUserApiDataType.h"
 #include "include/define.h"
+#include "recordio.h"
+#include "recordio_range.h"
 
 extern int nRequestID;
 
@@ -31,6 +34,7 @@ private:
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
     std::string broker_id;
     std::string user_id;
+    std::vector<CThostFtdcDepthMarketDataField*> v_depth_market_data;
 
 public:
     CTPTraderHandler(){};
@@ -43,13 +47,35 @@ public:
         cout << "~CTPTradeHandler" << endl;
     };
 
+    std::vector<CThostFtdcDepthMarketDataField*> get_depth_market_datas(std::vector<std::string> _v_instrument_id){
+        v_depth_market_data.clear();
+        for(auto it = _v_instrument_id.begin(); it != _v_instrument_id.end(); ++it)
+        {
+            CThostFtdcQryDepthMarketDataField mkt_fields = {0};
+	        std::strcpy(mkt_fields.InstrumentID, (*it).c_str());
+            ReqQryDepthMarketData(&mkt_fields, nRequestID++);
+            sleep(2);
+        }
+        return v_depth_market_data;
+    }
+
+    
+
     std::vector<std::string> GetFutureInstrumentID()
     {
+        unique_lock<mutex> mlock(mutex_);
+        cond_.wait(mlock, [&]() {
+            return login_ & available_;
+        }); 
         return this->future_instrumentID;
     }
 
     std::vector<std::string> GetOptionInstrumentID()
     {
+        unique_lock<mutex> mlock(mutex_);
+        cond_.wait(mlock, [&]() {
+            return login_ & available_;
+        }); 
         return this->option_instrumentID;
     }
 
@@ -608,4 +634,8 @@ public:
 
     ///请求查询资金账户
     int ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQryTradingAccount, int nRequestID);
+
+    ///请求查询投资者持仓明细
+	int ReqQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID);
+
 };

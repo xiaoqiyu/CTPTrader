@@ -8,6 +8,10 @@
 #include <fstream>
 #include <stdio.h>
 
+#include <cassert>
+#include <utility>
+#include <string.h>
+
 #include "include/ThostFtdcMdApi.h"
 #include "include/INIReader.h"
 #include "include/UserStruct.h"
@@ -16,6 +20,8 @@
 #include "CTPTraderHandler.h"
 #include "CTPMdHandler.h"
 #include "helper.h"
+#include "recordio.h"
+#include "recordio_range.h"
 
 typedef CTPTraderHandler *trader_util_ptr;
 typedef CTPMdHandler *md_ptr;
@@ -59,13 +65,38 @@ public: //order function
 	bool verify_order_condition();
 
 public: //qry for product/instrument/account
-	int get_instrument_by_product(std::string product_id);
+    std::tuple<std::vector<std::string>, std::vector<std::string>> get_instrument_by_product(std::string product_id);
 	int get_investor_position(std::string investor_id, std::string broker_id);
-	void get_porfortlio();
-	void get_account();
-
+	// void get_porfortlio();
+	int get_account(std::string investor_id, std::string broker_id);
+	int req_trade(std::string investor_id, std::string broker_id);
 	std::vector<std::string> getInstrumentID();
+	int get_depth_mkt(std::string instrument_id);
+	int get_position_details(std::string investor_id, std::string broker_id);
 	void setInstrumentID(std::vector<std::string> v_instrumentid);
+	std::vector<CThostFtdcDepthMarketDataField*> get_market_datas(std::vector<std::string> _v_instrument_id)
+	{
+		return p_trader_handler->get_depth_market_datas(_v_instrument_id);
+	}
+
+	void read_instruments()
+	{
+		// std::vector<std::pair<std::string, int>> res;
+		std::ifstream ifs("instruments.recordio", std::ios::binary);
+		recordio::RecordReader reader(&ifs);
+
+		
+		std::string buffer;
+		while (reader.ReadBuffer(buffer)) {
+			std::cout<<"read ins:"<<std::endl;
+			CThostFtdcInstrumentField instrument_fields={0};
+			assert(buffer.size() == sizeof(instrument_fields));
+			memcpy(&instrument_fields, buffer.data(), buffer.size());
+			std::cout<<instrument_fields.InstrumentID<<","<<instrument_fields.ProductClass<<std::endl;
+		}
+		reader.Close();
+
+	}
 
 protected:
 	trader_util_ptr p_trader_handler = nullptr;
@@ -87,6 +118,8 @@ private:
 	vector<std::ofstream *> v_kline_outfile;
 	vector<FILE*> v_depth_file_handler;
 	vector<FILE*> v_kline_file_handler;
+	vector<recordio::RecordWriter> v_depth_writer;
+	vector<recordio::RecordWriter> v_kline_writer;
 	vector<TickToKlineHelper *> v_t2k_helper;
 	// FileName mkt_depth_file_name = {'\0'};
 	// FileName kline_file_name = {'\0'};

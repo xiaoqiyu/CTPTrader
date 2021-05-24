@@ -6,6 +6,7 @@
 			"label": "C/C++: g++ build active file",
 			"command": "/usr/bin/g++",
 			"args": [
+				"-std=c++14",
 				"-g",
 				"*.cpp",
 				"-L",
@@ -16,7 +17,8 @@
 				"${fileDirname}/${fileBasenameNoExtension}",
 				"-lthosttraderapi_se",
 				"-lthostmduserapi_se",
-				"-lpthread"
+				"-lpthread",
+				"-lz"
 
 			],
 			"options": {
