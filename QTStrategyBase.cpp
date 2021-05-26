@@ -1,7 +1,12 @@
 #include <iostream>
 #include "QTStrategyBase.h"
 
-int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _conf_file_name)
+bool cmp_max(std::pair<std::string, double> x, std::pair<std::string, double>y)
+{
+	return x.second > y.second;
+}
+	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
+int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::string _conf_file_name)
 {
 	//初始
 	FileName _conf_file = {'\0'};
@@ -52,24 +57,37 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_ins, const std::string _c
 	std::string trading_date = this->p_trader_handler->getTradingDay();
 	std::cout << "Trading date is: " << trading_date << endl;
 
+	this->cache_main_instruments(_v_product_ids);
+	for(auto it=v_main_contract_ids.begin(); it!=v_main_contract_ids.end();++it)
+	{
+		this->v_instrummentID.push_back((*it));
+	}
+	for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
+	{
+		this->v_instrummentID.push_back((*it));
+	}
+	
+
 	//CTP MD init
 	this->p_md_handler = new CTPMdHandler();
 	this->p_md_handler->set_config(_conf_file);
 	this->p_md_handler->CreateFtdcMdApi();
 	this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
 	// std::cout<<"in qt strategy:"<<_v_ins.size()<<std::endl;
-	this->p_md_handler->init(_v_ins);
+	this->p_md_handler->init(this->v_instrummentID);
 
 	//data/order thread init
 	this->data_thread = thread(&QTStrategyBase::on_tick, this);
 	this->order_thread = thread(&QTStrategyBase::process_order, this);
 
+
+
 	int cnt = 0;
 	//private varilbe init
-	for(auto iter = _v_ins.begin(); iter!=_v_ins.end(); ++iter)
+	for(auto iter = this->v_instrummentID.begin(); iter!=this->v_instrummentID.end(); ++iter)
 	{
 		std::string _instrumentid = *iter;
-		this->v_instrummentID.push_back(_instrumentid);
+		// this->v_instrummentID.push_back(_instrumentid);
 		FileName mkt_depth_file_name = {'\0'};
 		FileName kline_file_name = {'\0'};
 		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
@@ -291,14 +309,14 @@ void QTStrategyBase::release()
 	// {
 	// 	(*iter)->close();
 	// }
-	for(auto  iter=v_depth_file_handler.begin(); iter!=v_depth_file_handler.end();++iter)
-	{
-		fclose(*iter);
-	}
-	for(auto iter=v_kline_file_handler.begin(); iter!=v_kline_file_handler.end();++iter)
-	{
-		fclose(*iter);
-	}
+	// for(auto  iter=v_depth_file_handler.begin(); iter!=v_depth_file_handler.end();++iter)
+	// {
+	// 	fclose(*iter);
+	// }
+	// for(auto iter=v_kline_file_handler.begin(); iter!=v_kline_file_handler.end();++iter)
+	// {
+	// 	fclose(*iter);
+	// }
 	for(auto iter=v_depth_writer.begin(); iter!=v_depth_writer.end(); ++iter)
 	{
 		(*iter).Close();
@@ -367,3 +385,106 @@ void QTStrategyBase::process_order()
 	}
 }
 
+void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrument_id)
+{
+	std::vector<CThostFtdcInstrumentField*> ret_instruments = get_instruments(_v_instrument_id);
+	std::vector<CThostFtdcDepthMarketDataField*> ret_depth_market_data = get_market_datas(_v_instrument_id);
+	std::unordered_map<std::string, double> m_ins2openinterest;
+	//cache {instrument_id:open_interest}
+	for(auto it=ret_depth_market_data.begin(); it!=ret_depth_market_data.end();++it)
+	{
+		std::string _ins_id = (*it)->InstrumentID;
+		CThostFtdcDepthMarketDataField* p_tmp = reinterpret_cast<CThostFtdcDepthMarketDataField*>(*it);
+		m_ins2openinterest[_ins_id] = p_tmp->OpenInterest;
+	}
+	// cal main future contracts group by productid, sort by open interest
+	for (auto it=ret_instruments.begin(); it!=ret_instruments.end(); ++it)
+	{
+		CThostFtdcInstrumentField* p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
+		if(p_tmp->ProductClass=='1'){//single future 
+			if(m_main_futures.find(p_tmp->ProductID)==m_main_futures.end()){//"key not exist"
+				m_main_futures.insert(std::pair<std::string, std::string>(p_tmp->ProductID, p_tmp->InstrumentID));
+			}else{ //"key exist"
+				std::string _prev_ins_id = m_main_futures[p_tmp->ProductID];
+				if(m_ins2openinterest.find(_prev_ins_id)==m_ins2openinterest.end()){ 
+					m_main_futures.insert(std::pair<std::string, std::string>(p_tmp->ProductID, p_tmp->InstrumentID));
+				}else if(m_ins2openinterest.find(p_tmp->InstrumentID)!=m_ins2openinterest.end()){
+					if(m_ins2openinterest[p_tmp->InstrumentID] > m_ins2openinterest[_prev_ins_id]){
+						m_main_futures[p_tmp->ProductID] = p_tmp->InstrumentID;
+					}
+				}
+			}
+		}
+	}
+	//get main future ids by cal results
+	for(const auto& n:m_main_futures)
+	{
+		std::cout<<n.first<<":"<<n.second<<std::endl;
+		v_main_contract_ids.push_back(n.second);
+	}
+
+	//get target options id 
+	std::unordered_map<std::string, std::vector<std::pair<std::string, double>>> m_option_val;
+	//{main_contract:[option_id, open_interest]}
+	for (auto it=ret_instruments.begin(); it!=ret_instruments.end(); ++it)
+	{
+		CThostFtdcInstrumentField* p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
+		if(p_tmp->ProductClass=='2'){//single option
+			std::string _underlying_id = p_tmp->UnderlyingInstrID;
+			auto it = find(v_main_contract_ids.begin(), v_main_contract_ids.end(), _underlying_id);
+			if(it != v_main_contract_ids.end()){ //underlying instrument is in main contract
+				if(m_ins2openinterest.find(p_tmp->InstrumentID)!=m_ins2openinterest.end()){
+					m_option_val[_underlying_id].push_back(std::pair<std::string, double>(p_tmp->InstrumentID, m_ins2openinterest[p_tmp->InstrumentID]));
+				}
+			}
+		}
+	}
+
+		//calculate target option id lst
+	for(auto& t:m_option_val){
+		std::cout<<t.first<<"option size:"<<t.second.size()<<std::endl;
+		//TODO:check sort here
+		sort(t.second.begin(), t.second.end(), [](const std::pair<std::string, double>& x, const std::pair<std::string, double>& y) -> bool {return x.second>=y.second;});
+		const auto it = t.second.begin();
+		int cnt = 0;
+		while(cnt<option_size){
+			v_option_ids.push_back((*(it+cnt)).first);
+			cnt ++;
+		}
+	}
+	// for(auto it=v_option_ids.begin();it!=v_option_ids.end();++it)
+	// {
+	// 	std::cout<<*it<<std::endl;
+	// }
+
+	//cache target instruments for both futures and option;{instrument_id: p_instrument_field}
+	for(auto it=ret_instruments.begin(); it!=ret_instruments.end();++it){
+		CThostFtdcInstrumentField* p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
+		std::string _instrument_id = p_tmp->InstrumentID;
+		auto f_it = find(v_main_contract_ids.begin(), v_main_contract_ids.end(), _instrument_id);
+		if(f_it!=v_main_contract_ids.end()){
+			m_target_instruments.insert(std::pair<std::string, CThostFtdcInstrumentField*>(_instrument_id,p_tmp));
+		}
+		auto o_it = find(v_option_ids.begin(), v_option_ids.end(), _instrument_id);
+		if(o_it!=v_option_ids.end()){
+			m_target_instruments.insert(std::pair<std::string, CThostFtdcInstrumentField*>(_instrument_id,p_tmp));
+		}
+	}
+	
+	// for(const auto& it:m_target_instruments)
+	// {
+	// 	std::cout<<it.first<<":"<<it.second->ProductID<<","<<it.second->UnderlyingInstrID<<std::endl;
+	// }
+	//delete temp instrument and market data
+	for(auto it =ret_instruments.begin(); it!=ret_instruments.end();++it)
+	{
+		delete *it;
+	}
+
+	for(auto it=ret_depth_market_data.begin(); it!=ret_depth_market_data.end(); ++it)
+	{
+		delete *it;
+	}
+
+
+}

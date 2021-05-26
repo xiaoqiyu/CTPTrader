@@ -11,7 +11,7 @@
 #include <cassert>
 #include <utility>
 #include <string.h>
-
+#include <algorithm>
 #include "include/ThostFtdcMdApi.h"
 #include "include/INIReader.h"
 #include "include/UserStruct.h"
@@ -76,7 +76,13 @@ public: //qry for product/instrument/account
 	void setInstrumentID(std::vector<std::string> v_instrumentid);
 	std::vector<CThostFtdcDepthMarketDataField*> get_market_datas(std::vector<std::string> _v_instrument_id)
 	{
+
 		return p_trader_handler->get_depth_market_datas(_v_instrument_id);
+	}
+
+	std::vector<CThostFtdcInstrumentField*> get_instruments(std::vector<std::string> _v_instrument_id)
+	{
+		return p_trader_handler->get_instruments(_v_instrument_id);
 	}
 
 	void read_instruments()
@@ -84,8 +90,6 @@ public: //qry for product/instrument/account
 		// std::vector<std::pair<std::string, int>> res;
 		std::ifstream ifs("instruments.recordio", std::ios::binary);
 		recordio::RecordReader reader(&ifs);
-
-		
 		std::string buffer;
 		while (reader.ReadBuffer(buffer)) {
 			std::cout<<"read ins:"<<std::endl;
@@ -95,8 +99,9 @@ public: //qry for product/instrument/account
 			std::cout<<instrument_fields.InstrumentID<<","<<instrument_fields.ProductClass<<std::endl;
 		}
 		reader.Close();
-
 	}
+
+	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 
 protected:
 	trader_util_ptr p_trader_handler = nullptr;
@@ -110,14 +115,15 @@ protected:
 	void calculate_kline();
 
 private:
+
 	std::vector<std::string> v_instrummentID;
 	unordered_map<std::string, int> m_filename_idx;
 	unordered_map<std::string, std::string> m_depth_filename;
 	unordered_map<std::string, std::string> m_kline_filename;
 	vector<std::ofstream *> v_depth_outfile;
 	vector<std::ofstream *> v_kline_outfile;
-	vector<FILE*> v_depth_file_handler;
-	vector<FILE*> v_kline_file_handler;
+	// vector<FILE*> v_depth_file_handler;
+	// vector<FILE*> v_kline_file_handler;
 	vector<recordio::RecordWriter> v_depth_writer;
 	vector<recordio::RecordWriter> v_kline_writer;
 	vector<TickToKlineHelper *> v_t2k_helper;
@@ -134,4 +140,9 @@ private:
 	std::string broker_id;
 	std::string user_id;
 	std::string name;
+	std::unordered_map<std::string, std::string> m_main_futures;
+	int option_size = 10;
+	std::vector<std::string> v_main_contract_ids;
+	std::vector<std::string> v_option_ids;
+	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
 };

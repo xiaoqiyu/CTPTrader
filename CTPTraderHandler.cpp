@@ -796,7 +796,7 @@ void CTPTraderHandler::OnRspQryDepthMarketData(CThostFtdcDepthMarketDataField *p
 {
     Task task = Task();
     task.task_name = ONRSPQRYDEPTHMARKETDATA;
-	std::cout<<"on rsp qry depth market"<<std::endl;
+	// std::cout<<"on rsp qry depth market"<<std::endl;
     if (pDepthMarketData)
     {
         CThostFtdcDepthMarketDataField *task_data = new CThostFtdcDepthMarketDataField();
@@ -3548,55 +3548,24 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 		// std::cout<<"in processRspQryInstrument, task_data---------"<<std::endl;
 
 		CThostFtdcInstrumentField* task_data = reinterpret_cast<CThostFtdcInstrumentField*>(task->task_data);
-		std::ofstream ofs("instruments.recordio", std::ios::binary);
+		std::ofstream ofs("instruments.recordio", std::ios::binary|std::ios::app);
 		recordio::RecordWriter writer(&ofs);
 		writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInstrumentField));
 		writer.Close();
+		v_instruments.push_back(task_data);
 		
-		if(task_data->ProductClass == '1')
-		{
-			// CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
-    		// strcpy(qryDepthMktDataField.InstrumentID, task_data->InstrumentID);
-    		// this->ReqQryDepthMarketData(&qryDepthMktDataField, nRequestID++);
-			// std::cout<<task_data->InstrumentID<<std::endl;
-			this->future_instrumentID.push_back(task_data->InstrumentID);
-		}else if(task_data->ProductClass == '2'){
-			// std::cout<<task_data->InstrumentID<<std::endl;
-			this->option_instrumentID.push_back(task_data->InstrumentID);
-		}
-		// std::cout<<"outside"<<task_data->InstrumentID<<","<<task_data->ProductID<<","<<task_data->ProductClass<<std::endl;
-		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
-		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
-		// printf("InstrumentName = %s\n", (task_data->InstrumentName));
-		// printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
-		// printf("ProductID = %s\n", (task_data->ProductID));
-		// printf("ProductClass = %d\n", task_data->ProductClass);
-		// printf("DeliveryYear = %d\n", task_data->DeliveryYear);
-		// printf("DeliveryMonth = %d\n", task_data->DeliveryMonth);
-		// printf("MaxMarketOrderVolume = %d\n", task_data->MaxMarketOrderVolume);
-		// printf("MinMarketOrderVolume = %d\n", task_data->MinMarketOrderVolume);
-		// printf("MaxLimitOrderVolume = %d\n", task_data->MaxLimitOrderVolume);
-		// printf("MinLimitOrderVolume = %d\n", task_data->MinLimitOrderVolume);
-		// printf("VolumeMultiple = %d\n", task_data->VolumeMultiple);
-		// printf("PriceTick = %f\n", task_data->PriceTick);
-		// printf("CreateDate = %s\n", (task_data->CreateDate));
-		// printf("OpenDate = %s\n", (task_data->OpenDate));
-		// printf("ExpireDate = %s\n", (task_data->ExpireDate));
-		// printf("StartDelivDate = %s\n", (task_data->StartDelivDate));
-		// printf("EndDelivDate = %s\n", (task_data->EndDelivDate));
-		// printf("InstLifePhase = %d\n", task_data->InstLifePhase);
-		// printf("IsTrading = %d\n", task_data->IsTrading);
-		// printf("PositionType = %d\n", task_data->PositionType);
-		// printf("PositionDateType = %d\n", task_data->PositionDateType);
-		// printf("LongMarginRatio = %f\n", task_data->LongMarginRatio);
-		// printf("ShortMarginRatio = %f\n", task_data->ShortMarginRatio);
-		// printf("MaxMarginSideAlgorithm = %d\n", task_data->MaxMarginSideAlgorithm);
-		// printf("UnderlyingInstrID = %s\n", (task_data->UnderlyingInstrID));
-		// printf("StrikePrice = %f\n", task_data->StrikePrice);
-		// printf("OptionsType = %d\n", task_data->OptionsType);
-		// printf("UnderlyingMultiple = %f\n", task_data->UnderlyingMultiple);
-		// printf("CombinationType = %d\n", task_data->CombinationType);
-		delete task_data;
+		// if(task_data->ProductClass == '1')
+		// {
+		// 	// CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
+    	// 	// strcpy(qryDepthMktDataField.InstrumentID, task_data->InstrumentID);
+    	// 	// this->ReqQryDepthMarketData(&qryDepthMktDataField, nRequestID++);
+		// 	// std::cout<<task_data->InstrumentID<<std::endl;
+		// 	this->future_instrumentID.push_back(task_data->InstrumentID);
+		// }else if(task_data->ProductClass == '2'){
+		// 	// std::cout<<task_data->InstrumentID<<std::endl;
+		// 	this->option_instrumentID.push_back(task_data->InstrumentID);
+		// }
+		// delete task_data;
 	}
 	if (task->task_error)
 	{
@@ -3615,16 +3584,16 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 
 void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 {
-	std::cout<<"process depth market data: data is:"<<task->task_data<<std::endl;
+	// std::cout<<"process depth market data: data is:"<<task->task_data<<std::endl;
 	if (task->task_data)
 	{
 		CThostFtdcDepthMarketDataField* task_data = reinterpret_cast<CThostFtdcDepthMarketDataField*>(task->task_data);
-		std::cout<<"depth market data result: "<<task_data->InstrumentID<<","<<task_data->PreOpenInterest<<std::endl;
-		printf("TradingDay = %s\n", (task_data->TradingDay));
-		printf("InstrumentID = %s\n", (task_data->InstrumentID));
+		// std::cout<<"depth market data result: "<<task_data->InstrumentID<<","<<task_data->UpdateTime<<","<<task_data->PreOpenInterest<<std::endl;
+		// printf("TradingDay = %s\n", (task_data->TradingDay));
+		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
 		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
 		// printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
-		printf("LastPrice = %f\n", task_data->LastPrice);
+		// printf("LastPrice = %f\n", task_data->LastPrice);
 		// printf("PreSettlementPrice = %f\n", task_data->PreSettlementPrice);
 		// printf("PreClosePrice = %f\n", task_data->PreClosePrice);
 		// printf("PreOpenInterest = %f\n", task_data->PreOpenInterest);
@@ -3634,13 +3603,13 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 		// printf("Volume = %d\n", task_data->Volume);
 		// printf("Turnover = %f\n", task_data->Turnover);
 		// printf("OpenInterest = %f\n", task_data->OpenInterest);
-		printf("ClosePrice = %f\n", task_data->ClosePrice);
+		// printf("ClosePrice = %f\n", task_data->ClosePrice);
 		// printf("SettlementPrice = %f\n", task_data->SettlementPrice);
 		// printf("UpperLimitPrice = %f\n", task_data->UpperLimitPrice);
 		// printf("LowerLimitPrice = %f\n", task_data->LowerLimitPrice);
 		// printf("PreDelta = %f\n", task_data->PreDelta);
 		// printf("CurrDelta = %f\n", task_data->CurrDelta);
-		printf("UpdateTime = %s\n", (task_data->UpdateTime));
+		// printf("UpdateTime = %s\n", (task_data->UpdateTime));
 		// printf("UpdateMillisec = %d\n", task_data->UpdateMillisec);
 		// printf("BidPrice1 = %f\n", task_data->BidPrice1);
 		// printf("BidVolume1 = %d\n", task_data->BidVolume1);
@@ -7936,6 +7905,11 @@ int CTPTraderHandler::exit()
 	{
 		delete (*it);
 	}
+	for(auto it = v_instruments.begin(); it!=v_instruments.end();++it)
+	{
+		delete(*it);
+	}
+
     return 1;
 };
 

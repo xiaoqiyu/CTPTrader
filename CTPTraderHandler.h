@@ -35,7 +35,7 @@ private:
     std::string broker_id;
     std::string user_id;
     std::vector<CThostFtdcDepthMarketDataField*> v_depth_market_data;
-
+    std::vector<CThostFtdcInstrumentField*> v_instruments;
 public:
     CTPTraderHandler(){};
     ~CTPTraderHandler()
@@ -47,18 +47,41 @@ public:
         cout << "~CTPTradeHandler" << endl;
     };
 
-    std::vector<CThostFtdcDepthMarketDataField*> get_depth_market_datas(std::vector<std::string> _v_instrument_id){
+    std::vector<CThostFtdcDepthMarketDataField*> get_depth_market_datas(std::vector<std::string> _v_instrument_id)
+    {   
+        for(auto it=v_depth_market_data.begin(); it!=v_depth_market_data.end(); ++it)
+        {
+            delete *it;
+        }
         v_depth_market_data.clear();
         for(auto it = _v_instrument_id.begin(); it != _v_instrument_id.end(); ++it)
         {
             CThostFtdcQryDepthMarketDataField mkt_fields = {0};
 	        std::strcpy(mkt_fields.InstrumentID, (*it).c_str());
             ReqQryDepthMarketData(&mkt_fields, nRequestID++);
-            sleep(2);
+            sleep(3);
         }
         return v_depth_market_data;
     }
 
+    std::vector<CThostFtdcInstrumentField*> get_instruments(std::vector<std::string> _v_instrument_id)
+    {
+        for(auto it=v_instruments.begin(); it!=v_instruments.end(); ++it)
+        {
+            delete *it;
+        }
+        v_instruments.clear();
+        for (auto it = _v_instrument_id.begin(); it!=_v_instrument_id.end();++it)
+        {
+            std::cout<<"Query Instrument for productID:"<<*it<<std::endl;
+            CThostFtdcQryInstrumentField pQryInstrument = {0};
+            std::strcpy(pQryInstrument.InstrumentID, (*it).c_str());
+            //TODO check return value
+            int ret = ReqQryInstrument(&pQryInstrument, nRequestID++);
+            sleep(3);
+        }
+        return v_instruments;
+    }
     
 
     std::vector<std::string> GetFutureInstrumentID()

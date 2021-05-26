@@ -52,8 +52,8 @@ def get_data(instrument_id="", trade_date=""):
         # y = np.sin(x)
         ax.plot(x, last_price_lst)
         # ax.set_xlabel(‘angle’)
-        ax.set_title(instrument_id)
-        x_idx = range(0, len(last_price_lst), 300)
+        ax.set_title('{0}_{1}'.format(instrument_id, trade_date))
+        x_idx = range(0, len(last_price_lst), 600)
         xtick_labels = []
         for _idx in x_idx:
             xtick_labels.append(min_lst[_idx])
@@ -63,7 +63,7 @@ def get_data(instrument_id="", trade_date=""):
         plt.xticks(x_idx, xtick_labels, rotation=60, FontSize=6)
         
         # ax.set_yticks([-1,0,1])
-        plt.savefig('last.png')
+        plt.savefig('{0}_{1}.png'.format(instrument_id, trade_date))
 
 
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
 #     subprocess.call("ls", shell=True)
     # subprocess.call("./main 1 hc2110 20210518")
-    get_data("hc2110", "20210520")
+    get_data("rb2110", "20210524")
 
 
 
