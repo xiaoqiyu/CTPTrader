@@ -100,64 +100,25 @@ int main(int argc, char *argv[])
         p_strategy = new TStrategy("t_strategy");
     }
 
-    //TODO check this read
-    // p_strategy->read_instruments();
-    // return 0;
     int ret = p_strategy->init(v_instrumentID, _conf_file_name);
 
 
-    std::string _str = "cu";
+
+#if true
+    sleep(5);
     std::string _user_id = "105600687";
     std::string _broker_id = "9040";
-    // std::tuple<std::vector<std::string>, std::vector<std::string>> ret_instrument_id = p_strategy->get_instrument_by_product(_str);
-    // std::vector<std::string> ret_future_id =std::get<0>(ret_instrument_id);
-    // std::vector<std::string> ret_option_id =std::get<1>(ret_instrument_id);
-    // for(auto it = ret_future_id.begin(); it!=ret_future_id.end();++it)
-    // {
-    //     std::cout<<*it<<std::endl;
-    // }
 
-    std::vector<std::string> _test_ins;
-    std::string _str1 = "m";
-    _test_ins.push_back(_str);
-    _test_ins.push_back(_str1);
-    // p_strategy->cache_main_instruments(_test_ins);
-
-#if false
-    std::vector<CThostFtdcInstrumentField*> ret_instruments = p_strategy->get_instruments(_test_ins);
-    sleep(5);
-    for(auto it = ret_instruments.begin(); it!=ret_instruments.end();++it)
-    {
-        CThostFtdcInstrumentField* p_instrument_field = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
-        std::cout<<p_instrument_field->InstrumentID<<","<<p_instrument_field->ProductID<<std::endl;
-    }
-    std::vector<CThostFtdcDepthMarketDataField*> ret_depth_market_data = p_strategy->get_market_datas(_test_ins);
-    for (auto it = ret_depth_market_data.begin(); it != ret_depth_market_data.end(); ++it)
-    {
-        CThostFtdcDepthMarketDataField* p_depth_mkt_data = reinterpret_cast<CThostFtdcDepthMarketDataField*>(*it);
-        std::cout<<p_depth_mkt_data->InstrumentID<<","<<p_depth_mkt_data->OpenInterest<<","<<p_depth_mkt_data->LastPrice<<","<<p_depth_mkt_data->PreOpenInterest<<","
-        <<p_depth_mkt_data->PreDelta<<std::endl;
-    }
-    std::cout<<"ret depth mkt size:"<<ret_depth_market_data.size()<<std::endl;
-    std::cout<<"ret ins size:"<<ret_instruments.size()<<std::endl;
-#endif 
-#if false
-
+    std::vector<CThostFtdcInvestorPositionField *>  ret_pos = p_strategy->get_investor_position(_user_id, _broker_id);
     sleep(5);
 
-    int ret_pos = p_strategy->get_investor_position(_user_id, _broker_id);
+    // int ret_trades = p_strategy->req_trade(_user_id, _broker_id);
+    // sleep(5);
+
+    std::vector<CThostFtdcTradingAccountField*>  ret_account = p_strategy->get_account(_user_id, _broker_id);
     sleep(5);
 
-    int ret_trades = p_strategy->req_trade(_user_id, _broker_id);
-    sleep(5);
-
-    int ret_account = p_strategy->get_account(_user_id, _broker_id);
-    sleep(5);
-
-    int ret_mkt = p_strategy->get_depth_mkt(v_instrumentID[0]);
-    sleep(5);
-
-    int ret_pos_detail = p_strategy->get_position_details(_user_id, _broker_id);
+    // int ret_pos_detail = p_strategy->get_position_details(_user_id, _broker_id);
     sleep(5);
 #endif
 

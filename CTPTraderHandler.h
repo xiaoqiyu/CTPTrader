@@ -36,6 +36,9 @@ private:
     std::string user_id;
     std::vector<CThostFtdcDepthMarketDataField*> v_depth_market_data;
     std::vector<CThostFtdcInstrumentField*> v_instruments;
+    std::vector<CThostFtdcInvestorPositionField *> v_investor_position_fields;
+    std::vector<CThostFtdcTradingAccountField*> v_trading_account;
+    
 public:
     CTPTraderHandler(){};
     ~CTPTraderHandler()
@@ -660,5 +663,13 @@ public:
 
     ///请求查询投资者持仓明细
 	int ReqQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID);
+
+    std::vector<CThostFtdcInvestorPositionField *> get_investor_position(std::string investor_id, std::string broker_id);
+
+    std::vector<CThostFtdcTradingAccountField*> get_account(std::string investor_id, std::string broker_id);
+
+    int req_trade(std::string investor_id, std::string broker_id);
+
+    int get_position_details(std::string investor_id, std::string broker_id);
 
 };

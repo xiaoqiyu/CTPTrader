@@ -66,9 +66,9 @@ public: //order function
 
 public: //qry for product/instrument/account
     std::tuple<std::vector<std::string>, std::vector<std::string>> get_instrument_by_product(std::string product_id);
-	int get_investor_position(std::string investor_id, std::string broker_id);
+	std::vector<CThostFtdcInvestorPositionField *> get_investor_position(std::string investor_id, std::string broker_id);
 	// void get_porfortlio();
-	int get_account(std::string investor_id, std::string broker_id);
+	std::vector<CThostFtdcTradingAccountField*> get_account(std::string investor_id, std::string broker_id);
 	int req_trade(std::string investor_id, std::string broker_id);
 	std::vector<std::string> getInstrumentID();
 	int get_depth_mkt(std::string instrument_id);

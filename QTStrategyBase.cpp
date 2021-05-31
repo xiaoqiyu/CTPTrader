@@ -235,22 +235,14 @@ std::tuple<std::vector<std::string>, std::vector<std::string>> QTStrategyBase::g
 
 }
 
-int QTStrategyBase::get_investor_position(std::string investor_id, std::string broker_id)
+std::vector<CThostFtdcInvestorPositionField *> QTStrategyBase::get_investor_position(std::string investor_id, std::string broker_id)
 {
-	CThostFtdcQryInvestorPositionField investor_pos_fields = {0};
-	std::strcpy(investor_pos_fields.InvestorID, investor_id.c_str());
-	std::strcpy(investor_pos_fields.BrokerID, broker_id.c_str());
-	return this->p_trader_handler->ReqQryInvestorPosition(&investor_pos_fields, nRequestID++);
+	return p_trader_handler->get_investor_position(investor_id, broker_id);
 }
 
-int QTStrategyBase::get_account(std::string investor_id, std::string broker_id)
+std::vector<CThostFtdcTradingAccountField*> QTStrategyBase::get_account(std::string investor_id, std::string broker_id)
 {
-	CThostFtdcQryTradingAccountField trading_account_fields = {0};
-	std::strcpy(trading_account_fields.AccountID, investor_id.c_str());
-	std::strcpy(trading_account_fields.BrokerID, broker_id.c_str());
-	int ret_req = this->p_trader_handler->ReqQryTradingAccount(&trading_account_fields, nRequestID++);	
-	std::cout<<"Req return is:"<<ret_req<<std::endl;
-	return ret_req;
+	return p_trader_handler->get_account(investor_id, broker_id);
 }
 
 int QTStrategyBase::req_trade(std::string investor_id, std::string broker_id)
@@ -264,14 +256,14 @@ int QTStrategyBase::req_trade(std::string investor_id, std::string broker_id)
 	return ret_req;
 }
 
-int QTStrategyBase::get_depth_mkt(std::string instrument_id)
-{
-	CThostFtdcQryDepthMarketDataField mkt_fields = {0};
-	std::strcpy(mkt_fields.InstrumentID, instrument_id.c_str());
-	int ret_req = this->p_trader_handler->ReqQryDepthMarketData(&mkt_fields, nRequestID++);
-	std::cout<<"Req return in depth market is:"<<ret_req<<std::endl;
-	return ret_req;
-}
+// int QTStrategyBase::get_depth_mkt(std::string instrument_id)
+// {
+// 	CThostFtdcQryDepthMarketDataField mkt_fields = {0};
+// 	std::strcpy(mkt_fields.InstrumentID, instrument_id.c_str());
+// 	int ret_req = this->p_trader_handler->ReqQryDepthMarketData(&mkt_fields, nRequestID++);
+// 	std::cout<<"Req return in depth market is:"<<ret_req<<std::endl;
+// 	return ret_req;
+// }
 
 int QTStrategyBase::get_position_details(std::string investor_id, std::string broker_id)
 {

@@ -146,7 +146,7 @@ void data_preprocessing(std::string instrument_id, std::string trade_date)
 {
 
 #if true
-    read_instruments();
+    // read_instruments();
     const std::string file_name = "/home/kiki/projects/CTPTrader/cache/"+instrument_id+"_depth_market_data_"+trade_date+".recordio"; 
     std::cout<<"read file is: "<<file_name<<std::endl;
     // FILE *fp = fopen(file_name.c_str(), "r");
@@ -185,7 +185,7 @@ void data_preprocessing(std::string instrument_id, std::string trade_date)
         perror("Error printed by perror");
         fprintf(stderr, "Error opening file: %s\n", strerror(errnum));
     }
-    #endif
+#endif
 
    
 }

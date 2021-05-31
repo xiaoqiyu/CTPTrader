@@ -35,3 +35,4 @@ cache/
 conf/ctp.ini
 draft.h
 TStrategy.* 
+Strategy/
