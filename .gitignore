@@ -36,3 +36,12 @@ conf/ctp.ini
 draft.h
 TStrategy.* 
 Strategy/
+core
+CTPMdHandler
+CTPTraderHandler
+draft
+instruments.recordio
+instruments.txt
+main
+QTStrategyBase
+TickToKlineHelper
