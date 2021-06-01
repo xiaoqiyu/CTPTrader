@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include "include/define.h"
+#include "define.h"
 
 // k线数据结构
 struct KLineDataType

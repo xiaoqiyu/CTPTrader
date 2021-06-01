@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <cstring>
 #include <algorithm>
-#include "include/ThostFtdcUserApiStruct.h"
+#include "ThostFtdcUserApiStruct.h"
 #include "TickToKlineHelper.h"
 
 //TODO to be updated

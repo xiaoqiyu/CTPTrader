@@ -1,7 +1,7 @@
 #include "CTPTraderHandler.h"
 #include "CTPMdHandler.h"
-#include "include/INIReader.h"
-#include "include/UserStruct.h"
+#include "INIReader.h"
+#include "UserStruct.h"
 #include <iostream>
 #include <unistd.h>
 #include <stdio.h>
@@ -10,12 +10,10 @@
 #include <sstream>
 #include <string>
 #include "TickToKlineHelper.h"
-#include "TStrategy.h"
 #include "DataStrategy.h"
 #include "models/data_analysis.h"
 #include <algorithm>
 #include <glog/logging.h>
-#include "draft.h"
 
 int nRequestID = 0;
 int DEBUG = 0;
@@ -96,6 +94,7 @@ int main(int argc, char *argv[])
         }
         return 0;
     }
+#if 0
     std::cout << "check ins in main" << v_instrumentID.size() << std::endl;
     QTStrategyBase *p_strategy = nullptr;
     if (_strategy_name == "data_strategy")
@@ -140,6 +139,7 @@ int main(int argc, char *argv[])
     p_strategy->start();
     p_strategy->stop();
     p_strategy->release();
+#endif
 
     return 0;
 }

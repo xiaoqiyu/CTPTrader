@@ -12,10 +12,10 @@
 #include <utility>
 #include <string.h>
 #include <algorithm>
-#include "include/ThostFtdcMdApi.h"
-#include "include/INIReader.h"
-#include "include/UserStruct.h"
-#include "include/define.h"
+#include "ThostFtdcMdApi.h"
+#include "INIReader.h"
+#include "UserStruct.h"
+#include "define.h"
 #include "TickToKlineHelper.h"
 #include "CTPTraderHandler.h"
 #include "CTPMdHandler.h"

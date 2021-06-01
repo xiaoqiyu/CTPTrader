@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <vector>
 #include <cstring>
-#include "include/ThostFtdcTraderApi.h"
-#include "include/UserStruct.h"
-#include "include/ThostFtdcUserApiDataType.h"
-#include "include/define.h"
+#include "ThostFtdcTraderApi.h"
+#include "UserStruct.h"
+#include "ThostFtdcUserApiDataType.h"
+#include "define.h"
 #include "recordio.h"
 #include "recordio_range.h"
 
