@@ -101,6 +101,22 @@ public: //qry for product/instrument/account
 		reader.Close();
 	}
 
+	void read_trading_account()
+	{
+		// std::vector<std::pair<std::string, int>> res;
+		std::ifstream ifs("trading_account.recordio", std::ios::binary);
+		recordio::RecordReader reader(&ifs);
+		std::string buffer;
+		while (reader.ReadBuffer(buffer)) {
+			std::cout<<"read trading account:"<<std::endl;
+			CThostFtdcTradingAccountField account_fields={0};
+			assert(buffer.size() == sizeof(account_fields));
+			memcpy(&account_fields, buffer.data(), buffer.size());
+			std::cout<<account_fields.AccountID<<","<<account_fields.Balance<<","<<account_fields.Credit<<std::endl;
+		}
+		reader.Close();
+	}
+
 	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 
 protected:

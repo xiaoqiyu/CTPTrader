@@ -17,6 +17,7 @@
 				"${fileDirname}/${fileBasenameNoExtension}",
 				"-lthosttraderapi_se",
 				"-lthostmduserapi_se",
+				"glog/lib/libglog.a",
 				"-lpthread",
 				"-lz"
 

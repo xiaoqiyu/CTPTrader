@@ -3233,7 +3233,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
 		std::cout<<"process trading position,"<<task_data->InstrumentID<<std::endl;
 		// FILE *fp = fopen("position.txt", "a");
 		ofstream ofs;
-		ofs.open("position.txt", std::ios::binary);
+		ofs.open("position.txt", std::ios::app);
 		ofs<<task_data->InstrumentID<<","
 		<<task_data->BrokerID<<","
 		<<task_data->InvestorID<<","
@@ -3308,61 +3308,61 @@ void CTPTraderHandler::processRspQryTradingAccount(Task* task)
 		// FILE *fp = fopen("trading_account.txt", "a");
 		// fwrite(task_data, 1, sizeof(CThostFtdcTradingAccountField), fp);
 		// fclose(fp);
-		std::ofstream ofs("trading_account.txt", std::ios::binary);
-		// recordio::RecordWriter writer(&ofs);
-		// writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcTradingAccountField));
-		// writer.Close();
+		std::ofstream ofs("trading_account.recordio", std::ios::binary);
+		recordio::RecordWriter writer(&ofs);
+		writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcTradingAccountField));
+		writer.Close();
 		
-		ofs<<task_data->BrokerID <<","
-		<< task_data->AccountID <<","
-		<< task_data->PreMortgage <<","
-		<< task_data->PreCredit <<","
-		<< task_data->PreDeposit <<","
-		<< task_data->PreBalance <<","
-		<< task_data->PreMargin <<","
-		<< task_data->InterestBase <<","
-		<< task_data->Interest <<","
-		<< task_data->Deposit <<","
-		<< task_data->Withdraw <<","
-		<< task_data->FrozenMargin <<","
-		<< task_data->FrozenCash <<","
-		<< task_data->FrozenCommission <<","
-		<< task_data->CurrMargin <<","
-		<< task_data->CashIn <<","
-		<< task_data->Commission <<","
-		<< task_data->CloseProfit <<","
-		<< task_data->PositionProfit <<","
-		<< task_data->Balance <<","
-		<< task_data->Available <<","
-		<< task_data->WithdrawQuota <<","
-		<< task_data->Reserve <<","
-		<< task_data->TradingDay <<","
-		<< task_data->SettlementID <<","
-		<< task_data->Credit <<","
-		<< task_data->Mortgage <<","
-		<< task_data->ExchangeMargin <<","
-		<< task_data->DeliveryMargin <<","
-		<< task_data->ExchangeDeliveryMargin <<","
-		<< task_data->ReserveBalance <<","
-		<< task_data->CurrencyID <<","
-		<< task_data->PreFundMortgageIn <<","
-		<< task_data->PreFundMortgageOut <<","
-		<< task_data->FundMortgageIn <<","
-		<< task_data->FundMortgageOut <<","
-		<< task_data->FundMortgageAvailable <<","
-		<< task_data->MortgageableFund <<","
-		<< task_data->SpecProductMargin <<","
-		<< task_data->SpecProductFrozenMargin <<","
-		<< task_data->SpecProductCommission <<","
-		<< task_data->SpecProductFrozenCommission <<","
-		<< task_data->SpecProductPositionProfit <<","
-		<< task_data->SpecProductCloseProfit <<","
-		<< task_data->SpecProductPositionProfitByAlg <<","
-		<< task_data->SpecProductExchangeMargin <<","
-		<< task_data->BizType <<","
-		<< task_data->FrozenSwap <<","
-		<< task_data->RemainSwap <<std::endl;
-		ofs.close();
+		// ofs<<task_data->BrokerID <<","
+		// << task_data->AccountID <<","
+		// << task_data->PreMortgage <<","
+		// << task_data->PreCredit <<","
+		// << task_data->PreDeposit <<","
+		// << task_data->PreBalance <<","
+		// << task_data->PreMargin <<","
+		// << task_data->InterestBase <<","
+		// << task_data->Interest <<","
+		// << task_data->Deposit <<","
+		// << task_data->Withdraw <<","
+		// << task_data->FrozenMargin <<","
+		// << task_data->FrozenCash <<","
+		// << task_data->FrozenCommission <<","
+		// << task_data->CurrMargin <<","
+		// << task_data->CashIn <<","
+		// << task_data->Commission <<","
+		// << task_data->CloseProfit <<","
+		// << task_data->PositionProfit <<","
+		// << task_data->Balance <<","
+		// << task_data->Available <<","
+		// << task_data->WithdrawQuota <<","
+		// << task_data->Reserve <<","
+		// << task_data->TradingDay <<","
+		// << task_data->SettlementID <<","
+		// << task_data->Credit <<","
+		// << task_data->Mortgage <<","
+		// << task_data->ExchangeMargin <<","
+		// << task_data->DeliveryMargin <<","
+		// << task_data->ExchangeDeliveryMargin <<","
+		// << task_data->ReserveBalance <<","
+		// << task_data->CurrencyID <<","
+		// << task_data->PreFundMortgageIn <<","
+		// << task_data->PreFundMortgageOut <<","
+		// << task_data->FundMortgageIn <<","
+		// << task_data->FundMortgageOut <<","
+		// << task_data->FundMortgageAvailable <<","
+		// << task_data->MortgageableFund <<","
+		// << task_data->SpecProductMargin <<","
+		// << task_data->SpecProductFrozenMargin <<","
+		// << task_data->SpecProductCommission <<","
+		// << task_data->SpecProductFrozenCommission <<","
+		// << task_data->SpecProductPositionProfit <<","
+		// << task_data->SpecProductCloseProfit <<","
+		// << task_data->SpecProductPositionProfitByAlg <<","
+		// << task_data->SpecProductExchangeMargin <<","
+		// << task_data->BizType <<","
+		// << task_data->FrozenSwap <<","
+		// << task_data->RemainSwap <<std::endl;
+		// ofs.close();
 		v_trading_account.push_back(task_data);
 		delete task_data;
 	}
@@ -3554,7 +3554,7 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 		// std::cout<<"in processRspQryInstrument, task_data---------"<<std::endl;
 
 		CThostFtdcInstrumentField* task_data = reinterpret_cast<CThostFtdcInstrumentField*>(task->task_data);
-		std::ofstream ofs("instruments.txt", std::ios::out);
+		std::ofstream ofs("instruments.txt", std::ios::app);
 		// recordio::RecordWriter writer(&ofs);
 		// writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInstrumentField));
 		// writer.Close();
@@ -3596,19 +3596,6 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
              << task_data->UnderlyingInstrID <<std::endl;
 
 		v_instruments.push_back(task_data);
-		
-		// if(task_data->ProductClass == '1')
-		// {
-		// 	// CThostFtdcQryDepthMarketDataField qryDepthMktDataField = {0};
-    	// 	// strcpy(qryDepthMktDataField.InstrumentID, task_data->InstrumentID);
-    	// 	// this->ReqQryDepthMarketData(&qryDepthMktDataField, nRequestID++);
-		// 	// std::cout<<task_data->InstrumentID<<std::endl;
-		// 	this->future_instrumentID.push_back(task_data->InstrumentID);
-		// }else if(task_data->ProductClass == '2'){
-		// 	// std::cout<<task_data->InstrumentID<<std::endl;
-		// 	this->option_instrumentID.push_back(task_data->InstrumentID);
-		// }
-		// delete task_data;
 	}
 	if (task->task_error)
 	{
@@ -3631,51 +3618,6 @@ void CTPTraderHandler::processRspQryDepthMarketData(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcDepthMarketDataField* task_data = reinterpret_cast<CThostFtdcDepthMarketDataField*>(task->task_data);
-		// std::cout<<"depth market data result: "<<task_data->InstrumentID<<","<<task_data->UpdateTime<<","<<task_data->PreOpenInterest<<std::endl;
-		// printf("TradingDay = %s\n", (task_data->TradingDay));
-		// printf("InstrumentID = %s\n", (task_data->InstrumentID));
-		// printf("ExchangeID = %s\n", (task_data->ExchangeID));
-		// printf("ExchangeInstID = %s\n", (task_data->ExchangeInstID));
-		// printf("LastPrice = %f\n", task_data->LastPrice);
-		// printf("PreSettlementPrice = %f\n", task_data->PreSettlementPrice);
-		// printf("PreClosePrice = %f\n", task_data->PreClosePrice);
-		// printf("PreOpenInterest = %f\n", task_data->PreOpenInterest);
-		// printf("OpenPrice = %f\n", task_data->OpenPrice);
-		// printf("HighestPrice = %f\n", task_data->HighestPrice);
-		// printf("LowestPrice = %f\n", task_data->LowestPrice);
-		// printf("Volume = %d\n", task_data->Volume);
-		// printf("Turnover = %f\n", task_data->Turnover);
-		// printf("OpenInterest = %f\n", task_data->OpenInterest);
-		// printf("ClosePrice = %f\n", task_data->ClosePrice);
-		// printf("SettlementPrice = %f\n", task_data->SettlementPrice);
-		// printf("UpperLimitPrice = %f\n", task_data->UpperLimitPrice);
-		// printf("LowerLimitPrice = %f\n", task_data->LowerLimitPrice);
-		// printf("PreDelta = %f\n", task_data->PreDelta);
-		// printf("CurrDelta = %f\n", task_data->CurrDelta);
-		// printf("UpdateTime = %s\n", (task_data->UpdateTime));
-		// printf("UpdateMillisec = %d\n", task_data->UpdateMillisec);
-		// printf("BidPrice1 = %f\n", task_data->BidPrice1);
-		// printf("BidVolume1 = %d\n", task_data->BidVolume1);
-		// printf("AskPrice1 = %f\n", task_data->AskPrice1);
-		// printf("AskVolume1 = %d\n", task_data->AskVolume1);
-		// printf("BidPrice2 = %f\n", task_data->BidPrice2);
-		// printf("BidVolume2 = %d\n", task_data->BidVolume2);
-		// printf("AskPrice2 = %f\n", task_data->AskPrice2);
-		// printf("AskVolume2 = %d\n", task_data->AskVolume2);
-		// printf("BidPrice3 = %f\n", task_data->BidPrice3);
-		// printf("BidVolume3 = %d\n", task_data->BidVolume3);
-		// printf("AskPrice3 = %f\n", task_data->AskPrice3);
-		// printf("AskVolume3 = %d\n", task_data->AskVolume3);
-		// printf("BidPrice4 = %f\n", task_data->BidPrice4);
-		// printf("BidVolume4 = %d\n", task_data->BidVolume4);
-		// printf("AskPrice4 = %f\n", task_data->AskPrice4);
-		// printf("AskVolume4 = %d\n", task_data->AskVolume4);
-		// printf("BidPrice5 = %f\n", task_data->BidPrice5);
-		// printf("BidVolume5 = %d\n", task_data->BidVolume5);
-		// printf("AskPrice5 = %f\n", task_data->AskPrice5);
-		// printf("AskVolume5 = %d\n", task_data->AskVolume5);
-		// printf("AveragePrice = %f\n", task_data->AveragePrice);
-		// printf("ActionDay = %s\n", (task_data->ActionDay));
 		v_depth_market_data.push_back(task_data);
 		// delete task_data;
 	}

@@ -14,6 +14,7 @@
 #include "DataStrategy.h"
 #include "models/data_analysis.h"
 #include <algorithm>
+#include <glog/logging.h>
 #include "draft.h"
 
 int nRequestID = 0;
@@ -50,6 +51,12 @@ int main(int argc, char *argv[])
     //     std::cout<<t.first<<":"<<t.second<<std::endl;
     // }
     // return 0;
+
+    //  google::InitGoogleLogging(argv[0]);
+
+    // // ...
+    // int num_cookies = 1;
+    // LOG(INFO) << "Found " << num_cookies << " cookies";
     std::string _conf_file_name;
     std::string _instrument_id;
     std::string mode = "0";
@@ -122,6 +129,13 @@ int main(int argc, char *argv[])
     sleep(5);
 #endif
 
+    p_strategy->read_trading_account();
+    std::vector<CThostFtdcInvestorPositionField *> ret_position = p_strategy->get_investor_position(_user_id, _broker_id);
+    std::cout<<"position size is:"<<ret_position.size()<<"--------------------------------------"<<std::endl;
+    for(auto it=ret_position.begin(); it!=ret_position.end();++it)
+    {
+        std::cout<<(*it)->InstrumentID<<","<<(*it)->CloseAmount<<","<<(*it)->OpenAmount<<","<<(*it)->Position<<","<<(*it)->OpenCost<<std::endl;
+    }
     //start strategy 
     p_strategy->start();
     p_strategy->stop();

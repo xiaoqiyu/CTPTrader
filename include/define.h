@@ -1,7 +1,7 @@
 #pragma once
 
 
-#define LOG(format, ...) printf(format, __VA_ARGS__)
+// #define LOG(format, ...) printf(format, __VA_ARGS__)
 
 //Trader Handler Task 
 #define ONFRONTCONNECTED 0

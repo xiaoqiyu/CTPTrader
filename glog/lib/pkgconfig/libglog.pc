@@ -1,0 +1,10 @@
+prefix=/home/jieping/third_party/glog
+exec_prefix=/home/jieping/third_party/glog/bin
+libdir=/home/jieping/third_party/glog/lib
+includedir=/home/jieping/third_party/glog/include
+
+Name: libglog
+Description: Google Log (glog) C++ logging framework
+Version: 0.5.0
+Libs: -L${libdir} -lglog
+Cflags: -I${includedir}
