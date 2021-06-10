@@ -16,7 +16,6 @@ void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const s
 	m_volumeVec.clear();
 	m_KLineDataVec.clear();
 
-	std::cout << "开始转换tick到k线..." << std::endl;
 	// 默认读取的tick数据表有4个字段：合约代码、更新时间、最新价、成交量
 	std::ifstream srcInFile;
 	std::ofstream dstOutFile;
@@ -78,7 +77,6 @@ void TickToKlineHelper::KLineFromLocalData(const std::string &sFilePath, const s
 	}
 	srcInFile.close();
 	dstOutFile.close();
-	std::cout << "k线生成成功" << std::endl;
 }
 
 bool TickToKlineHelper::KLineFromRealtimeData(CThostFtdcDepthMarketDataField *pDepthMarketData, KLineDataType * p_kline_data)

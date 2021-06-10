@@ -11,6 +11,7 @@
 #include "UserStruct.h"
 #include "define.h"
 #include "TickToKlineHelper.h"
+#include <glog/logging.h>
 
 // INIReader reader;
 extern int nRequestID;
@@ -89,14 +90,13 @@ public:
 
 	void init(std::vector<std::string> &v_instrumentid)
 	{
-		std::cout << "CTPMdHandler Init..." << std::endl;
-		std::cout << v_instrumentid.size();
+		LOG(INFO)<< "CTPMdHandler Init......";
 		this->g_pMdUserApi->Init();
 		this->active_ = true;
 		this->p_mktdata_queue = new DataQueue();
 		for (auto iter = v_instrumentid.begin(); iter != v_instrumentid.end(); ++iter)
 		{
-			std::cout << "push in instrument:" << *iter << std::endl;
+			LOG(INFO)<< "push instrument in init CTPMdHandler->"<< *iter;
 			this->v_instrumentID.push_back(*iter);
 		}
 		// strcpy(this->InstrumentID, instrument_id);

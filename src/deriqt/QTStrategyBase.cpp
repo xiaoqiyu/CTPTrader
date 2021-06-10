@@ -5,35 +5,38 @@ bool cmp_max(std::pair<std::string, double> x, std::pair<std::string, double>y)
 {
 	return x.second > y.second;
 }
-	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
+void cache_main_instruments(std::vector<std::string> _v_instrument_id);
+
 int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::string _conf_file_name)
 {
 	//初始
 	FileName _conf_file = {'\0'};
 	// snprintf(_conf_file, 100, "conf/%s.ini", argv[1]);
 
-	snprintf(_conf_file, 100, "conf/%s.ini", _conf_file_name.c_str());
+	// snprintf(_conf_file, 50, _conf_file_name.c_str());
+	strcpy(_conf_file, _conf_file_name.c_str());
 	INIReader reader(_conf_file);
 	if (reader.ParseError() != 0)
 	{
-		std::cout << "Can't load config file in current directory:" << _conf_file << std::endl;
+		LOG(FATAL)<< "Fail to load config file in current directory:"<< _conf_file;
 		return 1;
 	}
 
 	char mdAddr[40];
 	char ch[40];
 
+	this->task_tag = _v_product_ids[0];
 	//CTP Trader handler init
 	this->p_trader_handler = new CTPTraderHandler();
 	this->p_trader_handler->CreateFtdcTraderApi();
 	this->p_trader_handler->RegisterFront(strcpy(ch, reader.Get("td", "FrontAddr", "127.0.0.1:1234").c_str()));
-	this->p_trader_handler->init();
+	this->p_trader_handler->init(task_tag);
 	sleep(5);
 
 	this->broker_id = reader.Get("user", "BrokerID", "9999");
 	this->user_id = reader.Get("user", "UserID", "123456");
 
-	std::cout << "===============Start CTP Authenticate================" << std::endl;
+	LOG(INFO) << "Start CTP Authenticate.......";
 	CThostFtdcReqAuthenticateField reqAuth = {0};
 	strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
 	strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
@@ -43,7 +46,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->p_trader_handler->ReqAuthenticate(&reqAuth, nRequestID++);
 	sleep(5);
 
-	std::cout << "==================Start CTP Login====================" << std::endl;
+	LOG(INFO)<< "Start CTP Login......" << std::endl;
 	CThostFtdcReqUserLoginField reqUserLogin = {0};
 	strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
 	strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
@@ -55,15 +58,17 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	sleep(5);
 
 	std::string trading_date = this->p_trader_handler->getTradingDay();
-	std::cout << "Trading date is: " << trading_date << endl;
+	LOG(INFO)<< "Trading date is: " << trading_date;
 
 	this->cache_main_instruments(_v_product_ids);
 	for(auto it=v_main_contract_ids.begin(); it!=v_main_contract_ids.end();++it)
 	{
+		LOG(INFO)<<"push main contract id in init:"<<(*it);
 		this->v_instrummentID.push_back((*it));
 	}
 	for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
 	{
+		LOG(INFO)<<"push option id in init(strategy base):"<<(*it);
 		this->v_instrummentID.push_back((*it));
 	}
 	
@@ -73,7 +78,6 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->p_md_handler->set_config(_conf_file);
 	this->p_md_handler->CreateFtdcMdApi();
 	this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
-	// std::cout<<"in qt strategy:"<<_v_ins.size()<<std::endl;
 	this->p_md_handler->init(this->v_instrummentID);
 
 	//data/order thread init
@@ -86,40 +90,40 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	//private varilbe init
 	for(auto iter = this->v_instrummentID.begin(); iter!=this->v_instrummentID.end(); ++iter)
 	{
-		std::string _instrumentid = *iter;
-		// this->v_instrummentID.push_back(_instrumentid);
-		FileName mkt_depth_file_name = {'\0'};
-		FileName kline_file_name = {'\0'};
-		sprintf(mkt_depth_file_name, "cache/%s_depth_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
-		sprintf(kline_file_name, "cache/%s_kline_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
-		std::ofstream* p_mkt_depth_outfile = new std::ofstream();
-		// FILE* fp_depth_mkt;
-		std::ofstream* p_kline_outfile = new std::ofstream();
-		// FILE* fp_kline; 
-		p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app|std::ios::binary); // append mode
-		// fp_depth_mkt = fopen(mkt_depth_file_name, "a");
-		// fp_kline = fopen(kline_file_name, "a");
-		p_kline_outfile->open(kline_file_name, std::ios::app|std::ios::binary);
-		m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
-		m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
-		m_kline_filename.insert(std::pair<std::string, std::string>(_instrumentid, kline_file_name));
-		// v_depth_outfile.push_back(p_mkt_depth_outfile);
 
-		// std::ofstream ofs(path, std::ios::binary);
-  		recordio::RecordWriter _depth_mkt_writer(p_mkt_depth_outfile);
-		v_depth_writer.push_back(_depth_mkt_writer);
+		// std::string _instrumentid = *iter;
+		// FileName mkt_depth_file_name = {'\0'};
+		// FileName kline_file_name = {'\0'};
+		// sprintf(mkt_depth_file_name, "cache/mkt/%s_depth_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
+		// sprintf(kline_file_name, "cache/mkt/%s_kline_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
+		// std::ofstream* p_mkt_depth_outfile = new std::ofstream();
+		// std::ofstream* p_kline_outfile = new std::ofstream();
+		
+		
+		// p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app|std::ios::binary); // append mode
+	
+		// p_kline_outfile->open(kline_file_name, std::ios::app|std::ios::binary);
+		// m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
+		// m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
+		// m_kline_filename.insert(std::pair<std::string, std::string>(_instrumentid, kline_file_name));
+	
 
-		recordio::RecordWriter _kline_writer(p_kline_outfile);
-		v_kline_writer.push_back(_kline_writer);
+  		// recordio::RecordWriter _depth_mkt_writer(p_mkt_depth_outfile);
+		// v_depth_writer.push_back(_depth_mkt_writer);
 
-		// if (NULL != fp_depth_mkt){v_depth_file_handler.push_back(fp_depth_mkt);}
-		// if(NULL != fp_kline){v_kline_file_handler.push_back(fp_kline);}
-		// v_kline_outfile.push_back(p_kline_outfile);
+		// recordio::RecordWriter _kline_writer(p_kline_outfile);
+		// v_kline_writer.push_back(_kline_writer);
+
 		TickToKlineHelper *p_kline_helper =  new TickToKlineHelper();
 		v_t2k_helper.push_back(p_kline_helper);
 		cnt ++;
 	}
-	
+	std::ofstream * p_depth_mkt = new std::ofstream();
+	FileName _depth_mkt_filename = {'\0'};
+	sprintf(_depth_mkt_filename, "cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
+	p_depth_mkt->open(_depth_mkt_filename, std::ios::app|std::ios::binary);
+	// recordio::RecordWriter _depth_mkt_writer(p_depth_mkt);
+	this->p_depth_mkt_writer = new recordio::RecordWriter(p_depth_mkt);
 	// p_kline_helper = new TickToKlineHelper();
 	// p_mktdata_queue = new DataQueue();
 	this->p_order_queue = new DataQueue();
@@ -139,33 +143,30 @@ void QTStrategyBase::on_tick()
 			{
 			case FDEPTHMKT: //期货深度行情数据
 			{
-				// std::cout<<"in on_tick:"<<data.data_type<<std::endl;
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					// this->calculate_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
+					this->calculate_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
 					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
-					// std::cout << "Save Data: " << pDepthMarketData->InstrumentID<<std::endl;//减少IO阻塞
-					// std::cout<<"get fstream index:"<<std::endl;
-					int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
-					
-					// fwrite(pDepthMarketData, 1, sizeof(CThostFtdcDepthMarketDataField),this->v_depth_file_handler[_idx]);
-					v_depth_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
-					KLineDataType *p_kline_data = new KLineDataType();
-					bool ret = this->v_t2k_helper[_idx]->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
-					int w_kline;
-					if(ret)
-					{
-						// w_kline = fwrite(p_kline_data, 1, sizeof(KLineDataType), this->v_kline_file_handler[_idx]);
-						int ret_write_buffer = v_kline_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(p_kline_data), sizeof(KLineDataType));
-					}
-					delete p_kline_data;
+				
+					// int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
+					// v_depth_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
+					this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
+
+					// KLineDataType *p_kline_data = new KLineDataType();
+					// bool ret = this->v_t2k_helper[_idx]->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
+					// int w_kline;
+					// if(ret)
+					// {
+					// 	int ret_write_buffer = v_kline_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(p_kline_data), sizeof(KLineDataType));
+					// }
+					// delete p_kline_data;
 					delete pDepthMarketData;
 				}
 				if (data.error)
 				{
-					std::cout <<"handle error in market data subscribe" << std::endl;
 					// delete data.error;
+					LOG(ERROR)<<"ERROR msg in mkt data subscribe";
 				}
 
 				break;
@@ -225,7 +226,6 @@ void QTStrategyBase::insert_market_order(TThostFtdcPriceType limit_price, TThost
 
 std::tuple<std::vector<std::string>, std::vector<std::string>> QTStrategyBase::get_instrument_by_product(std::string product_id)
 {
-	std::cout<<"Query Instrument for productID:"<<product_id<<std::endl;
 	CThostFtdcQryInstrumentField pQryInstrument = {0};
 	std::strcpy(pQryInstrument.InstrumentID, product_id.c_str());
 	//TODO check return value
@@ -252,7 +252,7 @@ int QTStrategyBase::req_trade(std::string investor_id, std::string broker_id)
 	std::strcpy(trade_fields.BrokerID, broker_id.c_str());
 	// int ret_req = this->p_trader_handler->ReqQryTradingAccount(&trade_fields, nRequestID++);	
 	int ret_req = this->p_trader_handler->ReqQryTrade(&trade_fields, nRequestID++);
-	std::cout<<"Req return is:"<<ret_req<<std::endl;
+	LOG(INFO)<<"Req return in req_trade:"<<ret_req;
 	return ret_req;
 }
 
@@ -271,7 +271,7 @@ int QTStrategyBase::get_position_details(std::string investor_id, std::string br
 	std::strcpy(pos_detail_fields.InvestorID, investor_id.c_str());
 	std::strcpy(pos_detail_fields.BrokerID, broker_id.c_str());
 	int ret_req = this->p_trader_handler->ReqQryInvestorPositionDetail(&pos_detail_fields,nRequestID++);
-	std::cout<<"Req return in position details is:"<<ret_req<<std::endl;
+	LOG(INFO)<<"Req return in position details is:"<<ret_req;
 	return ret_req;
 }
 
@@ -292,31 +292,14 @@ void QTStrategyBase::release()
 		delete *iter;
 	}
 
-	//TODO this will be added if maintain fstream pointer when file open in init and close in exit
-	// for(auto iter=v_depth_outfile.begin(); iter!=v_depth_outfile.end();++iter)
+	// for(auto iter=v_depth_writer.begin(); iter!=v_depth_writer.end(); ++iter)
 	// {
-	// 	(*iter)->close();
+	// 	(*iter).Close();
 	// }
-	// for(auto iter=v_kline_outfile.begin(); iter!=v_kline_outfile.end(); ++iter)
+	// for(auto  iter=v_kline_writer.begin(); iter!=v_kline_writer.end(); ++iter)
 	// {
-	// 	(*iter)->close();
+	// 	(*iter).Close();
 	// }
-	// for(auto  iter=v_depth_file_handler.begin(); iter!=v_depth_file_handler.end();++iter)
-	// {
-	// 	fclose(*iter);
-	// }
-	// for(auto iter=v_kline_file_handler.begin(); iter!=v_kline_file_handler.end();++iter)
-	// {
-	// 	fclose(*iter);
-	// }
-	for(auto iter=v_depth_writer.begin(); iter!=v_depth_writer.end(); ++iter)
-	{
-		(*iter).Close();
-	}
-	for(auto  iter=v_kline_writer.begin(); iter!=v_kline_writer.end(); ++iter)
-	{
-		(*iter).Close();
-	}
 	this->p_md_handler->exit();
 	this->p_trader_handler->exit();
 }
@@ -328,7 +311,8 @@ void QTStrategyBase::calculate_factors(CThostFtdcDepthMarketDataField *pDepthMar
 	{
 		this->v_factor.clear();
 	}
-	std::vector<float> v_factor_val;
+	
+	std::vector<double> v_factor_val;
 	v_factor_val.push_back(pDepthMarketData->LastPrice);
 	v_factor_val.push_back(pDepthMarketData->AveragePrice);
 	v_factor_val.push_back(pDepthMarketData->BidPrice1-pDepthMarketData->AskPrice1);
@@ -411,7 +395,7 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 	//get main future ids by cal results
 	for(const auto& n:m_main_futures)
 	{
-		std::cout<<n.first<<":"<<n.second<<std::endl;
+		LOG(INFO)<<"push  main contract id in cache main contract->"<<n.first<<","<<n.second;
 		v_main_contract_ids.push_back(n.second);
 	}
 
@@ -432,10 +416,9 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 		}
 	}
 
-		//calculate target option id lst
+	//calculate target option id lst
 	for(auto& t:m_option_val){
-		std::cout<<t.first<<"option size:"<<t.second.size()<<std::endl;
-		//TODO:check sort here
+		LOG(INFO)<<t.first<<"option size:"<<t.second.size();
 		sort(t.second.begin(), t.second.end(), [](const std::pair<std::string, double>& x, const std::pair<std::string, double>& y) -> bool {return x.second>=y.second;});
 		const auto it = t.second.begin();
 		int cnt = 0;
@@ -444,12 +427,7 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 			cnt ++;
 		}
 	}
-	// for(auto it=v_option_ids.begin();it!=v_option_ids.end();++it)
-	// {
-	// 	std::cout<<*it<<std::endl;
-	// }
 
-	//cache target instruments for both futures and option;{instrument_id: p_instrument_field}
 	for(auto it=ret_instruments.begin(); it!=ret_instruments.end();++it){
 		CThostFtdcInstrumentField* p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
 		std::string _instrument_id = p_tmp->InstrumentID;
@@ -463,11 +441,7 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 		}
 	}
 	
-	// for(const auto& it:m_target_instruments)
-	// {
-	// 	std::cout<<it.first<<":"<<it.second->ProductID<<","<<it.second->UnderlyingInstrID<<std::endl;
-	// }
-	//delete temp instrument and market data
+
 	for(auto it =ret_instruments.begin(); it!=ret_instruments.end();++it)
 	{
 		delete *it;

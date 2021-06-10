@@ -9,8 +9,10 @@
 #include <unordered_map>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 #include "TickToKlineHelper.h"
 #include "DataStrategy.h"
+#include "TStrategy.h"
 #include "models/data_analysis.h"
 #include <algorithm>
 #include <glog/logging.h>
@@ -50,52 +52,47 @@ int main(int argc, char *argv[])
     // }
     // return 0;
 
-    //  google::InitGoogleLogging(argv[0]);
-
     // // ...
-    // int num_cookies = 1;
-    // LOG(INFO) << "Found " << num_cookies << " cookies";
+    google::InitGoogleLogging(argv[0]);
+    FLAGS_log_dir = "./log/";
+    int num_cookies = 1;
     std::string _conf_file_name;
     std::string _instrument_id;
     std::string mode = "0";
     std::string _strategy_name = "data_strategy";
     std::vector<std::string> v_instrumentID;
+    
+    
     if (argc <= 1)
     {
-        std::cout << "Please enter a config name" << std::endl;
-        _conf_file_name = "test";
+        LOG(ERROR) << "Please enter a config name" ;
+        _conf_file_name = "/home/kiki/projects/DERIQT/test.ini";
         v_instrumentID.push_back("rb2110");
         _strategy_name = "data_strategy";
-        // _instrument_id = "rb2110";
-        // return 1;
     }
     else
     {
         _conf_file_name = argv[3];
         _instrument_id = argv[2];
         mode = argv[1];
-        // _strategy_name = argv[4];
         std::stringstream sstr(_instrument_id);
         std::string token;
-        int cnt = 0;
         while (getline(sstr, token, ','))
         {
-            std::cout << "token:" << token << std::endl;
             v_instrumentID.push_back(token);
         }
     }
+    
     if(mode == "1")
     {
         std::string _trade_date = argv[3];
         for(auto it=v_instrumentID.begin(); it != v_instrumentID.end(); ++it)
         {
             data_preprocessing(*it, _trade_date);
-            // std::cout<<"data preprocessing"<<std::endl;
         }
         return 0;
     }
-#if 0
-    std::cout << "check ins in main" << v_instrumentID.size() << std::endl;
+#if 1
     QTStrategyBase *p_strategy = nullptr;
     if (_strategy_name == "data_strategy")
     {
@@ -106,7 +103,7 @@ int main(int argc, char *argv[])
         p_strategy = new TStrategy("t_strategy");
     }
 
-    int ret = p_strategy->init(v_instrumentID, _conf_file_name);
+    p_strategy->init(v_instrumentID, _conf_file_name);
 
 
 
@@ -128,13 +125,12 @@ int main(int argc, char *argv[])
     sleep(5);
 #endif
 
-    p_strategy->read_trading_account();
+    // p_strategy->read_trading_account();
     std::vector<CThostFtdcInvestorPositionField *> ret_position = p_strategy->get_investor_position(_user_id, _broker_id);
-    std::cout<<"position size is:"<<ret_position.size()<<"--------------------------------------"<<std::endl;
-    for(auto it=ret_position.begin(); it!=ret_position.end();++it)
-    {
-        std::cout<<(*it)->InstrumentID<<","<<(*it)->CloseAmount<<","<<(*it)->OpenAmount<<","<<(*it)->Position<<","<<(*it)->OpenCost<<std::endl;
-    }
+    // for(auto it=ret_position.begin(); it!=ret_position.end();++it)
+    // {
+    //     std::cout<<(*it)->InstrumentID<<","<<(*it)->CloseAmount<<","<<(*it)->OpenAmount<<","<<(*it)->Position<<","<<(*it)->OpenCost<<std::endl;
+    // }
     //start strategy 
     p_strategy->start();
     p_strategy->stop();

@@ -37,10 +37,10 @@ void get_depth_market()
     {
         std::cout << "read file" << std::endl;
         CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
-        int _size;
+
         while (!feof(fp))
         {
-             _size = fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
+            fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
             std::string _s = p_mkt->UpdateTime;
             if (_s==""){
                 std::cout<<"empty"<<std::endl;
@@ -148,19 +148,18 @@ void data_preprocessing(std::string instrument_id, std::string trade_date)
 
 #if true
     // read_instruments();
-    const std::string file_name = "/home/kiki/projects/CTPTrader/cache/"+instrument_id+"_depth_market_data_"+trade_date+".recordio"; 
+    const std::string file_name = "/home/kiki/projects/DERIQT/cache/mkt/"+instrument_id+"_depth_market_data_"+trade_date+".recordio"; 
     std::cout<<"read file is: "<<file_name<<std::endl;
     // FILE *fp = fopen(file_name.c_str(), "r");
     std::ifstream ifs(file_name, std::ios::binary);
     recordio::RecordReader reader(&ifs);
-    const std::string p_file_name = "/home/kiki/projects/CTPTrader/cache/p_"+instrument_id+"_depth_market_data_"+trade_date+".txt"; 
+    const std::string p_file_name = "/home/kiki/projects/DERIQT/cache/mkt_pycache/"+instrument_id+"_depth_market_data_"+trade_date+".txt"; 
     std::cout<<"write file is: "<<p_file_name<<std::endl;
     int errnum;
     std::string buffer;
     if (true)
     {
         CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
-        int _size;
         std::ofstream fout;
         fout.open(p_file_name,std::ios::app);
         
@@ -188,5 +187,4 @@ void data_preprocessing(std::string instrument_id, std::string trade_date)
     }
 #endif
 
-   
 }

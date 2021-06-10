@@ -31,6 +31,7 @@
 *.app
 
 cache/
+log/
 conf/ctp.ini
 draft.h
 TStrategy.* 

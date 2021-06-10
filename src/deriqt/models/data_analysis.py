@@ -54,11 +54,11 @@ def check_records(ts_lst=[], start_ts="09:30:00", end_ts="10:15:00"):
 
 
 def get_data(instrument_id="", trade_date="", start_ts="09:03:00", end_ts="09:15:00"):
-    _file_name = "cache/p_{0}_depth_market_data_{1}.txt".format(instrument_id, trade_date)
+    _file_name = "cache/mkt_pycache/{0}_depth_market_data_{1}.txt".format(instrument_id, trade_date)
     try:
         f = open(_file_name)
     except Exception as ex:
-        _cmd = "./main 1 "+instrument_id+" "+trade_date
+        _cmd = "./bazel-bin/src/deriqt/main 1 "+instrument_id+" "+trade_date
         print(_cmd)
         os.system(_cmd)
     with open(_file_name) as f:
@@ -107,7 +107,7 @@ def get_data(instrument_id="", trade_date="", start_ts="09:03:00", end_ts="09:15
         plt.xticks(x_idx, xtick_labels, rotation=60, FontSize=6)
         
         # ax.set_yticks([-1,0,1])
-        plt.savefig('{0}_{1}.png'.format(instrument_id, trade_date))
+        plt.savefig('cache/analysis_pycache/{0}_{1}.png'.format(instrument_id, trade_date))
 
 
 def get_file_lst(trade_date=''):
@@ -122,10 +122,10 @@ if __name__ == "__main__":
     # subprocess.call("./main 1 hc2110 20210518")
     # get_data("i2109", "20210601", start_ts="09:04:00", end_ts="10:15:00")
     # get_data("i2109", "20210601", start_ts="10:15:00", end_ts="11:30:00")
-    # get_data("i2109", "20210601", start_ts="13:30:00", end_ts="15:30:00")
+    get_data("y2109", "20210607", start_ts="13:30:00", end_ts="15:30:00")
     # check_records(ts_lst=["09:30:01.0","09:30:02.0"])
-    lst = get_file_lst('20210601')
-    import pprint
-    pprint.pprint(lst)
-    get_data(lst[0].split('_')[0], "20210601", start_ts="09:04:00", end_ts="10:15:00")
+    # lst = get_file_lst('20210601')
+    # import pprint
+    # pprint.pprint(lst)
+    # get_data(lst[0].split('_')[0], "20210601", start_ts="09:04:00", end_ts="10:15:00")
         

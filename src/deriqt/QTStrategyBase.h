@@ -22,6 +22,7 @@
 #include "helper.h"
 #include "recordio.h"
 #include "recordio_range.h"
+#include <glog/logging.h>
 
 typedef CTPTraderHandler *trader_util_ptr;
 typedef CTPMdHandler *md_ptr;
@@ -87,32 +88,26 @@ public: //qry for product/instrument/account
 
 	void read_instruments()
 	{
-		// std::vector<std::pair<std::string, int>> res;
 		std::ifstream ifs("instruments.recordio", std::ios::binary);
 		recordio::RecordReader reader(&ifs);
 		std::string buffer;
 		while (reader.ReadBuffer(buffer)) {
-			std::cout<<"read ins:"<<std::endl;
 			CThostFtdcInstrumentField instrument_fields={0};
 			assert(buffer.size() == sizeof(instrument_fields));
 			memcpy(&instrument_fields, buffer.data(), buffer.size());
-			std::cout<<instrument_fields.InstrumentID<<","<<instrument_fields.ProductClass<<std::endl;
 		}
 		reader.Close();
 	}
 
 	void read_trading_account()
 	{
-		// std::vector<std::pair<std::string, int>> res;
 		std::ifstream ifs("trading_account.recordio", std::ios::binary);
 		recordio::RecordReader reader(&ifs);
 		std::string buffer;
 		while (reader.ReadBuffer(buffer)) {
-			std::cout<<"read trading account:"<<std::endl;
 			CThostFtdcTradingAccountField account_fields={0};
 			assert(buffer.size() == sizeof(account_fields));
 			memcpy(&account_fields, buffer.data(), buffer.size());
-			std::cout<<account_fields.AccountID<<","<<account_fields.Balance<<","<<account_fields.Credit<<std::endl;
 		}
 		reader.Close();
 	}
@@ -124,14 +119,13 @@ protected:
 	md_ptr p_md_handler = nullptr;
 	thread data_thread;
 	thread order_thread;
-	std::vector<std::vector<float>> v_factor; //cached factor list
+	std::vector<std::vector<double>> v_factor; //cached factor list
 	Signal *p_signal = nullptr;				  //derived in subclass
-	virtual void calculate_signal(){std::cout<<"calbulate signal in base class"<<std::endl;};	  //overwrite in subclass
+	virtual void calculate_signal(){};	  //overwrite in subclass
 	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
 
 private:
-
 	std::vector<std::string> v_instrummentID;
 	unordered_map<std::string, int> m_filename_idx;
 	unordered_map<std::string, std::string> m_depth_filename;
@@ -156,9 +150,11 @@ private:
 	std::string broker_id;
 	std::string user_id;
 	std::string name;
+	std::string task_tag;
 	std::unordered_map<std::string, std::string> m_main_futures;
 	int option_size = 10;
 	std::vector<std::string> v_main_contract_ids;
 	std::vector<std::string> v_option_ids;
 	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
+	recordio::RecordWriter * p_depth_mkt_writer;
 };

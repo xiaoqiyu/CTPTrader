@@ -12,6 +12,7 @@
 #include "define.h"
 #include "recordio.h"
 #include "recordio_range.h"
+#include <glog/logging.h>
 
 extern int nRequestID;
 
@@ -38,9 +39,11 @@ private:
     std::vector<CThostFtdcInstrumentField*> v_instruments;
     std::vector<CThostFtdcInvestorPositionField *> v_investor_position_fields;
     std::vector<CThostFtdcTradingAccountField*> v_trading_account;
-    
+    std::string task_tag;
+
 public:
     CTPTraderHandler(){};
+
     ~CTPTraderHandler()
     {
         if (this->_active)
@@ -76,11 +79,11 @@ public:
         v_instruments.clear();
         for (auto it = _v_instrument_id.begin(); it!=_v_instrument_id.end();++it)
         {
-            std::cout<<"Query Instrument for productID:"<<*it<<std::endl;
             CThostFtdcQryInstrumentField pQryInstrument = {0};
             std::strcpy(pQryInstrument.InstrumentID, (*it).c_str());
-            //TODO check return value
+            //TODO check return value of req
             int ret = ReqQryInstrument(&pQryInstrument, nRequestID++);
+            LOG_IF(ERROR, ret!=0)<<"Error in ReqQryInstrument in get_instruments";
             sleep(3);
         }
         return v_instruments;
@@ -612,7 +615,7 @@ public:
 
     void release();
 
-    void init();
+    void init(const std::string& task_tag);
 
     int join();
 

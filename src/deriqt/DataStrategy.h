@@ -1,5 +1,5 @@
 #pragma once
-
+#include <glog/logging.h>
 #include "QTStrategyBase.h"
 
 class DataSignal : public Signal
@@ -13,8 +13,10 @@ public:
 class DataStrategy : public QTStrategyBase
 {
 public:
-    DataStrategy(const std::string &name) : QTStrategyBase(name){};
+    DataStrategy(const std::string &name) : QTStrategyBase(name){
+        LOG(INFO)<<"DataStrategy Constructor";
+    };
     ~DataStrategy(){};
 
-    void calculate_signal(){std::cout<<"calculate signal in datastrategy"<<std::endl;};
+    void calculate_signal(){};
 };

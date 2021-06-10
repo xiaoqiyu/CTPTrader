@@ -22,6 +22,7 @@ cc_binary(
         "models/data_analysis.h",
         "models/data_analysis.cpp",
         "timer.h",
+		"TStrategy.h"
 	],
     deps = [
 	    "//src/lib/ctp:ctp",
