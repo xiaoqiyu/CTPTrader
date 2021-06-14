@@ -1,0 +1,35 @@
+# Use container based environment, slightly faster than standard
+sudo: required
+dist: trusty
+
+language: java
+
+jdk:
+  - oraclejdk8
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      #- gcc-4.8
+      #- g++-4.8
+      - wget
+      # Package list from http://bazel.io/docs/install.html
+      - pkg-config
+      - zip
+      - zlib1g-dev
+      - gperf  # To build proxygen
+
+install:
+  - ./install-bazel.sh
+  - wget https://raw.githubusercontent.com/mzhaom/lrte/master/install-release.sh && sudo bash install-release.sh
+
+script:
+  # The kernel used by travis is too old to allow namespace creation
+  # for normal account, so we disable it.
+  - bazel --batch build --crosstool_top=//tools/lrte:toolchain --spawn_strategy=standalone --genrule_strategy=standalone //examples/...:all //third_party/java/netty:all //third_party/java/guava:all
+  - bazel --batch test --test_tag_filters=-no_travis --test_output=errors --crosstool_top=//tools/lrte:toolchain --spawn_strategy=standalone //examples/...:all //third_party/gperftools:all //third_party/folly:all //third_party/proxygen:all
+
+notifications:
+  email: false
