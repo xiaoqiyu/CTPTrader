@@ -1,7 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_binary(
-    name = "main",
+    name = "CTPTrader",
     srcs = [
 	    "CTPMdHandler.cpp",
 	    "CTPMdHandler.h",
@@ -19,8 +19,6 @@ cc_binary(
 	    "recordio_range.h",
 	    "TickToKlineHelper.cpp",
 	    "TickToKlineHelper.h",
-        "models/data_analysis.h",
-        "models/data_analysis.cpp",
         "timer.h",
 		"TStrategy.h"
 	],

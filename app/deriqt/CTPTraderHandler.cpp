@@ -2356,10 +2356,43 @@ void CTPTraderHandler::processFrontConnected(Task* task)
 
 void CTPTraderHandler::processFrontDisconnected(Task* task)
 {
+    LOG(INFO)<<"Reconnect......";
+    INIReader reader(this->_conf_file);
+    this->init(task_tag);
+	sleep(5);
+
+	this->broker_id = reader.Get("user", "BrokerID", "9999");
+	this->user_id = reader.Get("user", "UserID", "123456");
+
+	LOG(INFO) << "Start CTP Authenticate.......";
+	CThostFtdcReqAuthenticateField reqAuth = {0};
+	strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+	strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
+	strcpy(reqAuth.AuthCode, reader.Get("user", "AuthCode", "!@#$%^&*").c_str());
+	strcpy(reqAuth.AppID, reader.Get("user", "AppID", "MyProgram").c_str());
+
+	this->ReqAuthenticate(&reqAuth, nRequestID++);
+	sleep(5);
+
+	LOG(INFO)<< "Start CTP Login......" << std::endl;
+	CThostFtdcReqUserLoginField reqUserLogin = {0};
+	strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+	strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
+	strcpy(reqUserLogin.Password, reader.Get("user", "Password", "123456").c_str());
+	strcpy(reqUserLogin.MacAddress, reader.Get("user", "MacAddress", "123456").c_str());
+	strcpy(reqUserLogin.UserProductInfo, reader.Get("user", "UserProductInfo", "123456").c_str());
+
+	this->ReqUserLogin(&reqUserLogin, nRequestID++);
+	sleep(5);
+
+	std::string trading_date = this->getTradingDay();
+	LOG(INFO)<< "Reconnect Success......Trading date is: " << trading_date;
+
 };
 
 void CTPTraderHandler::processHeartBeatWarning(Task* task)
 {
+    LOG(INFO)<<"Heart beat response......";
 };
 
 void CTPTraderHandler::processRspAuthenticate(Task* task)

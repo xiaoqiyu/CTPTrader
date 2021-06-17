@@ -12,6 +12,7 @@
 #include "define.h"
 #include "recordio.h"
 #include "recordio_range.h"
+#include "INIReader.h"
 #include <glog/logging.h>
 
 extern int nRequestID;
@@ -35,6 +36,8 @@ private:
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
     std::string broker_id;
     std::string user_id;
+    //HACK FOR TEST
+    std::string _conf_file = "/home/kiki/projects/DERIQT_F/conf/ctp.ini";
     std::vector<CThostFtdcDepthMarketDataField*> v_depth_market_data;
     std::vector<CThostFtdcInstrumentField*> v_instruments;
     std::vector<CThostFtdcInvestorPositionField *> v_investor_position_fields;

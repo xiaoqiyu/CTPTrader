@@ -32,7 +32,10 @@ void CTPMdHandler::OnFrontConnected()
 // 断开连接通知
 void CTPMdHandler::OnFrontDisconnected(int nReason)
 {
-	LOG(INFO)<< "OnFrontDisconnected: "<<nReason;
+	LOG(INFO)<< "OnFrontDisconnected, Reconnet...... "<<nReason;
+	this->g_pMdUserApi->Init();
+	this->active_ = true;
+	cond_.notify_one();
 }
 
 // 心跳超时警告

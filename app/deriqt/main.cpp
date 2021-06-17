@@ -13,7 +13,7 @@
 #include "TickToKlineHelper.h"
 #include "DataStrategy.h"
 #include "TStrategy.h"
-#include "models/data_analysis.h"
+// #include "models/data_analysis.h"
 #include <algorithm>
 #include <glog/logging.h>
 
@@ -53,15 +53,14 @@ int main(int argc, char *argv[])
     // return 0;
 
     // // ...
-    google::InitGoogleLogging(argv[0]);
-    //FLAGS_log_dir = std::string("./log/");
-    int num_cookies = 1;
+
+    // google::InitGoogleLogging(argv[0]);
+    // FLAGS_log_dir = std::string("./log/");
     std::string _conf_file_name;
     std::string _instrument_id;
     std::string mode = "0";
     std::string _strategy_name = "data_strategy";
     std::vector<std::string> v_instrumentID;
-    
     
     if (argc <= 1)
     {
@@ -83,15 +82,15 @@ int main(int argc, char *argv[])
         }
     }
     
-    if(mode == "1")
-    {
-        std::string _trade_date = argv[3];
-        for(auto it=v_instrumentID.begin(); it != v_instrumentID.end(); ++it)
-        {
-            data_preprocessing(*it, _trade_date);
-        }
-        return 0;
-    }
+    // if(mode == "1")
+    // {
+    //     std::string _trade_date = argv[3];
+    //     for(auto it=v_instrumentID.begin(); it != v_instrumentID.end(); ++it)
+    //     {
+    //         data_preprocessing(*it, _trade_date);
+    //     }
+    //     return 0;
+    // }
 #if 1
     QTStrategyBase *p_strategy = nullptr;
     if (_strategy_name == "data_strategy")
@@ -102,7 +101,6 @@ int main(int argc, char *argv[])
     {
         p_strategy = new TStrategy("t_strategy");
     }
-
     p_strategy->init(v_instrumentID, _conf_file_name);
 
 

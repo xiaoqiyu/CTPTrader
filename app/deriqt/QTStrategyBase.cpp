@@ -419,14 +419,26 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 	//calculate target option id lst
 	for(auto& t:m_option_val){
 		LOG(INFO)<<t.first<<"option size:"<<t.second.size();
-		sort(t.second.begin(), t.second.end(), [](const std::pair<std::string, double>& x, const std::pair<std::string, double>& y) -> bool {return x.second>=y.second;});
-		const auto it = t.second.begin();
+		LOG(INFO)<<"BEFORE SORT";
+		sort(t.second.begin(), t.second.end(), [](const std::pair<std::string, double>& x, const std::pair<std::string, double>& y) -> bool {return x.second<y.second;});
+		LOG(INFO)<<"AFTER SORT";
+		const auto it = t.second.rbegin();
 		int cnt = 0;
+		LOG(INFO)<<"BEFORE PUSH V_OPTION_ID";
 		while(cnt<option_size){
-			v_option_ids.push_back((*(it+cnt)).first);
-			cnt ++;
+			if(it+cnt != t.second.rend())
+			{
+				v_option_ids.push_back((*(it+cnt)).first);
+				cnt ++;
+			}
 		}
+		LOG(INFO)<<"AFTER PUSH V_OPTION_ID";
 	}
+	for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
+	{
+		LOG(INFO)<<"v_option_id"<<*it;
+	}
+	LOG(INFO)<<"CACHE target instruments";
 
 	for(auto it=ret_instruments.begin(); it!=ret_instruments.end();++it){
 		CThostFtdcInstrumentField* p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
