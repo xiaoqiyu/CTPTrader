@@ -4,6 +4,6 @@
 bazel-*
 log/
 core
-cache/*
+cache/
 conf/ctp.ini
 *.con

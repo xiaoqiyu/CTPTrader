@@ -32,10 +32,13 @@ void CTPMdHandler::OnFrontConnected()
 // 断开连接通知
 void CTPMdHandler::OnFrontDisconnected(int nReason)
 {
+#if false
 	LOG(INFO)<< "OnFrontDisconnected, Reconnet...... "<<nReason;
 	this->g_pMdUserApi->Init();
 	this->active_ = true;
 	cond_.notify_one();
+#endif
+	LOG(INFO)<<"OnFrontDisconnected with "<<nReason;
 }
 
 // 心跳超时警告
@@ -131,7 +134,7 @@ int CTPMdHandler::exit()
 		LOG(INFO) << ">>>>>>发送取消订阅行情请求成功";
 	else
 		LOG(ERROR) << "--->>>发送取消订阅行情请求失败";
-	this->p_mktdata_queue->terminate();
+	this->p_mktdata_cache_queue->terminate();
 
 	//logout
 	CThostFtdcUserLogoutField user_logout_fields = {0};
@@ -239,7 +242,7 @@ void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMa
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
 	*mkt_data = *pDepthMarketData;
 	data._data = mkt_data;
-	this->p_mktdata_queue->push(data);
+	this->p_mktdata_cache_queue->push(data);
 }
 
 // 询价详情通知

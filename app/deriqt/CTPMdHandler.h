@@ -41,7 +41,8 @@ private:
 	// TThostFtdcInstrumentIDType	InstrumentID  = {'\0'};
 	std::vector<std::string> v_instrumentID;
 	// thread data_thread;
-	data_queue_ptr p_mktdata_queue = nullptr;
+	data_queue_ptr p_mktdata_cache_queue = nullptr;
+	data_queue_ptr p_mktdata_rt_queue = nullptr;
 	std::string broker_id;
 	std::string user_id;
 
@@ -57,7 +58,7 @@ public:
 	};
 
 	//TODO check friend
-	data_queue_ptr get_data_queue() { return this->p_mktdata_queue; }
+	data_queue_ptr get_data_queue() { return this->p_mktdata_cache_queue; }
 
 	void set_config(FileName _config_file)
 	{
@@ -93,7 +94,7 @@ public:
 		LOG(INFO)<< "CTPMdHandler Init......";
 		this->g_pMdUserApi->Init();
 		this->active_ = true;
-		this->p_mktdata_queue = new DataQueue();
+		this->p_mktdata_cache_queue = new DataQueue();
 		for (auto iter = v_instrumentid.begin(); iter != v_instrumentid.end(); ++iter)
 		{
 			LOG(INFO)<< "push instrument in init CTPMdHandler->"<< *iter;

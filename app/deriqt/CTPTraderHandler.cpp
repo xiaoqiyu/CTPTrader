@@ -2356,7 +2356,8 @@ void CTPTraderHandler::processFrontConnected(Task* task)
 
 void CTPTraderHandler::processFrontDisconnected(Task* task)
 {
-    LOG(INFO)<<"Reconnect......";
+    LOG(INFO)<<"Disconnect and Reconnect......";
+#if false
     INIReader reader(this->_conf_file);
     this->init(task_tag);
 	sleep(5);
@@ -2387,6 +2388,7 @@ void CTPTraderHandler::processFrontDisconnected(Task* task)
 
 	std::string trading_date = this->getTradingDay();
 	LOG(INFO)<< "Reconnect Success......Trading date is: " << trading_date;
+#endif
 
 };
 
