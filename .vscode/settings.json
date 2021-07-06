@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.inc": "cpp",
+        "*.ipp": "cpp",
+        "*.tcc": "cpp",
+        "unordered_map": "cpp",
+        "fstream": "cpp",
+        "istream": "cpp",
+        "numeric": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "cstdlib": "cpp",
+        "rope": "cpp",
+        "future": "cpp",
+        "condition_variable": "cpp"
+    }
+}

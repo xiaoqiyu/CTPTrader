@@ -26,8 +26,8 @@ private:
     bool _active = false;                //工作状态
     mutex mutex_;
     condition_variable cond_; //条件变量
-    bool ready_ = false;
-    bool login_ = false;
+    bool connected_ = false; //连接交易前置
+    bool login_ = false; //验证和登录完成
     bool available_ = false; //用于交易查询的流控
     //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
     std::vector<std::string> future_instrumentID;
@@ -36,8 +36,7 @@ private:
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
     std::string broker_id;
     std::string user_id;
-    //HACK FOR TEST
-    std::string _conf_file = "/home/kiki/projects/DERIQT_F/conf/ctp.ini";
+    FileName _conf_file_name = {'\0'};
     std::vector<CThostFtdcDepthMarketDataField*> v_depth_market_data;
     std::vector<CThostFtdcInstrumentField*> v_instruments;
     std::vector<CThostFtdcInvestorPositionField *> v_investor_position_fields;
@@ -53,9 +52,13 @@ public:
         {
             this->exit();
         }
-        cout << "~CTPTradeHandler" << endl;
+        LOG(INFO) << "~CTPTradeHandler" << endl;
     };
 
+    void set_config(FileName _config_file)
+	{
+		std::strcpy(this->_conf_file_name, _config_file);
+	}
     std::vector<CThostFtdcDepthMarketDataField*> get_depth_market_datas(std::vector<std::string> _v_instrument_id)
     {   
         for(auto it=v_depth_market_data.begin(); it!=v_depth_market_data.end(); ++it)
@@ -75,6 +78,7 @@ public:
 
     std::vector<CThostFtdcInstrumentField*> get_instruments(std::vector<std::string> _v_instrument_id)
     {
+        LOG(INFO)<<"query instruments in ctphandler";
         for(auto it=v_instruments.begin(); it!=v_instruments.end(); ++it)
         {
             delete *it;
@@ -86,9 +90,11 @@ public:
             std::strcpy(pQryInstrument.InstrumentID, (*it).c_str());
             //TODO check return value of req
             int ret = ReqQryInstrument(&pQryInstrument, nRequestID++);
+            LOG(INFO)<<"RETURN FOR REQ instrument:"<<ret;
             LOG_IF(ERROR, ret!=0)<<"Error in ReqQryInstrument in get_instruments";
             sleep(3);
         }
+        LOG(INFO)<<"INSTRUMENT LEN:"<<v_instruments.size();
         return v_instruments;
     }
     

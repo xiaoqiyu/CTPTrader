@@ -73,7 +73,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	}
 	
 
-	//CTP MD init
+	//CTP MD connect and init
 	this->p_md_handler = new CTPMdHandler();
 	this->p_md_handler->set_config(_conf_file);
 	this->p_md_handler->CreateFtdcMdApi();
@@ -187,7 +187,7 @@ void QTStrategyBase::calculate_kline(){};
 void QTStrategyBase::start()
 {
 	this->start_ = true;
-	this->p_md_handler->SubscribeMarketData();
+	// this->p_md_handler->SubscribeMarketData();
 
 }
 
@@ -363,6 +363,7 @@ void QTStrategyBase::process_order()
 
 void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrument_id)
 {
+	LOG(INFO)<<"CACHE MAIN INSTRUMENT";
 	std::vector<CThostFtdcInstrumentField*> ret_instruments = get_instruments(_v_instrument_id);
 	std::vector<CThostFtdcDepthMarketDataField*> ret_depth_market_data = get_market_datas(_v_instrument_id);
 	std::unordered_map<std::string, double> m_ins2openinterest;

@@ -75,6 +75,7 @@ void CTPMdHandler::OnRspUserLogin(
 
 		login_ = true;
 		cond_.notify_one();
+		this->SubscribeMarketData();
 	}
 	else
 		LOG(ERROR) << "Err in CTPMD Login->ErrorID=" << pRspInfo->ErrorID << ", ErrorMsg=" << pRspInfo->ErrorMsg;

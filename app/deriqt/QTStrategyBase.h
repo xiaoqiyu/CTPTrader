@@ -83,6 +83,7 @@ public: //qry for product/instrument/account
 
 	std::vector<CThostFtdcInstrumentField*> get_instruments(std::vector<std::string> _v_instrument_id)
 	{
+		LOG(INFO)<<"GET INSTRUMENTS:"<<_v_instrument_id[0];
 		return p_trader_handler->get_instruments(_v_instrument_id);
 	}
 

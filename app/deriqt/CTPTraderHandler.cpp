@@ -685,6 +685,7 @@ void CTPTraderHandler::OnRspQryTradingCode(CThostFtdcTradingCodeField *pTradingC
 
 void CTPTraderHandler::OnRspQryInstrumentMarginRate(CThostFtdcInstrumentMarginRateField *pInstrumentMarginRate, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
+    LOG(INFO)<<"ONRSPQRYINSTRUMENT";
     Task task = Task();
     task.task_name = ONRSPQRYINSTRUMENTMARGINRATE;
     if (pInstrumentMarginRate)
@@ -2349,47 +2350,15 @@ void CTPTraderHandler::OnRtnChangeAccountByBank(CThostFtdcChangeAccountField *pC
 };
 void CTPTraderHandler::processFrontConnected(Task* task)
 {
-	ready_ = true;
-	cond_.notify_one();
-	LOG(INFO)<<"ctp trader complete front connected";
+    LOG(INFO)<<"CTP TD Front Connected, API VERSION:"<<this->_api->GetApiVersion();
+    connected_ = true;
+    cond_.notify_all();
 };
 
 void CTPTraderHandler::processFrontDisconnected(Task* task)
 {
+    connected_=false;
     LOG(INFO)<<"Disconnect and Reconnect......";
-#if false
-    INIReader reader(this->_conf_file);
-    this->init(task_tag);
-	sleep(5);
-
-	this->broker_id = reader.Get("user", "BrokerID", "9999");
-	this->user_id = reader.Get("user", "UserID", "123456");
-
-	LOG(INFO) << "Start CTP Authenticate.......";
-	CThostFtdcReqAuthenticateField reqAuth = {0};
-	strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
-	strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
-	strcpy(reqAuth.AuthCode, reader.Get("user", "AuthCode", "!@#$%^&*").c_str());
-	strcpy(reqAuth.AppID, reader.Get("user", "AppID", "MyProgram").c_str());
-
-	this->ReqAuthenticate(&reqAuth, nRequestID++);
-	sleep(5);
-
-	LOG(INFO)<< "Start CTP Login......" << std::endl;
-	CThostFtdcReqUserLoginField reqUserLogin = {0};
-	strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
-	strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
-	strcpy(reqUserLogin.Password, reader.Get("user", "Password", "123456").c_str());
-	strcpy(reqUserLogin.MacAddress, reader.Get("user", "MacAddress", "123456").c_str());
-	strcpy(reqUserLogin.UserProductInfo, reader.Get("user", "UserProductInfo", "123456").c_str());
-
-	this->ReqUserLogin(&reqUserLogin, nRequestID++);
-	sleep(5);
-
-	std::string trading_date = this->getTradingDay();
-	LOG(INFO)<< "Reconnect Success......Trading date is: " << trading_date;
-#endif
-
 };
 
 void CTPTraderHandler::processHeartBeatWarning(Task* task)
@@ -2399,6 +2368,7 @@ void CTPTraderHandler::processHeartBeatWarning(Task* task)
 
 void CTPTraderHandler::processRspAuthenticate(Task* task)
 {
+    
 	if (task->task_data)
 	{
 		CThostFtdcRspAuthenticateField* task_data = reinterpret_cast<CThostFtdcRspAuthenticateField*>(task->task_data);
@@ -5270,10 +5240,10 @@ bool CTPTraderHandler::CreateFtdcTraderApi(const char *pszFlowPath)
 
 void CTPTraderHandler::init(const std::string& task_tag)
 {
+
     LOG(INFO)<<"CTPTraderHandler Init with task_tag:"<<task_tag;
     this->_active = true;
     this->_task_thread = thread(&CTPTraderHandler::processTask, this);
-	this->p_order_data_queue = new DataQueue();
     SubscribePrivateTopic(THOST_TERT_QUICK);
     SubscribePublicTopic(THOST_TERT_QUICK);
     this->task_tag = task_tag;
@@ -5282,15 +5252,14 @@ void CTPTraderHandler::init(const std::string& task_tag)
 	//TODO check 
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
-		return ready_; //调用了onfrontconnected时候才会将ready_设置为true，没有调用onfrontconnected,就会一直wait.
+		return connected_; //调用了onfrontconnected时候才会将ready_设置为true，没有调用onfrontconnected,就会一直wait.
 	}); 
-
 };
 
 void CTPTraderHandler::release()
 {
     this->_api->Release();
-	ready_ = false;
+	connected_ = false;
 };
 
 int CTPTraderHandler::join()
@@ -5347,11 +5316,14 @@ string CTPTraderHandler::getTradingDay()
 
 void CTPTraderHandler::RegisterFront(char *pszFrontAddress)
 {
+    LOG(INFO)<<"In CTP RegisterFront...";
     return _api->RegisterFront(pszFrontAddress);
 }
 int CTPTraderHandler::ReqAuthenticate(CThostFtdcReqAuthenticateField *pReqAuthenticateField, int nRequestID)
 {
-    return _api->ReqAuthenticate(pReqAuthenticateField, nRequestID);
+    int ret =  _api->ReqAuthenticate(pReqAuthenticateField, nRequestID);
+    LOG(INFO)<<"Return req authenticate:"<<ret;
+    return ret;
 }
 
 void CTPTraderHandler::SubscribePrivateTopic(THOST_TE_RESUME_TYPE nResumeType)
@@ -5392,7 +5364,9 @@ int CTPTraderHandler::ReqQryProduct(CThostFtdcQryProductField *pQryProduct, int 
 int CTPTraderHandler::ReqQryInstrument(CThostFtdcQryInstrumentField *pQryInstrument, int nRequestID)
 {
 	this->available_ = false;
+    LOG(INFO)<<"Send reqqry instrument:"<<pQryInstrument->InstrumentID;
 	int ret = _api->ReqQryInstrument(pQryInstrument, nRequestID); 
+    LOG(INFO)<<"ret for send reqqry instruemnt:"<<ret;
 	unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return login_&available_;
@@ -5425,6 +5399,7 @@ void CTPTraderHandler::ReqQryMainContract(vector<std::string> productID, int nRe
 	{
 		CThostFtdcQryInstrumentField pQryInstrument = {0};
     	std::strcpy(pQryInstrument.InstrumentID, (*iter).c_str());
+
     	this->ReqQryInstrument(&pQryInstrument, nRequestID++);
 	}
 
