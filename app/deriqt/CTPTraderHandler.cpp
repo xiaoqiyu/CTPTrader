@@ -5244,8 +5244,8 @@ void CTPTraderHandler::init(const std::string& task_tag)
     LOG(INFO)<<"CTPTraderHandler Init with task_tag:"<<task_tag;
     this->_active = true;
     this->_task_thread = thread(&CTPTraderHandler::processTask, this);
-    SubscribePrivateTopic(THOST_TERT_QUICK);
-    SubscribePublicTopic(THOST_TERT_QUICK);
+    SubscribePrivateTopic(THOST_TERT_RESUME);
+    SubscribePublicTopic(THOST_TERT_RESUME);
     this->task_tag = task_tag;
     this->_api->Init();
 	LOG(INFO)<<"API VERSION:"<<this->_api->GetApiVersion()<<"wait for front connected api call";
