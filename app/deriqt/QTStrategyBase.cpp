@@ -151,6 +151,7 @@ void QTStrategyBase::on_tick()
 				
 					// int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
 					// v_depth_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
+					// std::cout<<pDepthMarketData->UpdateTime<<"."<<pDepthMarketData->UpdateMillisec<<std::endl;
 					this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
 
 					// KLineDataType *p_kline_data = new KLineDataType();

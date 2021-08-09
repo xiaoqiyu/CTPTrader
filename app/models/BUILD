@@ -6,6 +6,9 @@ cc_binary(
 		"main.cpp",
         "data_analysis.h",
         "data_analysis.cpp",
+        "recordio.h",
+        "recordio.cpp",
+        "recordio_range.h"
 	],
     deps = [
         "//external:gflags",

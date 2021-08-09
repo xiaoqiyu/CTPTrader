@@ -12,10 +12,11 @@
 #include <utility>
 #include <stdlib.h>
 #include <glog/logging.h>
+#include <dirent.h>
 
 #include "ThostFtdcUserApiStruct.h"
-#include "../recordio.h"
-#include "../recordio_range.h"
+#include "recordio.h"
+#include "recordio_range.h"
 
 void get_depth_market()
 {
@@ -143,18 +144,42 @@ void read_instruments()
     fout.close();
 }
 
+std::vector<std::string> list_files(std::string dirname)
+{
+    // std::string dirname;
+    DIR *dp;
+    std::vector<std::string> ret;
+    struct dirent *dirp;
+  if((dp = opendir(dirname.c_str())) == NULL)
+    {
+        std::cout << "Can't open " << dirname << std::endl;
+    }
+    while((dirp = readdir(dp)) != NULL)
+    {
+        ret.push_back(dirp->d_name);
+        std::cout << dirp->d_name << std::endl;
+    }
+    closedir(dp);
+    return ret;
+}
 
-void data_preprocessing(std::string task_tag, std::string trade_date)
+
+
+// void data_preprocessing(std::string task_tag, std::string trade_date, std::string file_name)
+void data_preprocessing(std::string file_name)
 {
 
 #if true
     // read_instruments();
-    const std::string file_name = "/home/kiki/projects/DERIQT_B/cache/mkt/"+task_tag+"_depth_market_data_"+trade_date+".recordio"; 
-    LOG(INFO)<<"read file is: "<<file_name;
+    // const std::string file_name = "/home/kiki/projects/DERIQT_F/cache/mkt/"+task_tag+"_depth_market_data_"+trade_date+".recordio"; 
+    const std::string full_file_name = "/home/kiki/projects/DERIQT_F/cache/mkt/"+file_name; 
+   LOG(INFO)<<"read file is: "<<full_file_name;
     // FILE *fp = fopen(file_name.c_str(), "r");
-    std::ifstream ifs(file_name, std::ios::binary);
+    std::ifstream ifs(full_file_name, std::ios::binary);
     recordio::RecordReader reader(&ifs);
-    const std::string p_file_name = "/home/kiki/projects/DERIQT_B/cache/mkt_pycache/"+task_tag+"_depth_market_data_"+trade_date+".txt"; 
+    // const std::string p_file_name = "/home/kiki/projects/DERIQT_F/cache/mkt_pycache/"+task_tag+"_depth_market_data_"+trade_date+".csv"; 
+    const std::string p_file_name = "/home/kiki/projects/DERIQT_F/cache/mkt_pycache/"+file_name+".csv"; 
+    
     LOG(INFO)<<"write file is: "<<p_file_name;
     int errnum;
     std::string buffer;
@@ -162,15 +187,24 @@ void data_preprocessing(std::string task_tag, std::string trade_date)
     {
         CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
         std::ofstream fout;
-        fout.open(p_file_name,std::ios::app);
-        
+        fout.open(p_file_name,std::ios::out);
+        // ["InstrumentID", "LastPrice", "OpenPrice", "HighestPrice", "LowestPrice", "Volume", "Turnover", "OpenInterest",
+        // "UpperLimitPrice", "LowerLimitPrice", "UpdateTime",
+        // "UpdateMillisec",
+        // "BidPrice1", "BidVolume1", "AskPrice1", "AskVolume1", "BidPrice2", "BidVolume2", "AskPrice2", "AskVolume2",
+        // "BidPrice3", "BidVolume3",
+        // "AskPrice3", "AskVolume3", "BidPrice4", "BidVolume4", "AskPrice4", "AskVolume4", "BidPrice5", "BidVolume5",
+        // "AskPrice5", "AskVolume5"]
+        fout <<"InstrumentID"<<","<<"UpdateTime"<<","<<"Turnover"<<","<<"Volume"<<","<< "LastPrice"<<","<<
+        "AveragePrice"<<","<< "AskPrice1"<<","<<"AskVolume1"<<","<<"BidPrice1"<<","<<"BidVolume1"<<std::endl;
         while (reader.ReadBuffer(buffer))
         {
             // _size = fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
             assert(buffer.size()==sizeof(CThostFtdcDepthMarketDataField));
             memcpy(p_mkt, buffer.data(), buffer.size());
             // std::cout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<std::endl;
-            fout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<"."<<p_mkt->UpdateMillisec<<","
+            // std::cout<<p_mkt->UpdateTime<<","<<p_mkt->UpdateMillisec<<std::endl;
+            fout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<","
             <<p_mkt->Turnover<<","<<p_mkt->Volume<<","<<p_mkt->LastPrice<<","<<p_mkt->AveragePrice<<","
             <<p_mkt->AskPrice1<<","<<p_mkt->AskVolume1<<","<<p_mkt->BidPrice1<<","
             <<p_mkt->BidVolume1<<std::endl;
@@ -189,3 +223,5 @@ void data_preprocessing(std::string task_tag, std::string trade_date)
 #endif
 
 }
+
+
