@@ -113,6 +113,7 @@ public: //qry for product/instrument/account
 		reader.Close();
 	}
 
+
 	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 
 protected:
