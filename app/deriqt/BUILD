@@ -20,7 +20,9 @@ cc_binary(
 	    "TickToKlineHelper.cpp",
 	    "TickToKlineHelper.h",
         "timer.h",
-		"TStrategy.h"
+		"TStrategy.h",
+		"GMSimTrader.h",
+		"GMSimTrader.cpp"
 	],
     deps = [
         "//external:gflags",
@@ -29,5 +31,6 @@ cc_binary(
         "//base:init",
         "//external:glog",
         "//third_party/ctp:ctp",
+		"//third_party/gmsimtrade:gmsimtrade",
 	],
 )

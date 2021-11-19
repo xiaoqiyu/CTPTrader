@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
         p_strategy = new TStrategy("t_strategy");
     }
     p_strategy->init(v_instrumentID, _conf_file_name);
+    
 
 
 

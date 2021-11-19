@@ -1,0 +1,2 @@
+account id:a1a91403-2fc2-11ec-bd15-00163e0a4100,available:1,instrument id:DCE.m2201,side:1,
+account id:a1a91403-2fc2-11ec-bd15-00163e0a4100,available:0,instrument id:SHFE.rb2201,side:1,
