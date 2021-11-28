@@ -10,6 +10,7 @@ cc_binary(
         "GMSimTrader.h",
         "GMSimTrader.cpp",
         "define.h",
+        
 	],
     deps = [
         "//external:gflags",
@@ -18,5 +19,7 @@ cc_binary(
         "//base:init",
         "//external:glog",
         "//third_party/gmsimtrade:gmsimtrade",
+        "//third_party/boost:system",
+        "//third_party/boost:thread",
 	],
 )

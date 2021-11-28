@@ -5,7 +5,6 @@ bazel-*
 log/
 core
 cache/
-app/playground/
 conf/ctp.ini
 *.con
 Private.con
