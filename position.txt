@@ -1,3 +1,3 @@
-account id:3a2249d2-4e79-11ec-97c8-00163e0a4100,available:100,instrument id:SHSE.600158,side:1,pnl:9.99994
-account id:3a2249d2-4e79-11ec-97c8-00163e0a4100,available:1500,instrument id:SHSE.601598,side:1,pnl:0
-account id:3a2249d2-4e79-11ec-97c8-00163e0a4100,available:3600,instrument id:SZSE.002146,side:1,pnl:0
+account id:3a2249d2-4e79-11ec-97c8-00163e0a4100,available:100,instrument id:SHSE.600158,side:1,pnl:-30
+account id:3a2249d2-4e79-11ec-97c8-00163e0a4100,available:1500,instrument id:SHSE.601598,side:1,pnl:-120.001
+account id:3a2249d2-4e79-11ec-97c8-00163e0a4100,available:3600,instrument id:SZSE.002146,side:1,pnl:-216

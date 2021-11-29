@@ -1,27 +1,50 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_binary(
-    name = "main",
+    name = "consumer",
     srcs = [
-		"main.cpp",
-        "recordio.h",
-        "recordio.cpp",
-        "recordio_range.h",
-        "GMSimTrader.h",
-        "GMSimTrader.cpp",
-        "define.h",
-        
+		"consumer.cpp"
 	],
     deps = [
-        "//external:gflags",
-        "//external:zlib",
-        "//base:build_info",
-        "//base:init",
-        "//external:glog",
-        "//third_party/gmsimtrade:gmsimtrade",
-        "@boost//:system",
-        "@boost//:thread",
         "@boost//:lockfree",
         "@boost//:interprocess",
+        "@boost//:system",
+        "@boost//:thread",
 	],
+    linkopts = [
+        "-lrt"
+    ],
 )
+
+cc_binary(
+    name = "producer",
+    srcs = [
+		"producer.cpp"
+	],
+    deps = [
+        "@boost//:lockfree",
+        "@boost//:interprocess",
+        "@boost//:system",
+        "@boost//:thread",
+	],
+    linkopts = [
+        "-lrt"
+    ],
+)
+
+cc_binary(
+    name = "main",
+    srcs = [
+		"main.cpp"
+	],
+    deps = [
+        "@boost//:lockfree",
+        "@boost//:interprocess",
+        "@boost//:system",
+        "@boost//:thread",
+	],
+    linkopts = [
+        "-lrt"
+    ],
+)
+
