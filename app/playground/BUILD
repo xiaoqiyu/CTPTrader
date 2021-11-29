@@ -19,7 +19,9 @@ cc_binary(
         "//base:init",
         "//external:glog",
         "//third_party/gmsimtrade:gmsimtrade",
-        "//third_party/boost:system",
-        "//third_party/boost:thread",
+        "@boost//:system",
+        "@boost//:thread",
+        "@boost//:lockfree",
+        "@boost//:interprocess",
 	],
 )

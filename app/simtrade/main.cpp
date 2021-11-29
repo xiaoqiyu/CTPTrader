@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
         LOG(INFO) << "fpnl: " << cash.fpnl<<std::endl;
     }
     Order _order;
+    int pos_num = 0;
     // start order from file
     if (fin.is_open())
     {
@@ -199,16 +200,19 @@ int main(int argc, char *argv[])
         {
             line_num += 1;
             if (line_num==1) continue;
+            //TODO HACK 
+            if (line_num == 2) break;
             v_line.clear();
 
             v_line = split_str(line, ',');
             target_positions.push_back(v_line[0]);
-            if(std::find(curr_positions.begin(), curr_positions.end(), v_line[0]) == curr_positions.end())
+            if(std::find(curr_positions.begin(), curr_positions.end(), v_line[0]) == curr_positions.end() && pos_num <20)
             {
 
                 LOG(INFO)<<"buy order for code:"<<v_line[0]<<",with volume:"<<std::stoi(v_line[2])<<std::endl;
                 _order = mt.order_volume(v_line[0].c_str(),std::stoi(v_line[2])*100,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,equ_acc.c_str());
-                LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
+                if (_order.status == 1) pos_num +=1;
+                LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<"pos num: "<<pos_num<<std::endl;
             }
         }    
         for (int i = 0; i<ps->count(); i++)

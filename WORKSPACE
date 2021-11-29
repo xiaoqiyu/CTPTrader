@@ -367,3 +367,15 @@ http_archive(
     strip_prefix = "benchmark-16703ff83c1ae6d53e5155df3bb3ab0bc96083be",
     sha256 = "59f918c8ccd4d74b6ac43484467b500f1d64b40cc1010daa055375b322a43ba3",
 )
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "com_github_nelhage_rules_boost",
+    commit = "fce83babe3f6287bccb45d2df013a309fa3194b8",
+    remote = "https://github.com/nelhage/rules_boost",
+    shallow_since = "1591047380 -0700",
+)
+
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
