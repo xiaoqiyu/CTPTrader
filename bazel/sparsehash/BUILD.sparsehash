@@ -1,0 +1,28 @@
+licenses(["notice"])  # BSD/MIT-like license
+
+exports_files(["LICENSE"])
+
+genrule(
+    name = "sparseconfig_h",
+    srcs = ["@//app/bazel/sparsehash:sparseconfig.h"],
+    outs = ["src/sparsehash/internal/sparseconfig.h"],
+    cmd = "cp $< $@",
+)
+
+cc_library(
+  name = "sparsehash",
+  srcs = [
+    ":sparseconfig_h",
+  ],
+  linkstatic=1,
+  includes = [
+    "src",
+  ],
+  hdrs = glob([
+    "src/google/**/*",
+    "src/sparsehash/**/*"
+  ]) + [
+    "src/sparsehash/internal/sparseconfig.h",
+  ],
+  visibility = ["//visibility:public"],
+)

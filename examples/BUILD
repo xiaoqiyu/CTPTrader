@@ -8,7 +8,7 @@ cc_binary(
   deps = [
     "//base:build_info",
     "//base:init",
-    "//external:glog",
+    "@com_github_google_glog//:glog",
   ],
   stamp = 1,
 )
@@ -19,6 +19,6 @@ cc_test(
     "hello_test.cc",
   ],
   deps = [
-    "//external:gtest_main",
+    "@com_google_googletest//:gtest_main",
   ],
 )

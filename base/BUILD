@@ -19,6 +19,6 @@ cc_library(
   deps = [
     "@com_google_absl//absl/debugging:failure_signal_handler",
     "@com_google_absl//absl/flags:parse",
-    "//external:glog",
+    "@com_github_google_glog//:glog",
   ],
 )
