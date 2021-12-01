@@ -4,14 +4,14 @@ exports_files(["LICENSE"])
 
 genrule(
     name = "tiffconf_h",
-    srcs = ["@//app/bazel/tiff:tiffconf.h"],
+    srcs = ["@//bazel/tiff:tiffconf.h"],
     outs = ["libtiff/tiffconf.h"],
     cmd = "cp $< $@",
 )
 
 genrule(
     name = "tif_config_h",
-    srcs = ["@//app/bazel/tiff:tif_config.h"],
+    srcs = ["@//bazel/tiff:tif_config.h"],
     outs = ["libtiff/tif_config.h"],
     cmd = "cp $< $@",
 )

@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["restricted"])  # GPL (for fftw)
 
-load("@//app/bazel:files.bzl", "touch")
+load("@//bazel:files.bzl", "touch")
 
 
 fake_headers = [

@@ -8,6 +8,7 @@
 #include "GMSimTrader.h"
 #include <fstream>
 #include <glog/logging.h>
+#include <math.h>
 
 
 
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
     std::string account_id = order_acc;
 
     // 登录账户id
-    mt.login(account_id);
+    mt.login(account_id.c_str());
     mt.init();
 
     //开始接收事件
@@ -236,7 +237,7 @@ int main(int argc, char *argv[])
         {
             Position &p = ps->at(i);
             // LOG(INFO)<<"account id:"<<p.account_id<<std::endl;
-            if(abs(p.fpnl/p.amount) > 0.2)
+            if(fabs(p.fpnl/p.amount) > 0.2)
             {
                 LOG(INFO)<<"sell order for code:"<<p.symbol<<",with volume:"<<p.available<<std::endl;
                 _order = mt.order_volume(p.symbol,p.available,OrderSide_Sell,OrderType_Market,PositionEffect_CloseYesterday,56.15,equ_acc.c_str());

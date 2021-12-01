@@ -512,7 +512,7 @@ cc_library(
         "@boost//:crc",
         "@boost//:implicit_cast",
         "@double_conversion//:double-conversion",
-        "@//app/bazel/folly:folly_config",
+        "@//bazel/folly:folly_config",
         "@com_github_google_glog//:glog",
         "@jemalloc//:jemalloc",
         "@openssl//:ssl",

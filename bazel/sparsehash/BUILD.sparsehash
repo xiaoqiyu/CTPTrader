@@ -4,7 +4,7 @@ exports_files(["LICENSE"])
 
 genrule(
     name = "sparseconfig_h",
-    srcs = ["@//app/bazel/sparsehash:sparseconfig.h"],
+    srcs = ["@//bazel/sparsehash:sparseconfig.h"],
     outs = ["src/sparsehash/internal/sparseconfig.h"],
     cmd = "cp $< $@",
 )

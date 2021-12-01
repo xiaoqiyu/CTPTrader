@@ -12,11 +12,11 @@ cc_binary(
         "define.h",
 	],
     deps = [
-        "//external:gflags",
-        "//external:zlib",
+        "@com_github_gflags_gflags//:gflags",
+        "@zlib//:zlib",
         "//base:build_info",
         "//base:init",
-        "//external:glog",
+        "@com_github_google_glog//:glog",
         "//third_party/gmsimtrade:gmsimtrade",
 	],
 )

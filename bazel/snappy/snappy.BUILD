@@ -42,7 +42,7 @@ cc_library(
         "-Wno-sign-compare",
     ],
     deps = [
-        "@//app/bazel/snappy:snappy_config",
+        "@//bazel/snappy:snappy_config",
     ],
     visibility = ["//visibility:public"],
 )

@@ -5,7 +5,7 @@ licenses(["notice"])  # MIT
 
 exports_files(["COPYING"])
 
-load("@//app/bazel:files.bzl", "touch")
+load("@//bazel:files.bzl", "touch")
 
 cc_library(
     name = "gif",

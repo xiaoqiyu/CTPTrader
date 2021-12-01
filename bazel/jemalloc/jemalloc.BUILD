@@ -219,7 +219,7 @@ cc_library(
     "-Wsign-compare",
   ],
   deps = [
-    "@//app/bazel/jemalloc:jemalloc_config",
+    "@//bazel/jemalloc:jemalloc_config",
   ],
   visibility = ["//visibility:public"],
 )

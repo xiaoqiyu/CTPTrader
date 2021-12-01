@@ -3,7 +3,7 @@
 
 licenses(["notice"])  # BSD 2-clause
 
-load("@//app/bazel:os.bzl", "windows_select")
+load("@//bazel:os.bzl", "windows_select")
 
 exports_files(["LICENSE"])
 

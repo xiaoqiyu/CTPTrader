@@ -5,21 +5,21 @@ licenses(["notice"])  # Apache 2.0 license
 
 genrule(
     name = "config_h",
-    srcs = ["@//app/bazel/imagemagick:config.h"],
+    srcs = ["@//bazel/imagemagick:config.h"],
     outs = ["config/config.h"],
     cmd = "cp $< $@",
 )
 
 genrule(
     name = "magick-baseconfig_h",
-    srcs = ["@//app/bazel/imagemagick:magick-baseconfig.h"],
+    srcs = ["@//bazel/imagemagick:magick-baseconfig.h"],
     outs = ["MagickCore/magick-baseconfig.h"],
     cmd = "cp $< $@",
 )
 
 genrule(
     name = "version_h",
-    srcs = ["@//app/bazel/imagemagick:version.h"],
+    srcs = ["@//bazel/imagemagick:version.h"],
     outs = ["MagickCore/version.h"],
     cmd = "cp $< $@",
 )

@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])  # BSD/MIT-like license (for xz)
 
-load("@//app/bazel:files.bzl", "touch")
+load("@//bazel:files.bzl", "touch")
 
 cc_library(
     name = "lzma",

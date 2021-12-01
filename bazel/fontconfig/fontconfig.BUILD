@@ -19,7 +19,7 @@ licenses(["notice"])  # BSD-like
 
 genrule(
     name = "config_h",
-    srcs = ["@//app/bazel/fontconfig:config.h"],
+    srcs = ["@//bazel/fontconfig:config.h"],
     outs = ["fontconfig_internal/config.h"],
     cmd = "cp $< $@",
 )

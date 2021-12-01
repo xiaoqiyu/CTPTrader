@@ -85,7 +85,7 @@ cc_library(
         "-fno-strict-aliasing",
     ],
     deps = [
-        "@//app/bazel/libevent:libevent_config",
+        "@//bazel/libevent:libevent_config",
     ],
     visibility = ["//visibility:public"],
 )
