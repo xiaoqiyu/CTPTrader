@@ -173,7 +173,7 @@ void data_preprocessing(std::string file_name)
     // read_instruments();
     // const std::string file_name = "/home/kiki/projects/DERIQT_F/cache/mkt/"+task_tag+"_depth_market_data_"+trade_date+".recordio"; 
     const std::string full_file_name = "/home/kiki/projects/DERIQT_F/cache/mkt/"+file_name; 
-   LOG(INFO)<<"read file is: "<<full_file_name;
+    LOG(INFO)<<"read file is: "<<full_file_name;
     // FILE *fp = fopen(file_name.c_str(), "r");
     std::ifstream ifs(full_file_name, std::ios::binary);
     recordio::RecordReader reader(&ifs);
@@ -188,6 +188,7 @@ void data_preprocessing(std::string file_name)
         CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
         std::ofstream fout;
         fout.open(p_file_name,std::ios::out);
+        //SCHEMA
         // ["InstrumentID", "LastPrice", "OpenPrice", "HighestPrice", "LowestPrice", "Volume", "Turnover", "OpenInterest",
         // "UpperLimitPrice", "LowerLimitPrice", "UpdateTime",
         // "UpdateMillisec",
@@ -214,7 +215,7 @@ void data_preprocessing(std::string file_name)
     }
     else
     {
-        std::cout << "file is null" << std::endl;
+        LOG(INFO) << "file is null" << std::endl;
         errnum = errno;
         fprintf(stderr, "Value of errno: %d\n", errno);
         perror("Error printed by perror");

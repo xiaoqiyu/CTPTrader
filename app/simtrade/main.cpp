@@ -123,16 +123,20 @@ int main(int argc, char *argv[])
     // 设置服务地址api.myquant.cn:9000
     mt.set_endpoint ("api.myquant.cn:9000");
 
-    // 登录账户id
-    mt.login("3a2249d2-4e79-11ec-97c8-00163e0a4100");
-    mt.init();
-
-    //开始接收事件
-    int status = mt.start();
     std::string future_acc = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
     std::string equ_acc = "19377b27-4813-11ec-a1e1-00163e0a4100";
     std::string order_acc = "3a2249d2-4e79-11ec-97c8-00163e0a4100";
     std::string account_id = order_acc;
+
+    // 登录账户id
+    mt.login(account_id);
+    mt.init();
+
+    //开始接收事件
+    int status = mt.start();
+
+
+
 
     //判断状态
     if (status == 0)
@@ -176,7 +180,7 @@ int main(int argc, char *argv[])
     }
 
     Cash cash{};
-    int res = mt.get_cash (cash, future_acc.c_str());
+    int res = mt.get_cash (cash, account_id.c_str());
     if (res == 0)
     {
         LOG(INFO)<<"return for query cash:"<<std::endl;

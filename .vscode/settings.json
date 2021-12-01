@@ -113,4 +113,5 @@
 
     // Enable parameter hints
     "editor.parameterHints.enabled": true,
+    "C_Cpp.errorSquiggles": "Disabled",
 }
