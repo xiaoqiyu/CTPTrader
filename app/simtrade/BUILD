@@ -1,7 +1,7 @@
 package(default_visibility = ["//visibility:public"])
 
 cc_binary(
-    name = "main",
+    name = "simtrade",
     srcs = [
 		"main.cpp",
         "recordio.h",

@@ -13,7 +13,6 @@
 #include "TickToKlineHelper.h"
 #include "DataStrategy.h"
 #include "TStrategy.h"
-// #include "models/data_analysis.h"
 #include <algorithm>
 #include <glog/logging.h>
 
@@ -52,15 +51,6 @@ int main(int argc, char *argv[])
         }
     }
     
-    // if(mode == "1")
-    // {
-    //     std::string _trade_date = argv[3];
-    //     for(auto it=v_instrumentID.begin(); it != v_instrumentID.end(); ++it)
-    //     {
-    //         data_preprocessing(*it, _trade_date);
-    //     }
-    //     return 0;
-    // }
 #if 1
     QTStrategyBase *p_strategy = nullptr;
     if (_strategy_name == "data_strategy")
@@ -92,6 +82,8 @@ int main(int argc, char *argv[])
 
     // int ret_pos_detail = p_strategy->get_position_details(_user_id, _broker_id);
     sleep(5);
+    
+    
 #endif
 
     p_strategy->start();
