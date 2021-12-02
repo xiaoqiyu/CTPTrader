@@ -129,9 +129,10 @@ int main(int argc, char *argv[])
     ifstream fin ("app/simtrade/orders.csv");
     std::string line;
 
-    char mode = 's';
+    std::string mode = "s";
     
     if (argc > 1) mode = argv[1];
+    LOG(INFO)<<"run mode is:"<<mode<<std::endl;
     // token身份认证
     GMSimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
 
@@ -228,9 +229,10 @@ int main(int argc, char *argv[])
         
         while(std::getline(fin, line))
         {
+            LOG(INFO)<<"line:"<<line<<std::endl;
             line_num += 1;
-            if (line_num==1) continue;
-            
+            if (line_num<=1) continue;
+            LOG(INFO)<<"lin num after:"<<line_num<<std::endl;
 
             v_line = split_str(line, ',');
             LOG(INFO)<<"check order for:"<<v_line[0];
@@ -238,23 +240,23 @@ int main(int argc, char *argv[])
             std::vector<std::string>::iterator iter = curr_positions.begin(); 
             while (iter != curr_positions.end() && *iter != v_line[0])
             {
-                std::cout<<*iter<< v_line[0]<<std::endl;
                 iter++;
             }
-
-                // if(*iter == v_line[0]) break;
-        
-            if( iter == curr_positions.end() && pos_num <20 && mode == 'b')
-            {
-                LOG(INFO)<<"buy order for code:"<<v_line[0]<<",with volume:"<<std::stoi(v_line[2])<<std::endl;
-                _order = mt.order_volume(v_line[0].c_str(),std::stoi(v_line[2])*100,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,account_id.c_str());
-                if (_order.status == 1) pos_num +=1;
-                LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<"pos num: "<<pos_num<<std::endl;
+            if(iter == curr_positions.end()){
+                if( iter == curr_positions.end() && pos_num <20 && mode == "b")
+                {
+                    LOG(INFO)<<"buy order for code:"<<v_line[0]<<",with volume:"<<std::stoi(v_line[2])<<std::endl;
+                    _order = mt.order_volume(v_line[0].c_str(),std::stoi(v_line[2])*100,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,account_id.c_str());
+                    if (_order.status == 1) pos_num +=1;
+                    LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<"pos num: "<<pos_num<<std::endl;
+                }else{
+                    LOG(INFO)<<"not buy mode"<<std::endl;
+                }
+            }else{
+                LOG(INFO)<<"code  exist"<<std::endl;
             }
-            
         }    
-        
-        
+        if (mode == "s"){
         for (int i = 0; i<ps->count(); i++)
         {
             Position &p = ps->at(i);
@@ -263,13 +265,14 @@ int main(int argc, char *argv[])
             {
                 if(*iter == p.symbol) break;
             }
-            if(iter == target_positions.end() && mode == 's')
+            if(iter == target_positions.end() && mode == "s")
             {
                 LOG(INFO)<<"sell order for code:"<<p.symbol<<",with volume:"<<p.available<<std::endl;
                 _order = mt.order_volume(p.symbol,p.available,OrderSide_Sell,OrderType_Market,PositionEffect_CloseYesterday,56.15,account_id.c_str());
                 LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
             }
     
+        }
         }
         
         fin.close();
