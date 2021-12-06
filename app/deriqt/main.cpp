@@ -51,15 +51,16 @@ int main(int argc, char *argv[])
         }
     }
     
+std::cout<<"run here 1"<<std::endl;
 #if 1
     QTStrategyBase *p_strategy = nullptr;
     if (_strategy_name == "data_strategy")
     {
-        p_strategy = new DataStrategy("data_strategy");
+        p_strategy = new DataStrategy("data_strategy", std::stoi(mode));
     }
     else if (_strategy_name == "t_strategy")
     {
-        p_strategy = new TStrategy("t_strategy");
+        p_strategy = new TStrategy("t_strategy", std::stoi(mode));
     }
     p_strategy->init(v_instrumentID, _conf_file_name);
     
@@ -70,9 +71,13 @@ int main(int argc, char *argv[])
     sleep(5);
     std::string _user_id = "105600687";
     std::string _broker_id = "9040";
+     
+    LOG(INFO)<< "Before query investor position";
 
     std::vector<CThostFtdcInvestorPositionField *>  ret_pos = p_strategy->get_investor_position(_user_id, _broker_id);
     sleep(5);
+
+    LOG(INFO)<< "After query investor position";
 
     // int ret_trades = p_strategy->req_trade(_user_id, _broker_id);
     // sleep(5);

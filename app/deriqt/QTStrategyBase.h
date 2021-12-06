@@ -47,7 +47,7 @@ public: //strategy function
 	void on_tick();
 
 public: //stategy management
-	QTStrategyBase(const std::string &name) : name(name){};
+	QTStrategyBase(const std::string &name,  int mode) : name(name), mode(mode){LOG(INFO)<<"constructor in base";};
 	virtual ~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
 	//start subscrible market data, and strategy
@@ -152,6 +152,7 @@ private:
 	std::string broker_id;
 	std::string user_id;
 	std::string name;
+	int mode;
 	std::string task_tag;
 	std::unordered_map<std::string, std::string> m_main_futures;
 	int option_size = 10;

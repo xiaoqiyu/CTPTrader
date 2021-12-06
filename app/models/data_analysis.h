@@ -157,7 +157,6 @@ std::vector<std::string> list_files(std::string dirname)
     while((dirp = readdir(dp)) != NULL)
     {
         ret.push_back(dirp->d_name);
-        std::cout << dirp->d_name << std::endl;
     }
     closedir(dp);
     return ret;

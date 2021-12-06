@@ -10,6 +10,7 @@ void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::string _conf_file_name)
 {
 	//初始
+	// LOG(INFO)<<"Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name;
 	FileName _conf_file = {'\0'};
 	// snprintf(_conf_file, 100, "conf/%s.ini", argv[1]);
 
@@ -24,109 +25,120 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 
 	char mdAddr[40];
 	char ch[40];
+	std::string trading_date;
 
 	this->task_tag = _v_product_ids[0];
-	//CTP Trader handler init
-	this->p_trader_handler = new CTPTraderHandler();
-	this->p_trader_handler->CreateFtdcTraderApi();
-	this->p_trader_handler->RegisterFront(strcpy(ch, reader.Get("td", "FrontAddr", "127.0.0.1:1234").c_str()));
-	this->p_trader_handler->init(task_tag);
-	sleep(5);
 
-	this->broker_id = reader.Get("user", "BrokerID", "9999");
-	this->user_id = reader.Get("user", "UserID", "123456");
+	LOG(INFO)<<"before init ctp td";
+	if (this->mode == 2 || this->mode == 0 || this->mode == 1){
+		LOG(INFO)<<"Mode 0&2: Init CTP TD";
+		//mode 0(subscribe depth market) and mode 2(live trade) need to connect to ctp td; mode 0 for query api, mode 2 for order api 
+		//CTP Trader handler init
+		this->p_trader_handler = new CTPTraderHandler();
+		this->p_trader_handler->CreateFtdcTraderApi();
+		this->p_trader_handler->RegisterFront(strcpy(ch, reader.Get("td", "FrontAddr", "127.0.0.1:1234").c_str()));
+		this->p_trader_handler->init(task_tag);
+		sleep(5);
 
-	LOG(INFO) << "Start CTP Authenticate.......";
-	CThostFtdcReqAuthenticateField reqAuth = {0};
-	strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
-	strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
-	strcpy(reqAuth.AuthCode, reader.Get("user", "AuthCode", "!@#$%^&*").c_str());
-	strcpy(reqAuth.AppID, reader.Get("user", "AppID", "MyProgram").c_str());
+		this->broker_id = reader.Get("user", "BrokerID", "9999");
+		this->user_id = reader.Get("user", "UserID", "123456");
 
-	this->p_trader_handler->ReqAuthenticate(&reqAuth, nRequestID++);
-	sleep(5);
+		LOG(INFO) << "Start CTP Authenticate.......";
+		CThostFtdcReqAuthenticateField reqAuth = {0};
+		strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+		strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
+		strcpy(reqAuth.AuthCode, reader.Get("user", "AuthCode", "!@#$%^&*").c_str());
+		strcpy(reqAuth.AppID, reader.Get("user", "AppID", "MyProgram").c_str());
 
-	LOG(INFO)<< "Start CTP Login......" << std::endl;
-	CThostFtdcReqUserLoginField reqUserLogin = {0};
-	strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
-	strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
-	strcpy(reqUserLogin.Password, reader.Get("user", "Password", "123456").c_str());
-	strcpy(reqUserLogin.MacAddress, reader.Get("user", "MacAddress", "123456").c_str());
-	strcpy(reqUserLogin.UserProductInfo, reader.Get("user", "UserProductInfo", "123456").c_str());
+		this->p_trader_handler->ReqAuthenticate(&reqAuth, nRequestID++);
+		sleep(5);
 
-	this->p_trader_handler->ReqUserLogin(&reqUserLogin, nRequestID++);
-	sleep(5);
+		LOG(INFO)<< "Start CTP Login......" << std::endl;
+		CThostFtdcReqUserLoginField reqUserLogin = {0};
+		strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
+		strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
+		strcpy(reqUserLogin.Password, reader.Get("user", "Password", "123456").c_str());
+		strcpy(reqUserLogin.MacAddress, reader.Get("user", "MacAddress", "123456").c_str());
+		strcpy(reqUserLogin.UserProductInfo, reader.Get("user", "UserProductInfo", "123456").c_str());
 
-	std::string trading_date = this->p_trader_handler->getTradingDay();
-	LOG(INFO)<< "Trading date is: " << trading_date;
+		this->p_trader_handler->ReqUserLogin(&reqUserLogin, nRequestID++);
+		sleep(5);
 
-	this->cache_main_instruments(_v_product_ids);
-	for(auto it=v_main_contract_ids.begin(); it!=v_main_contract_ids.end();++it)
-	{
-		LOG(INFO)<<"push main contract id in init:"<<(*it);
-		this->v_instrummentID.push_back((*it));
+		trading_date = this->p_trader_handler->getTradingDay();
+		LOG(INFO)<< "Trading date is: " << trading_date;
+
+		this->cache_main_instruments(_v_product_ids);
+
+
+		for(auto it=v_main_contract_ids.begin(); it!=v_main_contract_ids.end();++it)
+		{
+			LOG(INFO)<<"push main contract id in init:"<<(*it);
+			this->v_instrummentID.push_back((*it));
+		}
+		for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
+		{
+			LOG(INFO)<<"push option id in init(strategy base):"<<(*it);
+			this->v_instrummentID.push_back((*it));
+		}
+	}else{
+		LOG(ERROR)<<"Invalid mode";
 	}
-	for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
-	{
-		LOG(INFO)<<"push option id in init(strategy base):"<<(*it);
-		this->v_instrummentID.push_back((*it));
-	}
-	
+	LOG(INFO)<<"after init ctp td ";
 
-	//CTP MD connect and init
-	this->p_md_handler = new CTPMdHandler();
-	this->p_md_handler->set_config(_conf_file);
-	this->p_md_handler->CreateFtdcMdApi();
-	this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
-	this->p_md_handler->init(this->v_instrummentID);
+	LOG(INFO)<<"after init ctp md";
+
+	if(this->mode == 0){//mode 0 need to connect CTPMD to subscribe depth market data
+		LOG(INFO)<<"Mode 0: init CTP MD";
+		//CTP MD connect and init
+		this->p_md_handler = new CTPMdHandler();
+		this->p_md_handler->set_config(_conf_file);
+		this->p_md_handler->CreateFtdcMdApi();
+		this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
+		this->p_md_handler->init(this->v_instrummentID);
+	}
+
+	LOG(INFO)<<"after init ctp md";
+
+	LOG(INFO)<<"before init simtrade";
+	if(this->mode == 1){//mode 1 will connet to simtrade server for simulation
+		LOG(INFO)<<"Mode 1: init simtrade";
+	//Simtrade connect and init
+	// code to connect gm trade trade and login
+	}
+	LOG(INFO)<<"after init simtrade";
 
 	//data/order thread init
-	this->data_thread = thread(&QTStrategyBase::on_tick, this);
-	this->order_thread = thread(&QTStrategyBase::process_order, this);
-
-
-
-	int cnt = 0;
-	//private varilbe init
-	for(auto iter = this->v_instrummentID.begin(); iter!=this->v_instrummentID.end(); ++iter)
-	{
-
-		// std::string _instrumentid = *iter;
-		// FileName mkt_depth_file_name = {'\0'};
-		// FileName kline_file_name = {'\0'};
-		// sprintf(mkt_depth_file_name, "cache/mkt/%s_depth_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
-		// sprintf(kline_file_name, "cache/mkt/%s_kline_market_data_%s.recordio", _instrumentid.c_str(), trading_date.c_str());
-		// std::ofstream* p_mkt_depth_outfile = new std::ofstream();
-		// std::ofstream* p_kline_outfile = new std::ofstream();
-		
-		
-		// p_mkt_depth_outfile->open(mkt_depth_file_name, std::ios::app|std::ios::binary); // append mode
-	
-		// p_kline_outfile->open(kline_file_name, std::ios::app|std::ios::binary);
-		// m_filename_idx.insert(std::pair<std::string, int>(_instrumentid, cnt));
-		// m_depth_filename.insert(std::pair<std::string, std::string>(_instrumentid, mkt_depth_file_name));
-		// m_kline_filename.insert(std::pair<std::string, std::string>(_instrumentid, kline_file_name));
-	
-
-  		// recordio::RecordWriter _depth_mkt_writer(p_mkt_depth_outfile);
-		// v_depth_writer.push_back(_depth_mkt_writer);
-
-		// recordio::RecordWriter _kline_writer(p_kline_outfile);
-		// v_kline_writer.push_back(_kline_writer);
-
-		TickToKlineHelper *p_kline_helper =  new TickToKlineHelper();
-		v_t2k_helper.push_back(p_kline_helper);
-		cnt ++;
+	if (this->mode == 0){ // start the data thread to process depth markets
+		LOG(INFO)<<"Mode 0: Create thread for tick processs";
+		this->data_thread = thread(&QTStrategyBase::on_tick, this);
+	}else if(this->mode == 1 || this->mode == 2){ // mode 1/2 for sim/live trade, start the thread to insert order fa
+		LOG(INFO)<<"Mode 1&2:Create thread to process ordder";
+		this->order_thread = thread(&QTStrategyBase::process_order, this);
 	}
-	std::ofstream * p_depth_mkt = new std::ofstream();
-	FileName _depth_mkt_filename = {'\0'};
-	sprintf(_depth_mkt_filename, "cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
-	p_depth_mkt->open(_depth_mkt_filename, std::ios::app|std::ios::binary);
-	// recordio::RecordWriter _depth_mkt_writer(p_depth_mkt);
-	this->p_depth_mkt_writer = new recordio::RecordWriter(p_depth_mkt);
-	// p_kline_helper = new TickToKlineHelper();
-	// p_mktdata_queue = new DataQueue();
-	this->p_order_queue = new DataQueue();
+
+
+	if (this->mode  == 0){ //mode 0 for kline resample and depth market cache
+	    LOG(INFO)<<"Mode 0: create cache writer";
+		int cnt = 0;
+		//private varilbe init
+		for(auto iter = this->v_instrummentID.begin(); iter!=this->v_instrummentID.end(); ++iter)
+		{
+			TickToKlineHelper *p_kline_helper =  new TickToKlineHelper();
+			v_t2k_helper.push_back(p_kline_helper);
+			cnt ++;
+		}
+		std::ofstream * p_depth_mkt = new std::ofstream();
+		FileName _depth_mkt_filename = {'\0'};
+		sprintf(_depth_mkt_filename, "cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
+		p_depth_mkt->open(_depth_mkt_filename, std::ios::app|std::ios::binary);
+		this->p_depth_mkt_writer = new recordio::RecordWriter(p_depth_mkt);
+	} else if (this-> mode == 1 || this->mode ==2){
+		LOG(INFO)<<"Mode 1 &2: create order data queue";
+		// order data queue for sim/live trade
+		this->p_order_queue = new DataQueue();
+	}else{
+		LOG(ERROR)<< "Invalid mode for strategy";
+	}
 	this->active_ = true;
 	return 0;
 };
@@ -188,7 +200,7 @@ void QTStrategyBase::calculate_kline(){};
 void QTStrategyBase::start()
 {
 	this->start_ = true;
-	// this->p_md_handler->SubscribeMarketData();
+	this->p_md_handler->SubscribeMarketData();
 
 }
 

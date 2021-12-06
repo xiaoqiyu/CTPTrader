@@ -1,145 +1,14 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@xiaoqiyu 
-xiaoqiyu
-/
-CTPTrader
-Public
-2
-20
-Code
-Issues
-Pull requests
-Actions
-Projects
-Wiki
-Security
-Insights
-Settings
-CTPTrader/app/simtrade/main.cpp
-@xiaoqiyu
-xiaoqiyu fix simtrade mode
-Latest commit 06d0391 4 days ago
- History
- 1 contributor
-300 lines (246 sloc)  9.39 KB
-   
 #include<iostream>
 #include<vector>
 #include <thread>
 #include<cstring>
 #include<string>
-#include "gmtrade_def.h"
-#include "gmtrade.h"
+// #include "gmtrade_def.h"
+// #include "gmtrade.h"
 #include "GMSimTrader.h"
 #include <fstream>
 #include <glog/logging.h>
 #include <math.h>
-
-#define DEBUG 0
-#define RUN 1
-
-/*
-int create_simtrader()
-{
-
-std::string future_acc = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
-std::string equ_acc = "d3b493fa-4165-11ec-abdb-00163e0a4100";
-std::string order_acc = "3a2249d2-4e79-11ec-97c8-00163e0a4100";
-std::string account_id = order_acc;
-    // token身份认证
-    GMSimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
-
-    // 设置服务地址api.myquant.cn:9000
-    mt.set_endpoint ("api.myquant.cn:9000");
-
-
-// 登录账户id
-mt.login(account_id.c_str());
-// mt.init();
-
-
-    //开始接收事件
-    int status = mt.start();
-    
-    
-    
-    
-
-    //判断状态
-    if (status == 0)
-    {
-        LOG(INFO) << "connected to server" << std::endl;
-    }
-    else
-    {
-        LOG(INFO) << "Fail to connect to server" << std::endl;
-    }
-
-
-
-    
-    
-    //position
-    gmtrade::DataArray<Position> *ps = mt.get_position(account_id.c_str());
-    if(ps->status()==0)
-    {
-        LOG(INFO)<<"return for query position: "<<ps->count()<<std::endl;
-        ofstream fout;
-        fout.open("position.txt", ios::out | ios::trunc );
-
-        for (int i = 0; i<ps->count(); i++)
-        {
-            Position &p = ps->at(i);
-            fout<<"account id:"<<p.account_id<<","<<
-            "available:"<<p.available<<","<<
-            "instrument id:"<<p.symbol<<","<<
-            "side:"<<p.side<<","<<
-            std::endl;
-            LOG(INFO)<<"account id:"<<p.account_id<<std::endl;
-            LOG(INFO)<<"available: "<<p.available<<std::endl;
-            LOG(INFO)<<"instrument id: "<<p.symbol<<","<<p.side<<std::endl;
-        }
-        ps->release();
-    }
-
-    Cash cash{};
-    int res = mt.get_cash (cash, future_acc.c_str());
-    if (res == 0)
-    {
-        LOG(INFO)<<"return for query cash:"<<std::endl;
-        LOG(INFO) << "account_id: "<< cash.account_id<<std::endl;;
-        LOG(INFO) << "available: " << cash.available<<std::endl;
-        LOG(INFO) << "balance: " << cash.balance<<std::endl;
-        LOG(INFO) << "fpnl: " << cash.fpnl<<std::endl;
-    }
-
-    // DataArray<Order>* get_orders(const char *account = NULL);
-    
-    std::string order_cmd;
-    std::cin>>order_cmd;
-    while(order_cmd != "exit") 
-    {
-        std::string _symbol="DCE.m2201";
-        std::string _sec_id = "SHSE.600158";
-        // mt.order_volume(symbol=_symbol.c_str(), volume=1, side=2,order_type=2, position_effect=2, price=0, account=future_acc.c_str());
-        // Order _order = mt.order_volume(_symbol.c_str(),1,1,2,1,0.0,account_id.c_str());
-        //id,volume, side(1:b,2:s), ordertype(1:limit, 2: market, 3: stop)position(0:unknow, 1:long, 2:short),price, account
-        Order _order;
-        // std::string _sec_id;
-        _order = mt.order_volume(_sec_id.c_str(),4000,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,account_id.c_str());
-        LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
-        std::cin>>order_cmd;
-    }
-    return 0;
-
-}
-*/
 
 
 std::vector<std::string> split_str(std::string s, char c)
@@ -160,23 +29,46 @@ std::vector<std::string> split_str(std::string s, char c)
 
 int main(int argc, char *argv[])
 {      
-    ifstream fin ("app/simtrade/orders.csv");
+    // token身份认证
+    SimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
+    ifstream fin ("app/gmsimtrade/orders.csv");
     std::string line;
 
     std::string mode = "s";
     
     if (argc > 1) mode = argv[1];
     LOG(INFO)<<"run mode is:"<<mode<<std::endl;
-    // token身份认证
-    SimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
+
+    int select_acc = 0;
+    if(argc>2) select_acc = std::stoi(argv[2]);
+
+    int stop_profit_loss_pct = 20;
+    if(argc>3) stop_profit_loss_pct = std::stoi((argv[3]));
 
     // 设置服务地址api.myquant.cn:9000
     mt.set_endpoint ("api.myquant.cn:9000");
 
     std::string future_acc = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
-    std::string equ_acc = "19377b27-4813-11ec-a1e1-00163e0a4100";
+    std::string equ_acc = "1a6d41a2-5590-11ec-8c77-00163e0a4100";
+    std::string equ_test_acc = "d3b493fa-4165-11ec-abdb-00163e0a4100";
     std::string order_acc = "3a2249d2-4e79-11ec-97c8-00163e0a4100";
     std::string account_id = order_acc;
+
+    switch (select_acc)
+    {
+    case 1: // 量价1, equ
+        account_id = equ_acc;
+        break;
+    case 2: //equ_test
+        account_id = equ_test_acc;
+        break;
+    case 3: //future
+        account_id = future_acc;
+        break;
+    default: //0
+        account_id = order_acc;
+        break;
+    }
 
     // 登录账户id
     mt.login(account_id.c_str());
@@ -184,10 +76,6 @@ int main(int argc, char *argv[])
 
     //开始接收事件
     int status = mt.start();
-
-
-
-
 
     //判断状态
     if (status == 0)
@@ -254,7 +142,6 @@ int main(int argc, char *argv[])
     if (fin.is_open())
     {
         LOG(INFO)<<"order file exist, start to order....."<<std::endl;
-
         std::vector<std::string> v_line;
         std::vector<std::string> target_positions;
         
@@ -312,14 +199,14 @@ int main(int argc, char *argv[])
         fin.close();
 
     }else{ // stop profit and loss
-        
         for (int i = 0; i<ps->count(); i++)
         {
             Position &p = ps->at(i);
             // LOG(INFO)<<"account id:"<<p.account_id<<std::endl;
-            if(fabs(p.fpnl/p.amount) > 0.2)
+            
+            if(fabs(p.fpnl/p.amount) > (stop_profit_loss_pct/100.0))
             {
-                LOG(INFO)<<"sell order for code:"<<p.symbol<<",with volume:"<<p.available<<std::endl;
+                LOG(INFO)<<"sell order for code:"<<p.symbol<<",with volume:"<<p.available<<"profit point"<<p.fpnl/p.amount<<" benchmark:"<<stop_profit_loss_pct/100.0;
                 _order = mt.order_volume(p.symbol,p.available,OrderSide_Sell,OrderType_Market,PositionEffect_CloseYesterday,56.15,account_id.c_str());
                 LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
             }

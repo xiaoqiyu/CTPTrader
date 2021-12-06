@@ -13,7 +13,7 @@ public:
 class DataStrategy : public QTStrategyBase
 {
 public:
-    DataStrategy(const std::string &name) : QTStrategyBase(name){
+    DataStrategy(const std::string &name, int mode) : QTStrategyBase(name, mode){
         LOG(INFO)<<"DataStrategy Constructor";
     };
     ~DataStrategy(){};

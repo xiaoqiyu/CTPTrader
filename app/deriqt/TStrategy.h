@@ -13,7 +13,7 @@ public:
 class TStrategy: public QTStrategyBase
 {
     public:
-    TStrategy(const std::string &name):QTStrategyBase(name){};
+    TStrategy(const std::string &name, int mode):QTStrategyBase(name,mode ){};
     ~TStrategy(){};
     
     void calculate_signal(){
