@@ -32,6 +32,10 @@ cc_binary(
         "@com_github_google_glog//:glog",
         "//third_party/ctp:ctp",
 		"//third_party/gmsimtrade:gmsimtrade",
+		"@boost//:lockfree",
+		"@boost//:interprocess",
+		"@boost//:system",
+		"@boost//:thread",
 	],
 
 

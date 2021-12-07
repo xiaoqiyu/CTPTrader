@@ -17,6 +17,7 @@ namespace shm
 }
 
 #include <unistd.h>
+#include<iostream>
 
 int main()
 {
@@ -30,10 +31,22 @@ int main()
     shm::ring_buffer *queue = segment.find_or_construct<shm::ring_buffer>("queue")();
 
     const char* messages[] = { "hello world", "the answer is 42", "where is your towel", 0 };
+    
+     srand(time(0));
+     char s[64];
+     int offset = 0;
+     for(int i = 0; i < 10; i++) {
+          offset += sprintf(s + offset, "%d,", rand() % 100);
+     }
+     s[offset - 1] = '\n';//将最后一个逗号换成换行符。
+    //  printf(s);
+     std::cout<<s<<std::endl;
 
     for (const char** msg_it = messages; *msg_it; ++msg_it)
     {
         sleep(1);
         queue->push(shm::shared_string(*msg_it, char_alloc));
     }
+       
+    queue->push(shm::shared_string(s, char_alloc));
 }

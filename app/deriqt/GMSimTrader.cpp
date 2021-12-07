@@ -7,7 +7,7 @@ void SimTrader::init()
 
 void SimTrader::exit()
 {
-    this->_active = true;
+    this->_active = false;
     this->_task_thread.join();
 }
 //关注委托状态变化
@@ -72,9 +72,7 @@ void SimTrader::process_execution_report(Task *task)
     }
     if (task->task_error)
     {
-        // CThostFtdcRspInfoField *task_error = reinterpret_cast<CThostFtdcRspInfoField *>(task->task_error);
-        // LOG_IF(FATAL, task_error->ErrorID != 0) << "Error processRspAuthenticate->" << task_error->ErrorID << "," << task_error->ErrorMsg;
-        // delete task_error;
+        LOG(ERROR)<<"process execute error";
     }
 }
 
@@ -96,9 +94,7 @@ void SimTrader::process_order_status(Task *task)
     }
     if (task->task_error)
     {
-        // CThostFtdcRspInfoField *task_error = reinterpret_cast<CThostFtdcRspInfoField *>(task->task_error);
-        // LOG_IF(FATAL, task_error->ErrorID != 0) << "Error processRspAuthenticate->" << task_error->ErrorID << "," << task_error->ErrorMsg;
-        // delete task_error;
+        LOG(ERROR)<<"Process order error";
     }
 }
 
@@ -126,6 +122,7 @@ void SimTrader::processTask(){
         case ONSIMEXECUTIONREPORT:
         {
             this->process_execution_report(&task);
+
         }
         }        
     }

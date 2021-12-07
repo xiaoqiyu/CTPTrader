@@ -102,8 +102,28 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	LOG(INFO)<<"before init simtrade";
 	if(this->mode == 1){//mode 1 will connet to simtrade server for simulation
 		LOG(INFO)<<"Mode 1: init simtrade";
-	//Simtrade connect and init
-	// code to connect gm trade trade and login
+		//Simtrade connect and init
+		// code to connect gm trade trade and login
+		SimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
+		// 设置服务地址api.myquant.cn:9000
+		mt.set_endpoint ("api.myquant.cn:9000");
+		std::string future_acc = "a1a91403-2fc2-11ec-bd15-00163e0a4";		
+		std::string account_id = future_acc;
+		
+		// 登录账户id
+		mt.login(account_id.c_str());
+		// mt.init();
+		//开始接收事件
+		int status = mt.start();
+		//判断状态
+		if (status == 0)
+		{
+		    LOG(INFO) << "connected to server" << std::endl;
+		}
+		else
+		{
+		    LOG(INFO) << "Fail to connect to server" << std::endl;
+		}
 	}
 	LOG(INFO)<<"after init simtrade";
 
@@ -132,16 +152,29 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		sprintf(_depth_mkt_filename, "cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
 		p_depth_mkt->open(_depth_mkt_filename, std::ios::app|std::ios::binary);
 		this->p_depth_mkt_writer = new recordio::RecordWriter(p_depth_mkt);
+		//mode 0 process is the producer for the shm 
+		bip::managed_shared_memory segment(bip::open_or_create, "MySharedMemory", 65536);
+    	shm::char_alloc char_alloc(segment.get_segment_manager());
+
+    	// Ringbuffer fully constructed in shared memory. The element strings are
+    	// also allocated from the same shared memory segment. This vector can be
+    	// safely accessed from other processes.
+    	this->p_shm_queue = segment.find_or_construct<shm::ring_buffer>("queue")();
 	} else if (this-> mode == 1 || this->mode ==2){
 		LOG(INFO)<<"Mode 1 &2: create order data queue";
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
+		//mode 0 process is the consumer for the shm 
+		bip::managed_shared_memory segment(bip::open_or_create, "MySharedMemory", 65536);
+    	shm::char_alloc char_alloc(segment.get_segment_manager());
+    	this->p_shm_queue  = segment.find_or_construct<shm::ring_buffer>("queue")();
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
 	this->active_ = true;
 	return 0;
 };
+
 
 
 void QTStrategyBase::on_tick()
@@ -200,8 +233,17 @@ void QTStrategyBase::calculate_kline(){};
 void QTStrategyBase::start()
 {
 	this->start_ = true;
-	this->p_md_handler->SubscribeMarketData();
-
+	if(this->mode == 0){
+		LOG(INFO)<<"mode 0: start subscribe mkt data";
+		this->p_md_handler->SubscribeMarketData();
+	}else if(this->mode == 1){
+		LOG(INFO)<<"mode 1: simtrade, start listen to factor";
+	}else if (this->mode == 2){
+		LOG(INFO)<<"mode 2: livetrade, start listen to factor";
+	}else{
+		LOG(ERROR)<<"invalid mode";
+	}
+	LOG(INFO)<<"end of start in strategy";
 }
 
 
@@ -291,29 +333,36 @@ int QTStrategyBase::get_position_details(std::string investor_id, std::string br
 void QTStrategyBase::stop()
 {
 	//TODO stop data_thread, but the ctp instance is still active
-	this->data_thread.join();
-	this->order_thread.join();
+	if(this->mode == 0){
+		LOG(INFO)<<"Mode 0: join data thread";
+		this->data_thread.join();
+	}else if (this->mode == 1 || this->mode == 2){
+		LOG(INFO)<<"Mode 1&2: join order thread";
+		this->order_thread.join();
+	}else{
+		LOG(ERROR)<<"Invalid mode in stop:"<<this->mode;
+	}
     sleep(3);
 }
 
 
 void QTStrategyBase::release()
 {
-	delete p_order_queue;
-	for(auto iter=v_t2k_helper.begin(); iter!=v_t2k_helper.end(); ++iter)
-	{
-		delete *iter;
+	if (this->mode == 0){
+		LOG(INFO)<<"Mode 0: delete t2k helper";
+		for(auto iter=v_t2k_helper.begin(); iter!=v_t2k_helper.end(); ++iter)
+		{
+			delete *iter;
+		}
+		LOG(INFO)<<"Mode 0 in relase:stop CTP MD";
+		this->p_md_handler->exit();
+	}else if(this->mode == 1 || this->mode==2){
+		LOG(INFO)<<"Mode 1&2: delete order queue in release";
+		delete p_order_queue;
+	}else{
+		LOG(INFO)<<"Invalide mode in relase:"<<this->mode;
 	}
-
-	// for(auto iter=v_depth_writer.begin(); iter!=v_depth_writer.end(); ++iter)
-	// {
-	// 	(*iter).Close();
-	// }
-	// for(auto  iter=v_kline_writer.begin(); iter!=v_kline_writer.end(); ++iter)
-	// {
-	// 	(*iter).Close();
-	// }
-	this->p_md_handler->exit();
+	LOG(INFO)<<"release:stop CTP TD";
 	this->p_trader_handler->exit();
 }
 

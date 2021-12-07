@@ -7,6 +7,13 @@
 #include <unordered_map>
 #include <fstream>
 #include <stdio.h>
+#include <unistd.h>
+
+#include <boost/lockfree/spsc_queue.hpp> // ring buffer
+
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/containers/string.hpp>
 
 #include <cassert>
 #include <utility>
@@ -22,12 +29,26 @@
 #include "helper.h"
 #include "recordio.h"
 #include "recordio_range.h"
+#include "GMSimTrader.h"
 #include <glog/logging.h>
 
 typedef CTPTraderHandler *trader_util_ptr;
 typedef CTPMdHandler *md_ptr;
 typedef bool order_signal;
 extern int nRequestID;
+
+
+namespace bip = boost::interprocess;
+namespace shm
+{
+    typedef bip::allocator<char, bip::managed_shared_memory::segment_manager> char_alloc;
+    typedef bip::basic_string<char, std::char_traits<char>, char_alloc >      shared_string;
+
+    typedef boost::lockfree::spsc_queue<
+        shared_string, 
+        boost::lockfree::capacity<200> 
+    > ring_buffer;
+}
 
 class Signal
 {
@@ -40,14 +61,20 @@ private:
 	order_signal _signal = LONGOPEN;
 };
 
+
+
 class QTStrategyBase
 {
 public: //strategy function
-	int get_signal();
-	void on_tick();
+	int get_signal(); // TODO: check how to signal, maybe replace  
+	void on_tick(); 
+	void on_event();
+	
 
 public: //stategy management
-	QTStrategyBase(const std::string &name,  int mode) : name(name), mode(mode){LOG(INFO)<<"constructor in base";};
+	QTStrategyBase(const std::string &name,  int mode) : name(name), mode(mode){
+		LOG(INFO)<<"constructor in base";		
+	};
 	virtual ~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
 	//start subscrible market data, and strategy
@@ -160,4 +187,5 @@ private:
 	std::vector<std::string> v_option_ids;
 	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
 	recordio::RecordWriter * p_depth_mkt_writer;
+	shm::ring_buffer *p_shm_queue;
 };

@@ -87,6 +87,7 @@ std::cout<<"run here 1"<<std::endl;
 
     // int ret_pos_detail = p_strategy->get_position_details(_user_id, _broker_id);
     sleep(5);
+    LOG(INFO)<< "After query investor account";
     
     
 #endif
