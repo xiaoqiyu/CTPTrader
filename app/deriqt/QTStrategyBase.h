@@ -66,7 +66,7 @@ private:
 class QTStrategyBase
 {
 public: //strategy function
-	int get_signal(); // TODO: check how to signal, maybe replace  
+	int get_signal(); // TODO: check how to signal, maybe replace, and push to order Q
 	void on_tick(); 
 	void on_event();
 	
@@ -139,8 +139,6 @@ public: //qry for product/instrument/account
 		}
 		reader.Close();
 	}
-
-
 	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 
 protected:
@@ -150,7 +148,7 @@ protected:
 	thread order_thread;
 	std::vector<std::vector<double>> v_factor; //cached factor list
 	Signal *p_signal = nullptr;				  //derived in subclass
-	virtual void calculate_signal(){};	  //overwrite in subclass
+	virtual void calculate_signal(){};	  //overwrite in subclass TODO add the signal update in process 2
 	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
 

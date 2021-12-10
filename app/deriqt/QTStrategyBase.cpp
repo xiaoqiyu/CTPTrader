@@ -136,6 +136,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		this->order_thread = thread(&QTStrategyBase::process_order, this);
 	}
 
+	// bip::managed_shared_memory segment(bip::open_or_create, "MySharedMemory", 65536);
+	// shm::char_alloc char_alloc(segment.get_segment_manager());
 
 	if (this->mode  == 0){ //mode 0 for kline resample and depth market cache
 	    LOG(INFO)<<"Mode 0: create cache writer";
@@ -153,21 +155,26 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_depth_mkt->open(_depth_mkt_filename, std::ios::app|std::ios::binary);
 		this->p_depth_mkt_writer = new recordio::RecordWriter(p_depth_mkt);
 		//mode 0 process is the producer for the shm 
+		/*
 		bip::managed_shared_memory segment(bip::open_or_create, "MySharedMemory", 65536);
     	shm::char_alloc char_alloc(segment.get_segment_manager());
-
+		*/
     	// Ringbuffer fully constructed in shared memory. The element strings are
     	// also allocated from the same shared memory segment. This vector can be
     	// safely accessed from other processes.
-    	this->p_shm_queue = segment.find_or_construct<shm::ring_buffer>("queue")();
+    	// this->p_shm_queue = segment.find_or_construct<shm::ring_buffer>("queue")();
+		
 	} else if (this-> mode == 1 || this->mode ==2){
 		LOG(INFO)<<"Mode 1 &2: create order data queue";
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
+		/*
 		//mode 0 process is the consumer for the shm 
 		bip::managed_shared_memory segment(bip::open_or_create, "MySharedMemory", 65536);
     	shm::char_alloc char_alloc(segment.get_segment_manager());
-    	this->p_shm_queue  = segment.find_or_construct<shm::ring_buffer>("queue")();
+		*/
+    	// this->p_shm_queue  = segment.find_or_construct<shm::ring_buffer>("queue")();
+		
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
@@ -175,6 +182,29 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	return 0;
 };
 
+void QTStrategyBase::on_event()
+{
+	try
+	{
+		while(true)
+		{
+
+			// shm::char_alloc char_alloc(segment.get_segment_manager());
+			// shm::shared_string v(char_alloc);
+// 
+			// this->p_shm_queue->pop(this->v);
+    		// if (this->p_shm_queue->pop(v)){
+    		    // LOG(INFO) << "Processed Event: '" << v << "'\n";
+				// 
+			// }
+		}
+	}
+	catch(const std::exception& e)
+	{
+		LOG(ERROR)<< e.what() << '\n';
+	}
+	
+}
 
 
 void QTStrategyBase::on_tick()
@@ -193,6 +223,7 @@ void QTStrategyBase::on_tick()
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
 					this->calculate_signal();//calculate signal details will be deterimined by subclass,buy specific strategy
 					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
+					//TODO: factor to buffer, and push to shm queue
 				
 					// int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
 					// v_depth_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));

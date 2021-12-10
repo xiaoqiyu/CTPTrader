@@ -37,7 +37,9 @@ cc_binary(
 		"@boost//:system",
 		"@boost//:thread",
 	],
-
+	linkopts = [
+    "-lrt"
+],
 
 
 )

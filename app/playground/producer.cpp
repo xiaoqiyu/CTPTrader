@@ -19,6 +19,24 @@ namespace shm
 #include <unistd.h>
 #include<iostream>
 
+class Signal
+{
+public:
+	Signal(){
+        bip::managed_shared_memory segment(bip::open_or_create, "SignalMemory", 65536);
+        this->p_char_alloc = shm::char_alloc(segment.get_segment_manager());
+        this->p_queue = segment.find_or_construct<shm::ring_buffer>("queue")();
+    };
+	~Signal();
+	void update_signal(){};
+
+private:
+	// bip::managed_shared_memory segment(bip::open_or_create, "SignalMemory", 65536);
+    shm::char_alloc * p_char_alloc;
+    shm::ring_buffer *p_queue;
+};
+
+
 int main()
 {
     // create segment and corresponding allocator
