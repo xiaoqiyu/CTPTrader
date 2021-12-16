@@ -21,7 +21,7 @@ namespace shm
 int main()
 {
     // create segment and corresponding allocator
-    bip::managed_shared_memory segment(bip::open_or_create, "MySharedMemory", 65536);
+    bip::managed_shared_memory segment(bip::open_or_create, "new_momory", 65536);
     shm::char_alloc char_alloc(segment.get_segment_manager());
 
     shm::ring_buffer *queue = segment.find_or_construct<shm::ring_buffer>("queue")();
@@ -31,5 +31,7 @@ int main()
         shm::shared_string v(char_alloc);
         if (queue->pop(v))
             std::cout << "Processed: '" << v << "'\n";
+            // std::cout<<v.find(',')<<std::endl;
+            
     }
 }

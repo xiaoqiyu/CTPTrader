@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
     std::string mode = "0";
     std::string _strategy_name = "data_strategy";
     std::vector<std::string> v_instrumentID;
+
     
     if (argc <= 1)
     {
@@ -56,11 +57,11 @@ std::cout<<"run here 1"<<std::endl;
     QTStrategyBase *p_strategy = nullptr;
     if (_strategy_name == "data_strategy")
     {
-        p_strategy = new DataStrategy("data_strategy", std::stoi(mode));
+        p_strategy = new DataStrategy("data_strategy", std::stoi(mode),_strategy_name, 65536);
     }
     else if (_strategy_name == "t_strategy")
     {
-        p_strategy = new TStrategy("t_strategy", std::stoi(mode));
+        p_strategy = new TStrategy("t_strategy", std::stoi(mode), _strategy_name, 65536);
     }
     p_strategy->init(v_instrumentID, _conf_file_name);
     

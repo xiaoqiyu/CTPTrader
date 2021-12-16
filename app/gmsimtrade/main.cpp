@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
                 iter++;
             }
             if(iter == curr_positions.end()){
-                if( iter == curr_positions.end() && pos_num <20 && mode == "b")
+                if( iter == curr_positions.end() && pos_num <10 && mode == "b")
                 {
                     LOG(INFO)<<"buy order for code:"<<v_line[0]<<",with volume:"<<std::stoi(v_line[2])<<std::endl;
                     _order = mt.order_volume(v_line[0].c_str(),std::stoi(v_line[2])*100,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,account_id.c_str());

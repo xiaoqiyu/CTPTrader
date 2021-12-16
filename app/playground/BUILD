@@ -19,7 +19,7 @@ cc_binary(
 cc_binary(
     name = "producer",
     srcs = [
-		"producer.cpp"
+		"producer_test.cpp"
 	],
     deps = [
         "@boost//:lockfree",

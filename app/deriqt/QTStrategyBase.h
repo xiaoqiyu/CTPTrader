@@ -72,8 +72,15 @@ public: //strategy function
 	
 
 public: //stategy management
-	QTStrategyBase(const std::string &name,  int mode) : name(name), mode(mode){
+	QTStrategyBase(const std::string &name,  int mode, const char* shared_memory_name, uint32_t size):name(name), mode(mode){
+
 		LOG(INFO)<<"constructor in base";		
+		segmet_ptr.reset(new bip::managed_shared_memory(bip::open_or_create, shared_memory_name, size));
+		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
+		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
+		// if(mode==0){
+			// this->p_shm_queue
+		// }
 	};
 	virtual ~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
@@ -146,6 +153,7 @@ protected:
 	md_ptr p_md_handler = nullptr;
 	thread data_thread;
 	thread order_thread;
+	thread signal_thread;
 	std::vector<std::vector<double>> v_factor; //cached factor list
 	Signal *p_signal = nullptr;				  //derived in subclass
 	virtual void calculate_signal(){};	  //overwrite in subclass TODO add the signal update in process 2
@@ -185,5 +193,11 @@ private:
 	std::vector<std::string> v_option_ids;
 	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
 	recordio::RecordWriter * p_depth_mkt_writer;
-	shm::ring_buffer *p_shm_queue;
+	// shm::ring_buffer* p_queue;
+    // shm::char_alloc acc;
+	std::unique_ptr<bip::managed_shared_memory> segmet_ptr;
+    std::unique_ptr<shm::char_alloc> char_alloc_ptr;
+    shm::ring_buffer* p_queue;
+	// TODO: FOR SIMTRADE TESTING
+	int position_limit; 
 };

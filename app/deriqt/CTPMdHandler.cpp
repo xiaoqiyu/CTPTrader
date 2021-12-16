@@ -69,7 +69,7 @@ void CTPMdHandler::OnRspUserLogin(
 
 		login_ = true;
 		cond_.notify_one();
-		this->SubscribeMarketData();
+		// this->SubscribeMarketData();
 	}
 	else
 		LOG(ERROR) << "Err in CTPMD Login->ErrorID=" << pRspInfo->ErrorID << ", ErrorMsg=" << pRspInfo->ErrorMsg;
@@ -232,6 +232,7 @@ void CTPMdHandler::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpe
 // 行情详情通知
 void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
+	// LOG(INFO)<<"return in dept market data";
 	DataField data = DataField();
 	data.data_type = FDEPTHMKT;
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
