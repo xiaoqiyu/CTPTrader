@@ -202,21 +202,17 @@ void QTStrategyBase::on_tick()
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
 					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
-					    char s[128];
-    				int offset = 0;
-    				// double d1 = 3.14;
-    				offset += sprintf(s+offset, "%f,", pDepthMarketData->LastPrice);
-    				// int v1 = 100;
-    				offset += sprintf(s+offset, "%d,", pDepthMarketData->Volume);
-    				s[offset - 1] = '\n';//将最后一个逗号换成换行符。
-    				//  printf(s);
-    				// std::cout<<s<<std::endl;
-    				p_queue->push(shm::shared_string(s, *char_alloc_ptr));
-					//TODO: factor to buffer, and push to shm queue
-				
-					// int _idx = this->m_filename_idx[pDepthMarketData->InstrumentID];
-					// v_depth_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
-					// std::cout<<pDepthMarketData->UpdateTime<<"."<<pDepthMarketData->UpdateMillisec<<std::endl;
+					//FIXME  HARD CODE for shared memory test
+					// if(this->task_tag == "eg"){
+						// char s[128];
+						// int offset = 0;
+						// offset += sprintf(s+offset, "%f,", pDepthMarketData->LastPrice);
+						// offset += sprintf(s+offset, "%d,", pDepthMarketData->Volume);
+						// s[offset - 1] = '\n';//将最后一个逗号换成换行符。
+						// p_queue->push(shm::shared_string(s, *char_alloc_ptr));
+// 
+					// }
+					
 					this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
 
 					// KLineDataType *p_kline_data = new KLineDataType();
