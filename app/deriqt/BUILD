@@ -22,7 +22,9 @@ cc_binary(
         "timer.h",
 		"TStrategy.h",
 		"GMSimTrader.h",
-		"GMSimTrader.cpp"
+		"GMSimTrader.cpp",
+		"OrderSignal.h",
+		"OrderSignal.cpp"
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",

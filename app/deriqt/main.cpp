@@ -51,13 +51,13 @@ int main(int argc, char *argv[])
             v_instrumentID.push_back(token);
         }
     }
+
     
-std::cout<<"run here 1"<<std::endl;
-#if 1
     QTStrategyBase *p_strategy = nullptr;
+    std::string _shm_name = _strategy_name+_instrument_id;
     if (_strategy_name == "data_strategy")
     {
-        p_strategy = new DataStrategy("data_strategy", std::stoi(mode),_strategy_name.c_str(), 65536);
+        p_strategy = new DataStrategy("data_strategy", std::stoi(mode),_shm_name.c_str(), 65536);
     }
     else if (_strategy_name == "t_strategy")
     {
@@ -66,9 +66,6 @@ std::cout<<"run here 1"<<std::endl;
     p_strategy->init(v_instrumentID, _conf_file_name);
     
 
-
-
-#if true
     sleep(5);
     std::string _user_id = "105600687";
     std::string _broker_id = "9040";
@@ -90,13 +87,11 @@ std::cout<<"run here 1"<<std::endl;
     sleep(5);
     LOG(INFO)<< "After query investor account";
     
-    
-#endif
 
     p_strategy->start();
     p_strategy->stop();
     p_strategy->release();
-#endif
+
 
     return 0;
 }

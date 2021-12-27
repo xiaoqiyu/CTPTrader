@@ -13,7 +13,7 @@ void SimTrader::exit()
 //关注委托状态变化
 void SimTrader::on_order_status(Order *order)
 {
-    LOG(INFO)<<"call back in order status:"<<order->symbol<<std::endl;
+    LOG(INFO)<<"call back in order status:"<<order->symbol<<order->status<<order->ord_rej_reason<<order->ord_rej_reason_detail;
     Task task = Task();
     task.task_name = ONSIMORDERSTATUS;
     if (order)
@@ -68,6 +68,13 @@ void SimTrader::process_execution_report(Task *task)
         LOG(INFO) << "commission: " << task_data->commission << std::endl;
         LOG(INFO) << "cost: " << task_data->cost << std::endl;
         LOG(INFO) << "created_at: " << task_data->created_at << std::endl;
+        
+        if (task_data->position_effect == PositionEffect_Open && task_data->volume > 0){//for the open position, will add the stop_profit and loss order automatically
+            double _order_price = task_data->price;
+            //TODO order volume
+
+
+        }
         delete task_data;
     }
     if (task->task_error)

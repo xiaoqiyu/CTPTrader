@@ -47,4 +47,3 @@ cc_binary(
         "-lrt"
     ],
 )
-

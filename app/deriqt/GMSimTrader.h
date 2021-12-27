@@ -27,6 +27,13 @@ private:
         bool connected_ = false; //连接交易前置
         bool login_ = false; //验证和登录完成
         bool available_ = false; //用于交易查询的流控
+        int stop_profit = 5; 
+        int stop_loss = 10; 
+        int fee_open = 2; 
+        int fee_close_today = 2;
+        int fee_close_yesterday = 2;
+        int multiplier  = 10; //FIXME remove hardcode, remove to config
+        
 public:
     SimTrader (const std::string& token)
         :Trade (token.c_str())

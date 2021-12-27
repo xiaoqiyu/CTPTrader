@@ -26,10 +26,11 @@
 #include "TickToKlineHelper.h"
 #include "CTPTraderHandler.h"
 #include "CTPMdHandler.h"
-#include "helper.h"
+// #include "helper.h"
 #include "recordio.h"
 #include "recordio_range.h"
 #include "GMSimTrader.h"
+#include "OrderSignal.h"
 #include <glog/logging.h>
 
 typedef CTPTraderHandler *trader_util_ptr;
@@ -50,18 +51,38 @@ namespace shm
     > ring_buffer;
 }
 
-class Signal
-{
-public:
-	Signal();
-	~Signal();
-	void update_signal(){};
-
-private:
-	order_signal _signal = LONGOPEN;
-};
 
 
+//TODO check multiple definition errors
+// std::vector<std::string> split_str(std::string s, char c)
+// {
+    // std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
+    // std::vector<std::string> v;
+	// std::stringstream sstr(s);
+	// std::string token;
+	// int cnt = 0;
+    // while (getline(sstr, token, c))
+    // {
+    //    v.push_back(token);
+    // }
+    // return v;
+// }
+// 
+
+// std::string get_exchange_id_order11(int mode=1, std::string product_id="eg"){
+    // if(mode == 1){
+        //  if(product_id == "eg"){
+            //  return "DCE";
+        //  }
+        // 
+    // }else if(mode == 2){
+        // return "mode 2";
+    // }else{
+        // return "invalid mode";
+    // }
+    // return "invalid mode";
+    // 
+// }
 
 class QTStrategyBase
 {
@@ -155,7 +176,13 @@ protected:
 	thread order_thread;
 	thread signal_thread;
 	std::vector<std::vector<double>> v_factor; //cached factor list
-	Signal *p_signal = nullptr;				  //derived in subclass
+	//FIXME remove hard code of the size
+	// std::vector<double> v_last_vector(7, 0.0); // last, max, min, spread, mid_price,avg, slope
+	std::vector<double> v_last_vector;
+	double last_price1 = 0.0; //last price in prev timestamp
+	double last_price2 = 0.0; //last price in prev 2 timesstamp
+	
+	// OrderSignal  *p_signal = nullptr;				  //derived in subclass
 	virtual void calculate_signal(){};	  //overwrite in subclass TODO add the signal update in process 2
 	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
@@ -197,7 +224,9 @@ private:
     // shm::char_alloc acc;
 	std::unique_ptr<bip::managed_shared_memory> segmet_ptr;
     std::unique_ptr<shm::char_alloc> char_alloc_ptr;
+	std::unique_ptr<SimTrader> simtrade_ptr;
     shm::ring_buffer* p_queue;
 	// TODO: FOR SIMTRADE TESTING
 	int position_limit; 
+	std::string simtrade_account_id;
 };

@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
             {
                 if(*iter == p.symbol) break;
             }
-            if(iter == target_positions.end() && mode == "s")
+            if(iter == target_positions.end() && mode == "s" && p.available >0)
             {
                 LOG(INFO)<<"sell order for code:"<<p.symbol<<",with volume:"<<p.available<<std::endl;
                 _order = mt.order_volume(p.symbol,p.available,OrderSide_Sell,OrderType_Market,PositionEffect_CloseYesterday,56.15,account_id.c_str());

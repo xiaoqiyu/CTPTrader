@@ -8,16 +8,16 @@
 //TODO check multiple definition errors
 // std::vector<std::string> split_str(std::string s, char c)
 // {
-//     // std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
-//     std::vector<std::string> v;
-// 	std::stringstream sstr(s);
-// 	std::string token;
-// 	int cnt = 0;
-//     while (getline(sstr, token, c))
-//     {
-//        v.push_back(token);
-//     }
-//     return v;
+    // std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
+    // std::vector<std::string> v;
+	// std::stringstream sstr(s);
+	// std::string token;
+	// int cnt = 0;
+    // while (getline(sstr, token, c))
+    // {
+    //    v.push_back(token);
+    // }
+    // return v;
 // }
 
 template <typename... Args>
@@ -64,3 +64,19 @@ static void formatStringEx(std::wstring &dst, const std::wstring &format, Args..
 
 // std::wstring wstr_1 = formatString(L"%s, %d, %f, %.2lf", L"today", 2, 2.1, 0.1);
 // formatStringEx(wstr, L"%s, %d, %f, %.2lf", L"today", 2, 2.1, 0.1);
+
+//TODO refactor
+// std::string get_exchange_id_order(int mode=1, std::string product_id="eg"){
+    // if(mode == 1){
+        //  if(product_id == "eg"){
+            //  return "DCE";
+        //  }
+        // 
+    // }else if(mode == 2){
+        // return "mode 2";
+    // }else{
+        // return "invalid mode";
+    // }
+    // return "invalid mode";
+    // 
+// }

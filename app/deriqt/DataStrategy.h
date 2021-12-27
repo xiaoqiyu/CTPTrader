@@ -2,13 +2,6 @@
 #include <glog/logging.h>
 #include "QTStrategyBase.h"
 
-class DataSignal : public Signal
-{
-public:
-    DataSignal();
-    ~DataSignal();
-    
-};
 
 class DataStrategy : public QTStrategyBase
 {

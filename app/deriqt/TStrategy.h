@@ -1,15 +1,6 @@
 #pragma once
 #include "QTStrategyBase.h"
 
-
-class TSignal:public Signal
-{
-public:
-    TSignal();
-    ~TSignal();
-    void update_signal(){};
-};
-
 class TStrategy: public QTStrategyBase
 {
     public:
