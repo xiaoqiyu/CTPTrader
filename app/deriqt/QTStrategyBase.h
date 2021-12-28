@@ -229,4 +229,5 @@ private:
 	// TODO: FOR SIMTRADE TESTING
 	int position_limit; 
 	std::string simtrade_account_id;
+	OrderSignal * p_sig;
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <glog/logging.h>
 #include "define.h"
 
 
@@ -8,9 +9,9 @@
 class OrderSignal
 {
 public:
-	OrderSignal();
+	OrderSignal(){};
 	~OrderSignal();
-	void get_signal(const std::vector<double>&v_factor){};
+	void get_signal(const std::vector<std::string>&v_factor, int trading_mode);
 
 private:
 	int _order_volume; 

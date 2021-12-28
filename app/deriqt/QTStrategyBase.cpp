@@ -31,6 +31,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 
 	//FIXME remove hardcode in the init of factor
 	for(int i = 0; i<7;++i) this->v_last_vector.push_back(0.0);
+	this->v_last_vector[2] = __DBL_MAX__;
+	this->v_last_vector[1] = __DBL_MIN__;
 
 	// TODO SIMTRADE 
 	position_limit = 0;
@@ -162,6 +164,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		LOG(INFO)<<"Mode 1 &2: create order data queue";
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
+		this->p_sig = new OrderSignal();
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
@@ -209,18 +212,21 @@ void QTStrategyBase::on_event()
 					Order _order;
 					
 					// std::string _symbol = "DCE.m2201";
-					std::string _symbol = v_rev[0];
-					std::string _update_time = v_rev[1];
-					int update_milsec = std::stoi(v_rev[2]);
-					long volume = std::stoi(v_rev[3]);
-					double last_price = std::stod(v_rev[4]);
-					double curr_max = std::stod(v_rev[5]);
-					double curr_min = std::stod(v_rev[6]);
-
-					LOG(INFO)<<"Recieve:"<<_symbol<<","<<_update_time<<","<<update_milsec<<","<<volume<<","<<last_price<<","<<curr_max<<","<<curr_min;
+					// std::string _symbol = v_rev[0];
+					// std::string _update_time = v_rev[1];
+					// int update_milsec = std::stoi(v_rev[2]);
+					// long volume = std::stoi(v_rev[3]);
+					// double last_price = std::stod(v_rev[4]);
+					// double curr_max = std::stod(v_rev[5]);
+					// double curr_min = std::stod(v_rev[6]);
+// 
+					// LOG(INFO)<<"Recieve:"<<_symbol<<","<<_update_time<<","<<update_milsec<<","<<volume<<","<<last_price<<","<<curr_max<<","<<curr_min;
+					p_sig->get_signal(v_rev, this->mode);
 					//FIXME task_tag is not grarantee to be product id
 					// std::string _exchange = get_exchange_id_order11(this->mode, this->task_tag); 
 					std::string _exchange;
+										
+					std::string _symbol = "DCE.m2201";
 					if (this->task_tag == "eg" && this->mode){
 						_exchange ="DCE";
 					}
@@ -262,7 +268,7 @@ void QTStrategyBase::on_tick()
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					// this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
+					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
 					//FIXME  HARD CODE for shared memory test
 					if(this->task_tag == "eg"){
 						char s[128];
@@ -401,14 +407,6 @@ int QTStrategyBase::req_trade(std::string investor_id, std::string broker_id)
 	return ret_req;
 }
 
-// int QTStrategyBase::get_depth_mkt(std::string instrument_id)
-// {
-// 	CThostFtdcQryDepthMarketDataField mkt_fields = {0};
-// 	std::strcpy(mkt_fields.InstrumentID, instrument_id.c_str());
-// 	int ret_req = this->p_trader_handler->ReqQryDepthMarketData(&mkt_fields, nRequestID++);
-// 	std::cout<<"Req return in depth market is:"<<ret_req<<std::endl;
-// 	return ret_req;
-// }
 
 int QTStrategyBase::get_position_details(std::string investor_id, std::string broker_id)
 {
@@ -485,9 +483,10 @@ void QTStrategyBase::calculate_factors(CThostFtdcDepthMarketDataField *pDepthMar
 	double _curr_spread = pDepthMarketData->AskPrice1 - pDepthMarketData->BidPrice1;
 	double _curr_vwap = pDepthMarketData->Turnover/pDepthMarketData->Volume;
 	double _curr_slope = _curr_last - last_price1;
-	double _curr_mid = (pDepthMarketData->AskPrice1+pDepthMarketData->BidPrice1)/2;
+	double _curr_mid = (pDepthMarketData->AskPrice1*pDepthMarketData->BidVolume1+pDepthMarketData->BidPrice1*pDepthMarketData->AskVolume1)/(pDepthMarketData->AskVolume1+pDepthMarketData->BidVolume1);
 
 	
+	// LOG(INFO)<<"calculate factor:"<<_curr_max<<","<<_curr_mid<<","<<_curr_min;
 	this->v_last_vector.push_back(_curr_last);
 	this->v_last_vector.push_back(_curr_max);
 	this->v_last_vector.push_back(_curr_min);
