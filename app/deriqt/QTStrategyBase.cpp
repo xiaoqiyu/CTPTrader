@@ -213,8 +213,11 @@ void QTStrategyBase::on_event()
 					std::string _update_time = v_rev[1];
 					int update_milsec = std::stoi(v_rev[2]);
 					long volume = std::stoi(v_rev[3]);
+					double last_price = std::stod(v_rev[4]);
+					double curr_max = std::stod(v_rev[5]);
+					double curr_min = std::stod(v_rev[6]);
 
-					LOG(INFO)<<"Recieve:"<<_symbol<<","<<_update_time<<","<<update_milsec<<","<<volume;
+					LOG(INFO)<<"Recieve:"<<_symbol<<","<<_update_time<<","<<update_milsec<<","<<volume<<","<<last_price<<","<<curr_max<<","<<curr_min;
 					//FIXME task_tag is not grarantee to be product id
 					// std::string _exchange = get_exchange_id_order11(this->mode, this->task_tag); 
 					std::string _exchange;
