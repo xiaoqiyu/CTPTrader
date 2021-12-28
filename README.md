@@ -1,9 +1,9 @@
-# CTPTrader
+# CTPTrader Includes:
 1. Connected to CTP Market Front and Trade Front;
 2. Subscribe depth market data, cache and calculate factor online;
 3. From factor, calculate trading signal, and place the order;
 4. Maintain order/transaction/positions;
-5. The project support 3 mode:
+5. The project support 3 modes:
    - mode 0: subscribe tick data
    - mode 1: simulation through GoldMine
    - mode 2: live trade through CTP
