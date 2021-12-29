@@ -220,8 +220,6 @@ private:
 	std::vector<std::string> v_option_ids;
 	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
 	recordio::RecordWriter * p_depth_mkt_writer;
-	// shm::ring_buffer* p_queue;
-    // shm::char_alloc acc;
 	std::unique_ptr<bip::managed_shared_memory> segmet_ptr;
     std::unique_ptr<shm::char_alloc> char_alloc_ptr;
 	std::unique_ptr<SimTrader> simtrade_ptr;
@@ -230,4 +228,6 @@ private:
 	int position_limit; 
 	std::string simtrade_account_id;
 	OrderSignal * p_sig;
+
+	
 };

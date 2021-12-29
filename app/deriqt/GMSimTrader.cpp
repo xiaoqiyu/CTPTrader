@@ -2,18 +2,19 @@
 
 void SimTrader::init()
 {
-    this->_task_thread = thread(&SimTrader::processTask, this);
+    LOG(INFO)<<"simtrade init-------------";
+    // this->_task_thread = thread(&SimTrader::processTask, this);
 }
 
 void SimTrader::exit()
 {
-    this->_active = false;
+    // this->_active = false;
     this->_task_thread.join();
 }
 //关注委托状态变化
 void SimTrader::on_order_status(Order *order)
 {
-    LOG(INFO)<<"call back in order status:"<<order->symbol<<order->status<<order->ord_rej_reason<<order->ord_rej_reason_detail;
+    // LOG(INFO)<<"call back in order status:"<<order->symbol<<order->status<<order->ord_rej_reason<<order->ord_rej_reason_detail;
     Task task = Task();
     task.task_name = ONSIMORDERSTATUS;
     if (order)
@@ -43,7 +44,7 @@ void SimTrader::on_execution_report(ExecRpt *rpt)
 void SimTrader::on_trade_data_connected()
 {
     this->connected_ = true;
-    LOG(INFO) << "connected to server in connect callback....\n";
+    LOG(INFO) << "connected to server in connect callback...."<<this->connected_;
 }
 
 void SimTrader::on_trade_data_disconnected()
@@ -69,12 +70,18 @@ void SimTrader::process_execution_report(Task *task)
         LOG(INFO) << "cost: " << task_data->cost << std::endl;
         LOG(INFO) << "created_at: " << task_data->created_at << std::endl;
         
+        /* //REMARK won't handle stop profit and loss here, all the orders will be triggered by tick, generated in order sigal 
         if (task_data->position_effect == PositionEffect_Open && task_data->volume > 0){//for the open position, will add the stop_profit and loss order automatically
-            double _order_price = task_data->price;
-            //TODO order volume
-
-
+            //FIXME  order volume for testing, only order with hardcode param, will add commission, and stop profit/stop loss settings
+            double delta_price = 2; //by default: if current order is sell, then the next order is sell will higer(lower) limit price for stop profit(loss)
+            int order_side = OrderSide_Buy; //by default: if current order is sell, then the close order side is sell
+            if (task_data->side == OrderSide_Buy){
+                order_side = OrderSide_Sell;
+                delta_price = -delta_price;//if current order is buy, then the close order is sell
+            }
+            this->order_volume(task_data->symbol, task_data->volume,order_side, OrderType_Limit, PositionEffect_Close,task_data->price);
         }
+        */
         delete task_data;
     }
     if (task->task_error)
@@ -85,6 +92,7 @@ void SimTrader::process_execution_report(Task *task)
 
 void SimTrader::process_order_status(Task *task)
 {
+    LOG(INFO)<< "Process order status in gm trade----------------------------------";
     if (task->task_data)
     {
         Order *task_data = reinterpret_cast<Order *>(task->task_data);
@@ -106,9 +114,11 @@ void SimTrader::process_order_status(Task *task)
 }
 
 void SimTrader::processTask(){
-    std::cout<<this->connected_<<std::endl;
-    while(this->_active && this->connected_)
+    // LOG(INFO)<<"Process task in gm simtrade:"<<this->_active<<","<<this->connected_;
+    // while(this->_active && this->connected_)//FIXME check status
+    while(true)
     {
+        LOG(INFO)<<"status ready in process task";
         Task task = this->_task_queue.pop();
         switch (task.task_name)
         {
@@ -134,40 +144,27 @@ void SimTrader::processTask(){
         }        
     }
 }
-/*
-void SimTrader::processTask()
-{
-    LOG(INFO)<<"Start process order task\n";
-    try
-    {
-        while (this->_active && this->connected_)
-        {
-            Task task = this->_task_queue.pop();
-            switch (task.task_name)
-            {
-            case ONSIMCONNECTED:
-            {
-                this->connected_ = true;
-                break;
-            }
-            case ONSIMDISCONNECTED:
-            {
-                this->connected_ = false;
-                break;
-            }
-            case ONSIMORDERSTATUS:
-            {
-                this->process_order_status(&task);
-            }
-            case ONSIMEXECUTIONREPORT:
-            {
-                this->process_execution_report(&task);
-            }
-            }
-        }
-    }
-    catch (const TerminatedError &)
-    {
-    }
-}
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

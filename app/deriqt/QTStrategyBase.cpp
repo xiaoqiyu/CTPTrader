@@ -121,6 +121,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		
 		// 登录账户id
 		simtrade_ptr->login(future_acc.c_str());
+		// simtrade_ptr->init();
 		// mt.init();
 		//开始接收事件
 		int status = simtrade_ptr->start();
@@ -182,8 +183,6 @@ void QTStrategyBase::on_event()
 			shm::shared_string v(*char_alloc_ptr);
     		if (p_queue->pop(v))
 			{
-    		    // std::cout << "Got Factor: '" << v << "'\n";
-				
 				std::string msg = v.data();
 				std::vector<std::string> v_rev;
 				char c = ',';
@@ -192,57 +191,25 @@ void QTStrategyBase::on_event()
 				while(getline(sstr, token, c)){
 					v_rev.push_back(token);
 				}
-				// std::cout<<"msg:"<<msg<<std::endl;
-				// for(auto it = v_rev.begin(); it != v_rev.end(); ++it){
-					// std::cout<<*it<<",";
-				// }
-				// std::cout<<std::endl;
-				// std::vector<std::string> v_str = split_str(msg,',');
-				// char *token = strtok(const_cast<char*>(msg.c_str()), ",");
-    			// std::vector<std::string> v_rev;
-    			// while (token != NULL)
-    			// {
-    			    // v_rev.push_back(token);
-    			    // token = strtok(NULL, ",");
-    			// }
-				// 
-				if (this->mode == 1){
-					//FIXME HARDCODE for testing
-					// LOG(INFO)<<"Start order volume";
+
+				if (this->mode == 1){//simtrade
+					//FIXME HARDCODE for testing, move account_id to config
+					std::string account_id = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
+					std::string _symbol = v_rev[0];
+					std::vector<Position *> v_pos = this->simtrade_ptr->get_position_details(account_id, _symbol);
 					Order _order;
 					
-					// std::string _symbol = "DCE.m2201";
-					// std::string _symbol = v_rev[0];
-					// std::string _update_time = v_rev[1];
-					// int update_milsec = std::stoi(v_rev[2]);
-					// long volume = std::stoi(v_rev[3]);
-					// double last_price = std::stod(v_rev[4]);
-					// double curr_max = std::stod(v_rev[5]);
-					// double curr_min = std::stod(v_rev[6]);
-// 
-					// LOG(INFO)<<"Recieve:"<<_symbol<<","<<_update_time<<","<<update_milsec<<","<<volume<<","<<last_price<<","<<curr_max<<","<<curr_min;
-					p_sig->get_signal(v_rev, this->mode);
-					//FIXME task_tag is not grarantee to be product id
-					// std::string _exchange = get_exchange_id_order11(this->mode, this->task_tag); 
-					std::string _exchange;
-										
-					std::string _symbol = "DCE.m2201";
-					if (this->task_tag == "eg" && this->mode){
-						_exchange ="DCE";
-					}
-					std::string _instrument_id = _exchange + "." + _symbol;
-					// std::cout<<v_rev[0]<<std::endl;
-				
-					if(this->position_limit==0){
-						LOG(INFO)<<"Start order volume"<<this->position_limit;
-						_order = simtrade_ptr->order_volume(_instrument_id.c_str(),1,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,simtrade_account_id.c_str());
+					OrderData* p_orderdata = p_sig->get_signal(v_rev, this->mode, v_pos);
+					if(p_orderdata->status == 1){
+						LOG(INFO)<<"Start order volume";
+						_order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
 						LOG(INFO)<<"Order return:"<<_order.status<<","<<_order.ord_rej_reason<<","<<_order.ord_rej_reason_detail;
 						if (_order.status == 1) 
 						{
 							position_limit += 1;
 						}
-					}
-				}
+						}
+					}//end of mode 1 simtrade 
 			}
 		}
 	}
