@@ -69,6 +69,8 @@ void SimTrader::process_execution_report(Task *task)
         LOG(INFO) << "commission: " << task_data->commission << std::endl;
         LOG(INFO) << "cost: " << task_data->cost << std::endl;
         LOG(INFO) << "created_at: " << task_data->created_at << std::endl;
+        LOG(INFO)<<"before update positions";
+        update_positions(task_data);
         
         /* //REMARK won't handle stop profit and loss here, all the orders will be triggered by tick, generated in order sigal 
         if (task_data->position_effect == PositionEffect_Open && task_data->volume > 0){//for the open position, will add the stop_profit and loss order automatically
@@ -82,7 +84,8 @@ void SimTrader::process_execution_report(Task *task)
             this->order_volume(task_data->symbol, task_data->volume,order_side, OrderType_Limit, PositionEffect_Close,task_data->price);
         }
         */
-        delete task_data;
+        //FIXME why double delete, where to delete?????
+        // delete task_data;
     }
     if (task->task_error)
     {

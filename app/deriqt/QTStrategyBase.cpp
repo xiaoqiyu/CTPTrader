@@ -196,20 +196,19 @@ void QTStrategyBase::on_event()
 					//FIXME HARDCODE for testing, move account_id to config
 					std::string account_id = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
 					std::string _symbol = v_rev[0];
-					std::vector<Position *> v_pos = this->simtrade_ptr->get_position_details(account_id, _symbol);
+					std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(_symbol);
 					Order _order;
-					
+					LOG(INFO)<<"Get position size in strategy:"<<v_pos.size();
 					OrderData* p_orderdata = p_sig->get_signal(v_rev, this->mode, v_pos);
-					if(p_orderdata->status == 1){
+					// LOG(INFO)<<"Get signal in stratege:"<<p_orderdata->status<<","<<p_orderdata->side;
+					if(p_orderdata->status == 1 || p_orderdata->status == 2){
 						LOG(INFO)<<"Start order volume";
-						_order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
+						//FIXME remove exchange hardcode
+						std::string  _instrument_id = "DCE."+p_orderdata->symbol;
+						_order = simtrade_ptr->order_volume(_instrument_id.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
 						LOG(INFO)<<"Order return:"<<_order.status<<","<<_order.ord_rej_reason<<","<<_order.ord_rej_reason_detail;
-						if (_order.status == 1) 
-						{
-							position_limit += 1;
-						}
-						}
-					}//end of mode 1 simtrade 
+					}
+				}//end of mode 1 simtrade 
 			}
 		}
 	}

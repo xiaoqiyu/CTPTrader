@@ -35,6 +35,8 @@ private:
         int fee_close_yesterday = 2;
         int multiplier  = 10; //FIXME remove hardcode, remove to config
         gmtrade::DataArray<Position> *p_pos;
+        std::vector<ptr_position> all_positions;
+        
         
 public:
     SimTrader (const std::string& token)
@@ -62,6 +64,65 @@ public:
     void process_order_status(Task *task);
 
     void process_execution_report(Task *task);
+
+    void update_positions(ExecRpt*p_exe){
+
+        std::string exe_symbol = p_exe->symbol;
+        float exe_price = p_exe->price;
+        
+        long exe_vol = p_exe->volume;//open 
+        if(p_exe->position_effect == PositionEffect_Close) exe_vol = -exe_vol;
+
+        LOG(INFO)<<"Start update positions,curr pos size:"<<all_positions.size();
+        unique_lock<mutex> mlock(mutex_);
+        bool flag = false;
+        if (this->all_positions.size()>0){//have positions now
+            for(auto it=all_positions.begin(); it!=all_positions.end(); ++it){
+                ptr_position p_curr_pos = *it;
+                if(p_curr_pos->symbol == p_exe->symbol && p_curr_pos->side == p_exe->side){ //position exists 
+                    flag = true;
+                    p_curr_pos->vwap = (p_curr_pos->vwap*p_curr_pos->volume + exe_price*exe_vol)/(p_curr_pos->volume+exe_vol);
+                    p_curr_pos->volume += p_exe->volume;
+                    //TODO add other value updates
+                }
+            }
+        }
+        LOG(INFO)<<"symbol not exist, start create new position for open order,flag:"<<flag<<"pos size:"<<all_positions.size();
+        if(!flag){
+            ptr_position p_pos = new Position();
+            strcpy(p_pos->symbol, exe_symbol.c_str());
+            p_pos->vwap = exe_price;
+            //TODO add other value updates 
+            all_positions.push_back(p_pos);
+            LOG(INFO)<<"after add new transaction:"<<all_positions.size()<< std::endl;
+        }
+        
+        mlock.unlock();     //释放锁
+        cond_.notify_one(); //通知正在阻塞等待的线程
+        
+    }
+
+    std::vector<ptr_position> get_positions(){
+        unique_lock<mutex> mlock(mutex_);
+        cond_.wait(mlock, [&]() {
+            return true; //FIXME double check
+        }); //等待条件变量通知
+        return this->all_positions;
+    }
+
+    std::vector<ptr_position> get_positions(const std::string& instrument_id){
+        unique_lock<mutex> mlock(mutex_);
+        cond_.wait(mlock, [&]() {
+            return true; //FIXME double check
+        }); //等待条件变量通知
+        return this->all_positions;
+        std::vector<ptr_position> ret_pos;
+        for(auto it = all_positions.begin(); it!=all_positions.end();++it){
+            ptr_position _tmp = *it;
+            if(_tmp->symbol == instrument_id) ret_pos.push_back(_tmp);
+        }
+        return ret_pos;
+    }
 
     int get_position_details(const std::string& account_id)
     {

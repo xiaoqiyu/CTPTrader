@@ -57,7 +57,8 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 			p_orderdata->status = 2;
 		}
 	}
-
+	// LOG(INFO)<<"before return in get_signal"<<p_orderdata->status<<","<<p_orderdata->symbol<<","<<p_orderdata->side;
+	return p_orderdata;
 	//FIXME task_tag is not grarantee to be product id
 	// std::string _exchange = get_exchange_id_order11(this->mode, this->task_tag); 
 
