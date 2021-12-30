@@ -7,7 +7,7 @@
 
 typedef struct 
 {
-	std::string symbol;
+	std::string symbol;     
 	int volume;
 	int side;
 	int order_type;

@@ -18,27 +18,32 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 	
 	OrderData* p_orderdata = new OrderData();
 
-	if (v_positions.size()>0){//stop_profit and loss
+	if (v_positions.size()>0){//stop_profit and loss FIXME if there is positions for the current instruments(long or short, then it will not open, re-consider this restriction)
 		for(auto it=v_positions.begin(); it!=v_positions.end();++it){
 			int _side = PositionSide_Long;
-			if((*it)->side == PositionSide_Long){
+			Position *p_curr_pos = *it;
+			if(p_curr_pos->side == PositionSide_Long){
 				_side = PositionSide_Short;
 			}
-			if(((*it)->fpnl>10 && (*it)->side==PositionSide_Long ) || ((*it)->fpnl<-10 && (*it)->side==PositionSide_Short)){ //fpnl=((price-vwap)*volume*multiplier)
+			//TODO pos fpnl not added yet,TBD
+			bool is_close = (_last_price - p_curr_pos->vwap >=0.5 && p_curr_pos->side==PositionSide_Long && p_curr_pos->volume>0 ) || (p_curr_pos->vwap - _last_price >=0.5 && p_curr_pos->side==PositionSide_Short&&p_curr_pos->volume>0)||_update_time=="14:55:00";
+			LOG(INFO)<<"cond for  stop profit and loss:"<<is_close<<","<<p_curr_pos->volume<<","<<p_curr_pos->side<<","<<p_curr_pos->vwap<<","<<_last_price;
+			if(is_close){ //fpnl=((price-vwap)*volume*multiplier)
 				LOG(INFO)<<"Get stop profit/loss signal";
-				p_orderdata->symbol = (*it)->symbol;
+				p_orderdata->symbol = p_curr_pos->symbol;
 				p_orderdata->order_type = OrderType_Market;
 				p_orderdata->position_effect = PositionEffect_Close;
 				p_orderdata->side = _side;
-				p_orderdata->price = (*it)->vwap;
-				p_orderdata->volume = (*it)->volume_today;//todays volume
+				p_orderdata->price = p_curr_pos->vwap;
+				p_orderdata->volume = p_curr_pos->volume;//todays volume
 				p_orderdata->status = 1;
 			}
 		}
 	}else{ //open signal
-		if(_mid-_last_price>1.0){ //open long
+		if(_mid-_last_price>1.0 && _spread>1.0){ //open long
 			LOG(INFO)<<"Get long open signal";
-			p_orderdata->symbol = _symbol;
+			//FIXME HARDCODE exchange
+			p_orderdata->symbol = "DCE."+_symbol;
 			p_orderdata->order_type = OrderType_Market;
 			p_orderdata->position_effect = PositionEffect_Open;
 			p_orderdata->side = OrderSide_Buy;
@@ -46,9 +51,10 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 			p_orderdata->volume = 1;//1 shot
 			p_orderdata->status = 2;
 
-		}else if (_last_price-_mid>1.0){//open short
+		}else if (_last_price-_mid>1.0&&_spread>1.0){//open short
 			LOG(INFO)<<"Get short open signal";
-			p_orderdata->symbol = _symbol;
+			//FIXME HARDCODE exchange
+			p_orderdata->symbol = "DCE."+_symbol;
 			p_orderdata->order_type = OrderType_Market;
 			p_orderdata->position_effect = PositionEffect_Open;
 			p_orderdata->side = OrderSide_Sell;

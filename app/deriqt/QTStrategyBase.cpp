@@ -198,14 +198,12 @@ void QTStrategyBase::on_event()
 					std::string _symbol = v_rev[0];
 					std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(_symbol);
 					Order _order;
-					LOG(INFO)<<"Get position size in strategy:"<<v_pos.size();
+					// LOG(INFO)<<"Get position size in strategy:"<<v_pos.size();
 					OrderData* p_orderdata = p_sig->get_signal(v_rev, this->mode, v_pos);
 					// LOG(INFO)<<"Get signal in stratege:"<<p_orderdata->status<<","<<p_orderdata->side;
 					if(p_orderdata->status == 1 || p_orderdata->status == 2){
 						LOG(INFO)<<"Start order volume";
-						//FIXME remove exchange hardcode
-						std::string  _instrument_id = "DCE."+p_orderdata->symbol;
-						_order = simtrade_ptr->order_volume(_instrument_id.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
+						_order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
 						LOG(INFO)<<"Order return:"<<_order.status<<","<<_order.ord_rej_reason<<","<<_order.ord_rej_reason_detail;
 					}
 				}//end of mode 1 simtrade 

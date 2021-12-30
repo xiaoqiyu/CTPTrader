@@ -63,14 +63,18 @@ void SimTrader::process_execution_report(Task *task)
     if (task->task_data)
     {
         ExecRpt *task_data = reinterpret_cast<ExecRpt *>(task->task_data);
+        LOG(INFO)<<"Execution reports";
         LOG(INFO) << "price: " << task_data->price << std::endl;
         LOG(INFO) << "volume: " << task_data->volume << std::endl;
         LOG(INFO) << "amount: " << task_data->amount << std::endl;
         LOG(INFO) << "commission: " << task_data->commission << std::endl;
         LOG(INFO) << "cost: " << task_data->cost << std::endl;
         LOG(INFO) << "created_at: " << task_data->created_at << std::endl;
-        LOG(INFO)<<"before update positions";
-        update_positions(task_data);
+        
+        if (task_data->volume>0){
+            LOG(INFO)<<"start update positions";
+            update_positions(task_data);
+        }
         
         /* //REMARK won't handle stop profit and loss here, all the orders will be triggered by tick, generated in order sigal 
         if (task_data->position_effect == PositionEffect_Open && task_data->volume > 0){//for the open position, will add the stop_profit and loss order automatically
@@ -99,6 +103,7 @@ void SimTrader::process_order_status(Task *task)
     if (task->task_data)
     {
         Order *task_data = reinterpret_cast<Order *>(task->task_data);
+        LOG(INFO)<<"Order reports";
         LOG(INFO) << "symbol: " << task_data->symbol << std::endl;
         LOG(INFO) << "cl_ord_id" << task_data->cl_ord_id << std::endl;
         LOG(INFO) << "status: " << task_data->status << std::endl;
@@ -121,7 +126,6 @@ void SimTrader::processTask(){
     // while(this->_active && this->connected_)//FIXME check status
     while(true)
     {
-        LOG(INFO)<<"status ready in process task";
         Task task = this->_task_queue.pop();
         switch (task.task_name)
         {

@@ -42,6 +42,26 @@ cc_binary(
         "@boost//:interprocess",
         "@boost//:system",
         "@boost//:thread",
+        "@boost//:circular_buffer",
+
+	],
+    linkopts = [
+        "-lrt"
+    ],
+)
+
+cc_binary(
+    name = "array",
+    srcs = [
+		"array.cpp"
+	],
+    deps = [
+        "@boost//:lockfree",
+        "@boost//:interprocess",
+        "@boost//:system",
+        "@boost//:thread",
+        "@boost//:circular_buffer",
+
 	],
     linkopts = [
         "-lrt"

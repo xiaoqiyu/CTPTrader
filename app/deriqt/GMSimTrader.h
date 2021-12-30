@@ -79,11 +79,18 @@ public:
         if (this->all_positions.size()>0){//have positions now
             for(auto it=all_positions.begin(); it!=all_positions.end(); ++it){
                 ptr_position p_curr_pos = *it;
-                if(p_curr_pos->symbol == p_exe->symbol && p_curr_pos->side == p_exe->side){ //position exists 
+                LOG(INFO)<<"current positions:"<<p_curr_pos->symbol<<","<<p_curr_pos->vwap<<","<<p_curr_pos->volume<<","<<p_curr_pos->side;
+                LOG(INFO)<<"to be added exe,check cond---------------------:"<<p_exe->symbol<<","<<p_exe->side<<","<<p_curr_pos->symbol<<","<<p_curr_pos->side;
+                //代码一样，同时多空方向一致且为开或者多空方向相反且为平
+                bool _is_pos_exist = strcmp(p_curr_pos->symbol, p_exe->symbol)==0 && (p_curr_pos->side == p_exe->side && p_exe->position_effect==PositionEffect_Open || p_curr_pos->side != p_exe->side && p_exe->position_effect==PositionEffect_Close);
+                LOG(INFO)<<"check whether to merge position----------------:"<<_is_pos_exist;
+                if(_is_pos_exist){ //position exists 
+                    LOG(INFO)<<"pos exist, and update position";
                     flag = true;
                     p_curr_pos->vwap = (p_curr_pos->vwap*p_curr_pos->volume + exe_price*exe_vol)/(p_curr_pos->volume+exe_vol);
                     p_curr_pos->volume += p_exe->volume;
                     //TODO add other value updates
+                    LOG(INFO)<<"After update position,vol:"<<p_curr_pos->volume;
                 }
             }
         }
@@ -92,9 +99,12 @@ public:
             ptr_position p_pos = new Position();
             strcpy(p_pos->symbol, exe_symbol.c_str());
             p_pos->vwap = exe_price;
+            p_pos->volume = p_exe->volume;
+            p_pos->volume_today = p_exe->volume;
+            p_pos->side = p_exe->side;
             //TODO add other value updates 
             all_positions.push_back(p_pos);
-            LOG(INFO)<<"after add new transaction:"<<all_positions.size()<< std::endl;
+            LOG(INFO)<<"after add new transaction,size:"<<all_positions.size()<<",P VOL:"<<p_pos->volume<< std::endl;
         }
         
         mlock.unlock();     //释放锁
