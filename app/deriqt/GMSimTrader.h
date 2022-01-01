@@ -27,7 +27,7 @@ private:
         condition_variable cond_; //条件变量
         bool connected_ = false; //连接交易前置
         bool login_ = false; //验证和登录完成
-        bool available_ = false; //用于交易查询的流控
+        bool available_ = true; //用于持仓查询控制
         int stop_profit = 5; 
         int stop_loss = 10; 
         int fee_open = 2; 
@@ -36,6 +36,7 @@ private:
         int multiplier  = 10; //FIXME remove hardcode, remove to config
         gmtrade::DataArray<Position> *p_pos;
         std::vector<ptr_position> all_positions;
+
         
         
 public:
@@ -66,7 +67,7 @@ public:
     void process_execution_report(Task *task);
 
     void update_positions(ExecRpt*p_exe){
-
+        this->available_ = false;
         std::string exe_symbol = p_exe->symbol;
         float exe_price = p_exe->price;
         
@@ -85,10 +86,14 @@ public:
                 bool _is_pos_exist = strcmp(p_curr_pos->symbol, p_exe->symbol)==0 && (p_curr_pos->side == p_exe->side && p_exe->position_effect==PositionEffect_Open || p_curr_pos->side != p_exe->side && p_exe->position_effect==PositionEffect_Close);
                 LOG(INFO)<<"check whether to merge position----------------:"<<_is_pos_exist;
                 if(_is_pos_exist){ //position exists 
-                    LOG(INFO)<<"pos exist, and update position";
+                    LOG(INFO)<<"pos exist, and update position"<<"exe type:"<<p_exe->exec_type<<",pos vol:"<<p_curr_pos->volume<<",exe vol:"<<exe_vol;
                     flag = true;
-                    p_curr_pos->vwap = (p_curr_pos->vwap*p_curr_pos->volume + exe_price*exe_vol)/(p_curr_pos->volume+exe_vol);
-                    p_curr_pos->volume += p_exe->volume;
+                    if (p_curr_pos->volume+exe_vol == 0){
+                        p_curr_pos->vwap = 0.0;
+                    }else{
+                        p_curr_pos->vwap = (p_curr_pos->vwap*p_curr_pos->volume + exe_price*exe_vol)/(p_curr_pos->volume+exe_vol);
+                    }
+                    p_curr_pos->volume += exe_vol;
                     //TODO add other value updates
                     LOG(INFO)<<"After update position,vol:"<<p_curr_pos->volume;
                 }
@@ -106,7 +111,7 @@ public:
             all_positions.push_back(p_pos);
             LOG(INFO)<<"after add new transaction,size:"<<all_positions.size()<<",P VOL:"<<p_pos->volume<< std::endl;
         }
-        
+        this->available_ = true;
         mlock.unlock();     //释放锁
         cond_.notify_one(); //通知正在阻塞等待的线程
         
@@ -115,7 +120,7 @@ public:
     std::vector<ptr_position> get_positions(){
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
-            return true; //FIXME double check
+            return this->available_; //FIXME double check
         }); //等待条件变量通知
         return this->all_positions;
     }

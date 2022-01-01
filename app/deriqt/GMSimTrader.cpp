@@ -63,17 +63,15 @@ void SimTrader::process_execution_report(Task *task)
     if (task->task_data)
     {
         ExecRpt *task_data = reinterpret_cast<ExecRpt *>(task->task_data);
-        LOG(INFO)<<"Execution reports";
-        LOG(INFO) << "price: " << task_data->price << std::endl;
-        LOG(INFO) << "volume: " << task_data->volume << std::endl;
-        LOG(INFO) << "amount: " << task_data->amount << std::endl;
-        LOG(INFO) << "commission: " << task_data->commission << std::endl;
-        LOG(INFO) << "cost: " << task_data->cost << std::endl;
-        LOG(INFO) << "created_at: " << task_data->created_at << std::endl;
-        
-        if (task_data->volume>0){
-            LOG(INFO)<<"start update positions";
+        if (task_data->volume>0 && task_data->exec_type == ExecType_Trade){
+            LOG(INFO)<<"Execution reports:trades, start update positions";
             update_positions(task_data);
+            LOG(INFO) << "price: " << task_data->price << std::endl;
+            LOG(INFO) << "volume: " << task_data->volume << std::endl;
+            LOG(INFO) << "amount: " << task_data->amount << std::endl;
+            LOG(INFO) << "commission: " << task_data->commission << std::endl;
+            LOG(INFO) << "cost: " << task_data->cost << std::endl;
+            LOG(INFO) << "created_at: " << task_data->created_at << std::endl;
         }
         
         /* //REMARK won't handle stop profit and loss here, all the orders will be triggered by tick, generated in order sigal 
@@ -124,6 +122,7 @@ void SimTrader::process_order_status(Task *task)
 void SimTrader::processTask(){
     // LOG(INFO)<<"Process task in gm simtrade:"<<this->_active<<","<<this->connected_;
     // while(this->_active && this->connected_)//FIXME check status
+    LOG(INFO)<<"in process task: ";
     while(true)
     {
         Task task = this->_task_queue.pop();
