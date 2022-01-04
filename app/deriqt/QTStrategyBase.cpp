@@ -113,16 +113,16 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		//Simtrade connect and init
 		// code to connect gm trade trade and login
 		// SimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
-		simtrade_ptr.reset(new SimTrader("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"));
+		
+		simtrade_ptr.reset(new SimTrader(reader.Get("simtrade", "token", "a1128cf0aaa3735b04a2706c8029a562e8c2c6b6").c_str()));
 		// 设置服务地址api.myquant.cn:9000
-		simtrade_ptr->set_endpoint ("api.myquant.cn:9000");
-		std::string future_acc = "a1a91403-2fc2-11ec-bd15-00163e0a4100";		
+		simtrade_ptr->set_endpoint ( reader.Get("simtrade", "endpoint", "api.myquant.cn:9000").c_str());
+		std::string future_acc = reader.Get("simtrade", "account_id", "a1a91403-2fc2-11ec-bd15-00163e0a4100");		
 		simtrade_account_id = future_acc;
 		
 		// 登录账户id
 		simtrade_ptr->login(future_acc.c_str());
-		// simtrade_ptr->init();
-		// mt.init();
+		simtrade_ptr->init_positions(future_acc);
 		//开始接收事件
 		int status = simtrade_ptr->start();
 		//判断状态
@@ -244,9 +244,6 @@ void QTStrategyBase::on_tick()
 						for (auto it = this->v_last_vector.begin(); it!=this->v_last_vector.end();++it){
 							offset += sprintf(s+offset, "%f,", *it);
 						}
-					
-						// s[offset - 1] = '\n';//将最后一个逗号换成换行符。
-						// s[offset - 1] = '\n';//将最后一个逗号换成换行符。
 						p_queue->push(shm::shared_string(s, *char_alloc_ptr));
 						
 					}

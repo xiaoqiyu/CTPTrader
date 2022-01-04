@@ -1,10 +1,6 @@
 #include "GMSimTrader.h"
 
-void SimTrader::init()
-{
-    LOG(INFO)<<"simtrade init-------------";
-    // this->_task_thread = thread(&SimTrader::processTask, this);
-}
+
 
 void SimTrader::exit()
 {
@@ -65,6 +61,7 @@ void SimTrader::process_execution_report(Task *task)
         ExecRpt *task_data = reinterpret_cast<ExecRpt *>(task->task_data);
         if (task_data->volume>0 && task_data->exec_type == ExecType_Trade){
             LOG(INFO)<<"Execution reports:trades, start update positions";
+
             update_positions(task_data);
             LOG(INFO) << "price: " << task_data->price << std::endl;
             LOG(INFO) << "volume: " << task_data->volume << std::endl;

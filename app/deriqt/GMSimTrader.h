@@ -47,7 +47,26 @@ public:
         this->_task_thread = thread(&SimTrader::processTask, this);
     }
 
-    void init();
+    void init_positions(std::string account_id)
+    {
+        LOG(INFO)<<"simtrade init with account id:"<<account_id<<" Init positions";
+        // this->_task_thread = thread(&SimTrader::processTask, this);
+        gmtrade::DataArray<Position> *ps = this->get_position(account_id.c_str());
+
+        if(ps->status()==0)
+        {
+            //TODO CHECK wheather no need lock, called before start, and no callback event yet
+            LOG(INFO)<<"Init positions with existing positions,before size:"<<all_positions.size();
+            for (int i = 0; i<ps->count(); i++)
+            {
+                ptr_position _curr_pos= &(ps->at(i));
+                this->all_positions.push_back(_curr_pos);
+            }
+            ps->release();
+            LOG(INFO)<<"Complte init positions with existing positions, size:"<<all_positions.size();
+        }
+
+    }
     void exit();
     void processTask();
     //关注委托状态变化
@@ -99,8 +118,9 @@ public:
                 }
             }
         }
-        LOG(INFO)<<"symbol not exist, start create new position for open order,flag:"<<flag<<"pos size:"<<all_positions.size();
+        
         if(!flag){
+            LOG(INFO)<<"symbol not exist, start create new position for open order,flag:"<<flag<<"pos size:"<<all_positions.size();
             ptr_position p_pos = new Position();
             strcpy(p_pos->symbol, exe_symbol.c_str());
             p_pos->vwap = exe_price;
@@ -128,9 +148,10 @@ public:
     std::vector<ptr_position> get_positions(const std::string& instrument_id){
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
-            return true; //FIXME double check
+            return this->available_;//FIXME double check
         }); //等待条件变量通知
-        return this->all_positions;
+        // return this->all_positions;
+        
         std::vector<ptr_position> ret_pos;
         for(auto it = all_positions.begin(); it!=all_positions.end();++it){
             ptr_position _tmp = *it;

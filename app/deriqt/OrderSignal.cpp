@@ -1,6 +1,8 @@
 #include "OrderSignal.h"
 #include <vector>
 
+//FIXME remove hardcode
+double stop_profit_loss = 1.0;
 
 OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int trading_mode, std::vector<Position *> v_positions){
     // std::string _symbol = "DCE.m2201";
@@ -23,21 +25,29 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 	if (v_positions.size()>0){//stop_profit and loss FIXME if there is positions for the current instruments(long or short, then it will not open, re-consider this restriction)
 		for(auto it=v_positions.begin(); it!=v_positions.end();++it){
 			int _side = PositionSide_Long;
+
 			Position *p_curr_pos = *it;
 			if(p_curr_pos->side == PositionSide_Long){
 				_side = PositionSide_Short;
 			}
 			total_vol += p_curr_pos->volume; // add the vol in the positions
+			
 			//TODO pos fpnl not added yet,TBD
-			bool is_close = (_last_price - p_curr_pos->vwap >=0.5 && p_curr_pos->side==PositionSide_Long && p_curr_pos->volume>0 ) || (p_curr_pos->vwap - _last_price >=0.5 && p_curr_pos->side==PositionSide_Short&&p_curr_pos->volume>0)||_update_time=="14:55:00";
-			// LOG(INFO)<<"cond for  stop profit and loss:"<<is_close<<","<<p_curr_pos->volume<<","<<p_curr_pos->side<<","<<p_curr_pos->vwap<<","<<_last_price;
+			bool is_close = (_last_price - p_curr_pos->vwap >=stop_profit_loss && p_curr_pos->side==PositionSide_Long && p_curr_pos->volume>0 ) || (p_curr_pos->vwap - _last_price >=stop_profit_loss && p_curr_pos->side==PositionSide_Short&&p_curr_pos->volume>0)||_update_time=="14:55:00";
+			// LOG(INFO)<<"is closed:"<<is_close<<",last price:"<<_last_price<<",curr vwap:"<<p_curr_pos->vwap<<",curr side:"<<p_curr_pos->side<<",curr vol:"<<p_curr_pos->volume<<",updatetime:"<<_update_time;
 			if(is_close){ //fpnl=((price-vwap)*volume*multiplier)
 				LOG(INFO)<<"Get stop profit/loss signal";
+				double _order_price = p_curr_pos->vwap;
+				if(p_curr_pos->side==PositionSide_Long){
+					_order_price += stop_profit_loss;
+				}else if(p_curr_pos->side == PositionSide_Short){
+					_order_price -= stop_profit_loss;
+				}
 				p_orderdata->symbol = p_curr_pos->symbol;
-				p_orderdata->order_type = OrderType_Market;
+				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->position_effect = PositionEffect_Close;
 				p_orderdata->side = _side;
-				p_orderdata->price = p_curr_pos->vwap;
+				p_orderdata->price = _order_price;
 				p_orderdata->volume = p_curr_pos->volume;//todays volume
 				p_orderdata->status = 1;
 				return p_orderdata; //if this event trigger the stop profit and loss, then will not check the open signal REMARK

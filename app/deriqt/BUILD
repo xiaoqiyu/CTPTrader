@@ -38,6 +38,7 @@ cc_binary(
 		"@boost//:interprocess",
 		"@boost//:system",
 		"@boost//:thread",
+		"@boost//:circular_buffer",
 	],
 	linkopts = [
     "-lrt"
