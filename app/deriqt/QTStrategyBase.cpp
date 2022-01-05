@@ -196,9 +196,10 @@ void QTStrategyBase::on_event()
 					//FIXME HARDCODE for testing, move account_id to config
 					std::string account_id = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
 					std::string _symbol = v_rev[0];
-					std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(_symbol);
+					std::string full_symbol = "DCE."+_symbol; //FIXME remove exchange hardcode 
+					std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(full_symbol);
 					Order _order;
-					// LOG(INFO)<<"Get position size in strategy:"<<v_pos.size();
+					LOG(INFO)<<"Get position size in strategy:"<<v_pos.size()<<",symbol:"<<full_symbol;
 					OrderData* p_orderdata = p_sig->get_signal(v_rev, this->mode, v_pos);
 					// LOG(INFO)<<"Get signal in stratege:"<<p_orderdata->status<<","<<p_orderdata->side;
 					if(p_orderdata->status == 1 || p_orderdata->status == 2){
@@ -232,18 +233,21 @@ void QTStrategyBase::on_tick()
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
+					// this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
 					//FIXME  HARD CODE for shared memory test
 					if(this->task_tag == "eg"){
-						char s[128];
-						int offset = 0;
-						offset += sprintf(s+offset, "%s,", pDepthMarketData->InstrumentID);
-						offset += sprintf(s+offset, "%s,", pDepthMarketData->UpdateTime);
-						offset += sprintf(s+offset, "%d,", pDepthMarketData->UpdateMillisec);
-						offset += sprintf(s+offset, "%d,", pDepthMarketData->Volume);
-						for (auto it = this->v_last_vector.begin(); it!=this->v_last_vector.end();++it){
-							offset += sprintf(s+offset, "%f,", *it);
-						}
+						// char s[128];
+						// int offset = 0;
+						// offset += sprintf(s+offset, "%s,", pDepthMarketData->InstrumentID);
+						// offset += sprintf(s+offset, "%s,", pDepthMarketData->UpdateTime);
+						// offset += sprintf(s+offset, "%d,", pDepthMarketData->UpdateMillisec);
+						// offset += sprintf(s+offset, "%d,", pDepthMarketData->Volume);
+						// for (auto it = this->v_last_vector.begin(); it!=this->v_last_vector.end();++it){
+							// offset += sprintf(s+offset, "%f,", *it);
+						// }
+						char s[factor_len];
+						p_factor->update_factor(pDepthMarketData, s);		
+						// LOG(INFO)<<"Got Factor len:"<<strlen(s)<<",value:"<<s;
 						p_queue->push(shm::shared_string(s, *char_alloc_ptr));
 						
 					}

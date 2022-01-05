@@ -24,7 +24,9 @@ cc_binary(
 		"GMSimTrader.h",
 		"GMSimTrader.cpp",
 		"OrderSignal.h",
-		"OrderSignal.cpp"
+		"OrderSignal.cpp",
+		"Factor.h",
+		"Factor.cpp"
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",

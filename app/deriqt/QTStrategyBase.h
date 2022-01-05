@@ -31,6 +31,7 @@
 #include "recordio_range.h"
 #include "GMSimTrader.h"
 #include "OrderSignal.h"
+#include "Factor.h"
 #include <glog/logging.h>
 
 typedef CTPTraderHandler *trader_util_ptr;
@@ -99,6 +100,8 @@ public: //stategy management
 		segmet_ptr.reset(new bip::managed_shared_memory(bip::open_or_create, shared_memory_name, size));
 		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
+		//TODO check factor init 
+		p_factor = new Factor(12, 5);
 		// if(mode==0){
 			// this->p_shm_queue
 		// }
@@ -228,6 +231,9 @@ private:
 	int position_limit; 
 	std::string simtrade_account_id;
 	OrderSignal * p_sig;
+	Factor *p_factor;
+	std::vector<Order> v_order;
+	long factor_len = 1024;
 
 	
 };

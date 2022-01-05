@@ -57,7 +57,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 	//FIXME REMOVE THE HARDCODE OF position limit(now hardcode the postion limit to 5), will change to margin level when the risk management is supported
 	if(total_vol<5){ //if this event not trigger the stop profit and loss, and the current position is less than the pos limit, then check open signal 
 		if(_mid-_last_price>1.0&& _spread>1.0){ //open long
-			LOG(INFO)<<"Get long open signal";
+			LOG(INFO)<<"Get long open signal, curr total vol:"<<total_vol;
 			//FIXME HARDCODE exchange
 			p_orderdata->symbol = "DCE."+_symbol;
 			p_orderdata->order_type = OrderType_Market;
@@ -80,12 +80,13 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 		}
 	}
 	// LOG(INFO)<<"before return in get_signal"<<p_orderdata->status<<","<<p_orderdata->symbol<<","<<p_orderdata->side;
-	return p_orderdata;
+
 	//FIXME task_tag is not grarantee to be product id
 	// std::string _exchange = get_exchange_id_order11(this->mode, this->task_tag); 
 
     // sample data from log:Recieve:eg2205,15:01:13,770,352685,4819,4819,4819,2,4820.85,48027.5,4819
     //Recieve:eg2205,14:59:33,279,351987,4819,4821,0,1,4818.71,48027.2,4819
-	// LOG(INFO)<<"Recieve:"<<_symbol<<","<<_update_time<<","<<_update_milsec<<","<<_volume
-    // <<","<<_last_price<<","<<_max<<","<<_min<<","<<_spread<<","<<_mid<<","<<_vwap<<","<<_slope;
+	// LOG(INFO)<<"Recieve:"<<_symbol<<",update_time:"<<_update_time<<",update msecc:"<<_update_milsec<<",volume:"<<_volume
+    // <<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap<<",slope:"<<_slope;
+	return p_orderdata;
 }

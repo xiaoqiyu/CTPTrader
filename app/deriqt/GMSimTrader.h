@@ -59,11 +59,16 @@ public:
             LOG(INFO)<<"Init positions with existing positions,before size:"<<all_positions.size();
             for (int i = 0; i<ps->count(); i++)
             {
+            
                 ptr_position _curr_pos= &(ps->at(i));
-                this->all_positions.push_back(_curr_pos);
+                if (_curr_pos->volume>0){ //only get the positions that has volumes
+                    this->all_positions.push_back(_curr_pos);
+                }
+                LOG(INFO)<<_curr_pos->symbol<<",vol:"<<_curr_pos->volume<<",available:"<<_curr_pos->available<<",vwap:"<<_curr_pos->vwap<<",side:"<<_curr_pos->side;
             }
             ps->release();
             LOG(INFO)<<"Complte init positions with existing positions, size:"<<all_positions.size();
+            
         }
 
     }
@@ -99,8 +104,8 @@ public:
         if (this->all_positions.size()>0){//have positions now
             for(auto it=all_positions.begin(); it!=all_positions.end(); ++it){
                 ptr_position p_curr_pos = *it;
-                LOG(INFO)<<"current positions:"<<p_curr_pos->symbol<<","<<p_curr_pos->vwap<<","<<p_curr_pos->volume<<","<<p_curr_pos->side;
-                LOG(INFO)<<"to be added exe,check cond---------------------:"<<p_exe->symbol<<","<<p_exe->side<<","<<p_curr_pos->symbol<<","<<p_curr_pos->side;
+                LOG(INFO)<<"current positions:"<<p_curr_pos->symbol<<",pos vwap:"<<p_curr_pos->vwap<<",pos vol:"<<p_curr_pos->volume<<",pos side:"<<p_curr_pos->side;
+                LOG(INFO)<<"to be added exe,check cond---------------------:"<<p_exe->symbol<<",exe side:"<<p_exe->side<<",pos side:"<<p_curr_pos->symbol<<",pos side:"<<p_curr_pos->side;
                 //代码一样，同时多空方向一致且为开或者多空方向相反且为平
                 bool _is_pos_exist = strcmp(p_curr_pos->symbol, p_exe->symbol)==0 && (p_curr_pos->side == p_exe->side && p_exe->position_effect==PositionEffect_Open || p_curr_pos->side != p_exe->side && p_exe->position_effect==PositionEffect_Close);
                 LOG(INFO)<<"check whether to merge position----------------:"<<_is_pos_exist;
@@ -121,6 +126,7 @@ public:
         
         if(!flag){
             LOG(INFO)<<"symbol not exist, start create new position for open order,flag:"<<flag<<"pos size:"<<all_positions.size();
+            LOG(INFO)<<"EXE POS:"<<exe_symbol;
             ptr_position p_pos = new Position();
             strcpy(p_pos->symbol, exe_symbol.c_str());
             p_pos->vwap = exe_price;
