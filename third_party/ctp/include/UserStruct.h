@@ -150,3 +150,26 @@ inline string toUtf(const string &gb2312)
 typedef DataQueue* data_queue_ptr;
 typedef TaskQueue* task_queue_ptr;
 typedef char FileName[50];
+
+typedef struct{
+    double stop_profit = 0.0;
+    double stop_loss = 0.0;
+    int close_type = 0; //开仓激进程度， 如空信号，现持有多仓；0： 平现有多仓；1： 忽略该信号；2： 平现有多仓，并开空仓（数量由pos_limit决定）
+    long vol_limit = 0; //
+    double init_cash = 0;
+    float risk_ratio = 0.1; 
+    int order_duration = 20;
+}StrategyConfig;
+
+
+typedef struct 
+{
+	std::string symbol;     
+	int volume;
+	int side;
+	int order_type;
+	int position_effect;
+	double price;
+	std::string account;
+	int status;
+}OrderData;

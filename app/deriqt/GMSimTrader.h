@@ -36,6 +36,7 @@ private:
         int multiplier  = 10; //FIXME remove hardcode, remove to config
         gmtrade::DataArray<Position> *p_pos;
         std::vector<ptr_position> all_positions;
+        double total_cost;
 
         
         
@@ -143,6 +144,9 @@ public:
         
     }
 
+    double get_total_cost(){ //TODO to be improved
+        return this->total_cost;
+    }
     std::vector<ptr_position> get_positions(){
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
@@ -151,13 +155,13 @@ public:
         return this->all_positions;
     }
 
+
     std::vector<ptr_position> get_positions(const std::string& instrument_id){
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
             return this->available_;//FIXME double check
         }); //等待条件变量通知
-        // return this->all_positions;
-        
+    
         std::vector<ptr_position> ret_pos;
         for(auto it = all_positions.begin(); it!=all_positions.end();++it){
             ptr_position _tmp = *it;
