@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include "UserStruct.h"
 
 //TODO check multiple definition errors
 // std::vector<std::string> split_str(std::string s, char c)
@@ -80,3 +81,8 @@ static void formatStringEx(std::wstring &dst, const std::wstring &format, Args..
     // return "invalid mode";
     // 
 // }
+
+
+
+
+

@@ -78,7 +78,9 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "csetjmp": "cpp"
+        "csetjmp": "cpp",
+        "charconv": "cpp",
+        "cuchar": "cpp"
     },
 
 

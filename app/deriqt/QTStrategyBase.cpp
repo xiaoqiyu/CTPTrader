@@ -110,9 +110,9 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	LOG(INFO)<<"before init simtrade";
 	if(this->mode == 1){//mode 1 will connet to simtrade server for simulation
 		LOG(INFO)<<"Mode 1: init simtrade";
-		//Simtrade connect and init
-		// code to connect gm trade trade and login
-		// SimTrader mt ("a1128cf0aaa3735b04a2706c8029a562e8c2c6b6"); 
+		
+		simtrade_token = reader.Get("simtrade", "token", "a1128cf0aaa3735b04a2706c8029a562e8c2c6b6");
+		simtrade_account_id = reader.Get("simtrade", "account_id", "a1a91403-2fc2-11ec-bd15-00163e0a4100");
 		
 		simtrade_ptr.reset(new SimTrader(reader.Get("simtrade", "token", "a1128cf0aaa3735b04a2706c8029a562e8c2c6b6").c_str()));
 		// 设置服务地址api.myquant.cn:9000
@@ -166,6 +166,14 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
 		this->p_sig = new OrderSignal();
+		this->p_strategy_config = new StrategyConfig(); //new and init the strategy config
+		p_strategy_config->close_type = std::stoi(reader.Get("strategy","close_type","0"));
+		p_strategy_config->stop_profit = std::stod(reader.Get("strategy", "stop_profit","1"));
+		p_strategy_config->stop_loss = std::stod(reader.Get("strategy", "stop_loss","1"));
+		p_strategy_config->vol_limit = std::stoi(reader.Get("strategy", "vol_limit","1"));
+		p_strategy_config->init_cash = std::stod(reader.Get("strategy", "init_cash","1000000"));
+		p_strategy_config->risk_ratio = std::stod(reader.Get("strategy", "risk_ratio","1000000"));
+		p_strategy_config->order_duration = std::stoi(reader.Get("strategy", "order_duration","20"));
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
@@ -191,21 +199,37 @@ void QTStrategyBase::on_event()
 				while(getline(sstr, token, c)){
 					v_rev.push_back(token);
 				}
-
+				// LOG(INFO)<<"--------Got event timestamp:"<< v_rev[1];
 				if (this->mode == 1){//simtrade
-					//FIXME HARDCODE for testing, move account_id to config
-					std::string account_id = "a1a91403-2fc2-11ec-bd15-00163e0a4100";
-					std::string _symbol = v_rev[0];
-					std::string full_symbol = "DCE."+_symbol; //FIXME remove exchange hardcode 
-					std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(full_symbol);
-					Order _order;
-					LOG(INFO)<<"Get position size in strategy:"<<v_pos.size()<<",symbol:"<<full_symbol;
-					OrderData* p_orderdata = p_sig->get_signal(v_rev, this->mode, v_pos);
-					// LOG(INFO)<<"Get signal in stratege:"<<p_orderdata->status<<","<<p_orderdata->side;
-					if(p_orderdata->status == 1 || p_orderdata->status == 2){
-						LOG(INFO)<<"Start order volume";
-						_order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
-						LOG(INFO)<<"Order return:"<<_order.status<<","<<_order.ord_rej_reason<<","<<_order.ord_rej_reason_detail;
+					std::time_t now_time = std::time(nullptr);
+					std::time_t duration =  now_time - last_order_time;
+					// std::cout<<"duration:"<<duration<<"dur config:"<<p_strategy_config->order_duration<<std::endl;
+					if (duration > p_strategy_config->order_duration){
+						// LOG(INFO)<<"dur:"<<duration<<">"<<p_strategy_config->order_duration<<"check order signal";
+						std::string _symbol = v_rev[0];
+						std::string full_symbol = "DCE."+_symbol; //FIXME remove exchange hardcode 
+						std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(full_symbol);
+						
+						double _total_cost = 0.0;
+						long long _total_vol = 0;
+						for(auto it = v_pos.begin(); it!=v_pos.end(); ++it){
+							Position *_tmp = *it;
+							_total_vol += _tmp->volume;
+							_total_cost += _tmp->cost;
+						}
+						float live_risk = _total_cost/p_strategy_config->init_cash;
+						// LOG(INFO) <<"live cost:"<< _total_cost<<",live risk:"<<live_risk<<",risk ratio threshold:"<<p_strategy_config->risk_ratio<<",total_vol:"<<_total_vol;
+						if (_total_vol<p_strategy_config->vol_limit){//TODO update the condition(init cash to live market values) if exceed the risk ratio, then it will now order for this tick
+							LOG(INFO)<<"In get signal,cur vol"<<_total_vol<<"duration:"<<duration<<"config vol:"<<p_strategy_config->vol_limit;
+							Order _order;
+							OrderData* p_orderdata = p_sig->get_signal(v_rev, this->mode, v_pos, p_strategy_config, p_strategy_config->vol_limit-_total_vol);
+							if(p_orderdata->status == 1 || p_orderdata->status == 2){
+								LOG(INFO)<<"Start order volume,now:";
+								_order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
+								LOG(INFO)<<"Order return:status:"<<_order.status<<",rej reason:"<<_order.ord_rej_reason<<",rej details:"<<_order.ord_rej_reason_detail<<", create at:"<<_order.created_at<<",update at:"<<_order.updated_at;
+								last_order_time = _order.updated_at;
+							}
+						}
 					}
 				}//end of mode 1 simtrade 
 			}
@@ -236,15 +260,6 @@ void QTStrategyBase::on_tick()
 					// this->calculate_factors(pDepthMarketData, 7200);//this could be overwritten by subclass
 					//FIXME  HARD CODE for shared memory test
 					if(this->task_tag == "eg"){
-						// char s[128];
-						// int offset = 0;
-						// offset += sprintf(s+offset, "%s,", pDepthMarketData->InstrumentID);
-						// offset += sprintf(s+offset, "%s,", pDepthMarketData->UpdateTime);
-						// offset += sprintf(s+offset, "%d,", pDepthMarketData->UpdateMillisec);
-						// offset += sprintf(s+offset, "%d,", pDepthMarketData->Volume);
-						// for (auto it = this->v_last_vector.begin(); it!=this->v_last_vector.end();++it){
-							// offset += sprintf(s+offset, "%f,", *it);
-						// }
 						char s[factor_len];
 						p_factor->update_factor(pDepthMarketData, s);		
 						// LOG(INFO)<<"Got Factor len:"<<strlen(s)<<",value:"<<s;

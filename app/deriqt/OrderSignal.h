@@ -4,26 +4,14 @@
 #include <glog/logging.h>
 #include "define.h"
 #include "gmtrade_def.h"
-
-typedef struct 
-{
-	std::string symbol;     
-	int volume;
-	int side;
-	int order_type;
-	int position_effect;
-	double price;
-	std::string account;
-	int status;
-}OrderData;
-
+#include "UserStruct.h"
 
 class OrderSignal
 {
 public:
 	OrderSignal(){};
 	~OrderSignal();
-	OrderData* get_signal(const std::vector<std::string>&v_factor, int trading_mode,std::vector<Position *> v_positions);
+	OrderData* get_signal(const std::vector<std::string>&v_factor, int trading_mode,std::vector<Position *> v_positions,StrategyConfig *p_strategy_config, int order_limit);
 
 private:
 	int _order_volume; 

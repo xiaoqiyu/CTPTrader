@@ -8,6 +8,8 @@
 #include <fstream>
 #include <stdio.h>
 #include <unistd.h>
+#include <ctime>
+#include <chrono>
 
 #include <boost/lockfree/spsc_queue.hpp> // ring buffer
 
@@ -202,13 +204,6 @@ private:
 	vector<recordio::RecordWriter> v_depth_writer;
 	vector<recordio::RecordWriter> v_kline_writer;
 	vector<TickToKlineHelper *> v_t2k_helper;
-	// FileName mkt_depth_file_name = {'\0'};
-	// FileName kline_file_name = {'\0'};
-	// std::ofstream mkt_depth_outfile;
-	// std::ofstream kline_outfile;
-	// TickToKlineHelper *p_kline_helper = nullptr;
-	// data_queue_ptr p_mktdata_queue = nullptr;
-	// DataQueue mktdata_queue = DataQueue();
 	data_queue_ptr p_order_queue = nullptr;
 	bool start_ = false;
 	bool active_ = false;
@@ -234,6 +229,8 @@ private:
 	Factor *p_factor;
 	std::vector<Order> v_order;
 	long factor_len = 1024;
-
+	std::time_t  last_order_time = std::time(nullptr);
+	std::string simtrade_token;
+	StrategyConfig * p_strategy_config;
 	
 };
