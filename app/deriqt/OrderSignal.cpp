@@ -122,7 +122,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, int tra
 
 			if(_is_stop_profit || _is_stop_loss){
 				p_orderdata->symbol = p_curr_pos->symbol;
-				p_orderdata->order_type = OrderType_Limit;
+				p_orderdata->order_type = OrderType_Stop;
 				p_orderdata->position_effect = PositionEffect_Close;
 				p_orderdata->side = _side;
 				p_orderdata->price = _limit_price;

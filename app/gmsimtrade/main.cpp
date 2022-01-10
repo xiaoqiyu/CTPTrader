@@ -96,26 +96,28 @@ int main(int argc, char *argv[])
     if(ps->status()==0)
     {
         LOG(INFO)<<"return for query position: "<<ps->count()<<std::endl;
-        ofstream fout;
-        fout.open("app/simtrade/position.txt", ios::out | ios::trunc );
+        // ofstream fout;
+        // fout.open("app/simtrade/position.txt", ios::out | ios::trunc );
 
         for (int i = 0; i<ps->count(); i++)
         {
             Position &p = ps->at(i);
-            fout<<"account id:"<<p.account_id<<","<<
-            "available:"<<p.available<<","<<
-            "instrument id:"<<p.symbol<<","<<
-            "side:"<<p.side<<","<<
-            "pnl:"<<p.fpnl<<
-            std::endl;
-            LOG(INFO)<<"account id:"<<p.account_id<<std::endl;
-            LOG(INFO)<<"available: "<<p.available<<std::endl;
-            LOG(INFO)<<"instrument id: "<<p.symbol<<","<<p.side<<std::endl;
-            LOG(INFO)<<"side:"<<p.side<<std::endl;
-            LOG(INFO)<<"fpnl:"<<p.fpnl<<std::endl;
-            LOG(INFO)<<"amount"<<p.amount<<std::endl;
-            std::cout<<p.fpnl/p.amount<<std::endl;
-            curr_positions.push_back(p.symbol);
+            // fout<<"account id:"<<p.account_id<<","<<
+            // "available:"<<p.available<<","<<
+            // "instrument id:"<<p.symbol<<","<<
+            // "side:"<<p.side<<","<<
+            // "pnl:"<<p.fpnl<<
+            // std::endl;
+            if (p.available > 0){
+                LOG(INFO)<<"account id:"<<p.account_id<<std::endl;
+                LOG(INFO)<<"available: "<<p.available<<std::endl;
+                LOG(INFO)<<"instrument id: "<<p.symbol<<","<<p.side<<std::endl;
+                LOG(INFO)<<"side:"<<p.side<<std::endl;
+                LOG(INFO)<<"fpnl:"<<p.fpnl<<std::endl;
+                LOG(INFO)<<"amount"<<p.amount<<std::endl;
+                std::cout<<p.fpnl/p.amount<<std::endl;
+                curr_positions.push_back(p.symbol);
+            }
         }
         // ps->release();
     }
