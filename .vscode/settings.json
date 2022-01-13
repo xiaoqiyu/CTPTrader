@@ -80,7 +80,8 @@
         "variant": "cpp",
         "csetjmp": "cpp",
         "charconv": "cpp",
-        "cuchar": "cpp"
+        "cuchar": "cpp",
+        "version": "cpp"
     },
 
 

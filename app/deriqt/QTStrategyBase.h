@@ -90,7 +90,6 @@ namespace shm
 class QTStrategyBase
 {
 public: //strategy function
-	int get_signal(); // TODO: check how to signal, maybe replace, and push to order Q
 	void on_tick(); 
 	void on_event();
 	
@@ -122,8 +121,12 @@ public: //order function
 	void insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcOrderPriceTypeType OrderPriceType, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void order(int stop_loss_percents = 0, int stop_profit_percent = 0);
+	void insert_limit_order_gfd(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
+	void insert_limit_order_fok(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
+	void insert_order_sim(OrderData* p_order_data);
 	void process_order();
-	bool verify_order_condition();
+	int verify_order_condition(CThostFtdcInputOrderField *p_order_field_);//check whether to place order(live mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
+	int verify_order_condition(OrderData* p_orderdata);//check whether to place  order(sim mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
 
 public: //qry for product/instrument/account
     std::tuple<std::vector<std::string>, std::vector<std::string>> get_instrument_by_product(std::string product_id);
@@ -181,15 +184,6 @@ protected:
 	thread order_thread;
 	thread signal_thread;
 	std::vector<std::vector<double>> v_factor; //cached factor list
-	//FIXME remove hard code of the size
-	// std::vector<double> v_last_vector(7, 0.0); // last, max, min, spread, mid_price,avg, slope
-	std::vector<double> v_last_vector;
-	double last_price1 = 0.0; //last price in prev timestamp
-	double last_price2 = 0.0; //last price in prev 2 timesstamp
-	
-	// OrderSignal  *p_signal = nullptr;				  //derived in subclass
-	virtual void calculate_signal(){};	  //overwrite in subclass TODO add the signal update in process 2
-	void calculate_factors(CThostFtdcDepthMarketDataField *pDepthMarketData, int cache_len);
 	void calculate_kline();
 
 private:
@@ -199,8 +193,6 @@ private:
 	unordered_map<std::string, std::string> m_kline_filename;
 	vector<std::ofstream *> v_depth_outfile;
 	vector<std::ofstream *> v_kline_outfile;
-	// vector<FILE*> v_depth_file_handler;
-	// vector<FILE*> v_kline_file_handler;
 	vector<recordio::RecordWriter> v_depth_writer;
 	vector<recordio::RecordWriter> v_kline_writer;
 	vector<TickToKlineHelper *> v_t2k_helper;
@@ -222,8 +214,6 @@ private:
     std::unique_ptr<shm::char_alloc> char_alloc_ptr;
 	std::unique_ptr<SimTrader> simtrade_ptr;
     shm::ring_buffer* p_queue;
-	// TODO: FOR SIMTRADE TESTING
-	int position_limit; 
 	std::string simtrade_account_id;
 	OrderSignal * p_sig;
 	Factor *p_factor;
@@ -232,5 +222,4 @@ private:
 	std::time_t  last_order_time = std::time(nullptr);
 	std::string simtrade_token;
 	StrategyConfig * p_strategy_config;
-	
 };

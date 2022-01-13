@@ -7,7 +7,8 @@
 #include <codecvt>
 #include <condition_variable>
 #include <locale>
-
+#include <vector>
+#include <unordered_map>
 
 using namespace std;
 
@@ -147,9 +148,6 @@ inline string toUtf(const string &gb2312)
 }
 
 
-typedef DataQueue* data_queue_ptr;
-typedef TaskQueue* task_queue_ptr;
-typedef char FileName[50];
 
 typedef struct{
     double stop_profit = 0.0;
@@ -173,3 +171,69 @@ typedef struct
 	std::string account;
 	int status;
 }OrderData;
+
+
+class OrderQueue
+{
+private:
+    queue<OrderData> queue_;       //标准库队列
+    mutex mutex_;             //互斥锁
+    condition_variable cond_; //条件变量
+    bool _terminate = false;
+
+public:
+    OrderQueue(){};
+    ~OrderQueue(){};
+    void push(const OrderData &data)
+    {
+        unique_lock<mutex> mlock(mutex_);
+        queue_.push(data);  //向队列中存入数据
+        mlock.unlock();     //释放锁
+        cond_.notify_one(); //通知正在阻塞等待的线程
+    }
+
+    OrderData pop()
+    {
+        unique_lock<mutex> mlock(mutex_);
+        cond_.wait(mlock, [&]() {
+            return !queue_.empty() ;
+        }); //等待条件变量通知
+        if (_terminate)
+            throw TerminatedError();
+        OrderData data = queue_.front(); //获取队列中的最后一个数据
+        queue_.pop();               //删除该数据
+        return data;                //返回该数据
+    }
+
+    void terminate()
+    {
+        _terminate = true;
+        cond_.notify_all(); //通知正在阻塞等待的线程
+    }
+};
+
+
+typedef DataQueue* data_queue_ptr;
+typedef TaskQueue* task_queue_ptr;
+// typedef OrderQueue* order_queue_ptr;
+typedef char FileName[50];
+
+
+// int test(std::string product_id, int mode){
+    // std::unordered_map<std::string, std::string> gm_exchange_map;
+    // std::unordered_map<std::string, std::string> ctp_exchange_map;
+    // std::string no_results;
+    // gm_exchange_map.insert(std::pair<std::string, std::string>("eg", "DCE"));
+    // if(mode == 1){//simtrade
+        // auto it = gm_exchange_map.find(product_id);
+        // if (it != gm_exchange_map.end()){
+            // return it->second;
+        // }
+    // }else if(mode == 2){
+        // auto it = ctp_exchange_map.find(product_id);
+        // if (it != ctp_exchange_map.end()){
+            // return it->second;
+        // }
+    // }
+    // return 0;
+// }

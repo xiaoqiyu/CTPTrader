@@ -11,8 +11,8 @@ class OrderSignal
 public:
 	OrderSignal(){};
 	~OrderSignal();
-	OrderData* get_signal(const std::vector<std::string>&v_factor, int trading_mode,std::vector<Position *> v_positions,StrategyConfig *p_strategy_config, int order_limit);
-
+	OrderData* get_signal_v0(const std::vector<std::string>&v_factor, int trading_mode,std::vector<Position *> v_positions,StrategyConfig *p_strategy_config, int order_limit);
+	OrderData* get_signal(const std::vector<std::string>&v_rev);
 private:
 	int _order_volume; 
 	int order_side; 

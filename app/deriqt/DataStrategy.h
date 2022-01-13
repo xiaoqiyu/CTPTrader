@@ -11,5 +11,4 @@ public:
     };
     ~DataStrategy(){};
 
-    void calculate_signal(){};
 };
