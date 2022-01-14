@@ -50,10 +50,13 @@ public:
     //存入新的任务
     void push(const Task &task)
     {
+        std::cout<<"queue size:"<<queue_.size()<<std::endl;
+        LOG(INFO)<<"start push to task Queue";
         unique_lock<mutex> mlock(mutex_);
         queue_.push(task);  //向队列中存入数据
         mlock.unlock();     //释放锁
         cond_.notify_one(); //通知正在阻塞等待的线程
+        std::cout<<"complete push to task Queue, notify";<<std::endl;
     }
 
     //取出老的任务
@@ -65,6 +68,7 @@ public:
         }); //等待条件变量通知
         if (_terminate)
             throw TerminatedError();
+        std::cout<<"complete cond wait for task queue,start pop"<<std::endl;
         Task task = queue_.front(); //获取队列中的最后一个任务
         queue_.pop();               //删除该任务
         return task;                //返回该任务

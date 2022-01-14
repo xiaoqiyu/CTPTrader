@@ -30,10 +30,13 @@ void SimTrader::on_execution_report(ExecRpt *rpt)
     task.task_name = ONSIMEXECUTIONREPORT;
     if(rpt)
     {
+        std::cout<<"push exe report to queue"<<std::endl;
         ExecRpt *task_data = new ExecRpt();
         *task_data = *rpt;
         task.task_data = task_data;
+        std::cout<<"new exe task complete"<<std::endl;
     }
+    LOG(INFO)<<"start push exe task to task queue";
     this->_task_queue.push(task);
 }
 
@@ -56,11 +59,12 @@ void SimTrader::on_account_status(AccountStatus *account_status)
 
 void SimTrader::process_execution_report(Task *task)
 {
+    LOG(INFO)<<"Execution reports:trades, start update positions";
     if (task->task_data)
     {
         ExecRpt *task_data = reinterpret_cast<ExecRpt *>(task->task_data);
         if (task_data->volume>0 && task_data->exec_type == ExecType_Trade){
-            LOG(INFO)<<"Execution reports:trades, start update positions";
+            
             update_positions(task_data);
             LOG(INFO) << "price: " << task_data->price << std::endl;
             LOG(INFO) << "volume: " << task_data->volume << std::endl;
@@ -119,7 +123,7 @@ void SimTrader::process_order_status(Task *task)
 void SimTrader::processTask(){
     // LOG(INFO)<<"Process task in gm simtrade:"<<this->_active<<","<<this->connected_;
     // while(this->_active && this->connected_)//FIXME check status
-    LOG(INFO)<<"in process task: ";
+    LOG(INFO)<<"-----------------------------------in process task: ";
     while(true)
     {
         Task task = this->_task_queue.pop();
@@ -137,10 +141,12 @@ void SimTrader::processTask(){
         }
         case ONSIMORDERSTATUS:
         {
+            std::cout<<"case: order report"<<std::endl;
             this->process_order_status(&task);
         }
         case ONSIMEXECUTIONREPORT:
         {
+            std::cout<<"case: execution report"<<std::endl;
             this->process_execution_report(&task);
 
         }
@@ -256,10 +262,11 @@ std::vector<ptr_position> SimTrader::get_positions(const std::string& instrument
     }); //等待条件变量通知
 
     // init_positions(account_id);
+    LOG(INFO)<<"In get positions, after cond wait";
     std::vector<ptr_position> ret_pos;
     for(auto it = all_positions.begin(); it!=all_positions.end();++it){
         ptr_position _tmp = *it;
-        if(_tmp->symbol == instrument_id) ret_pos.push_back(_tmp);
+        if(_tmp->symbol == instrument_id && _tmp->volume >0) ret_pos.push_back(_tmp);
     }
     return ret_pos;
 }
@@ -325,7 +332,7 @@ Order* SimTrader::insert_order(CThostFtdcInputOrderField *p_order_field_){
 Order* SimTrader::insert_order(OrderData * p_orderdata){
     order_complete_ = false;
     Order _order;
-    LOG(INFO)<<"insert order in simtrade";
+    LOG(INFO)<<"insert order in simtrade:symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side;
     _order = order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, OrderType_Limit,p_orderdata->position_effect, p_orderdata->price, account_id.c_str());
     unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {

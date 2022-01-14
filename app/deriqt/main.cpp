@@ -23,8 +23,8 @@ int DEBUG = 0;
 int main(int argc, char *argv[])
 {
 
-    // google::InitGoogleLogging(argv[0]);
-    // FLAGS_log_dir = std::string("./log/");
+    google::InitGoogleLogging(argv[0]);
+    FLAGS_log_dir = std::string("./log/");
     std::string _conf_file_name;
     std::string _instrument_id;
     std::string mode = "0";

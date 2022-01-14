@@ -1,17 +1,17 @@
 #include "GMSimTrader.h"
 
-void GMSimTrader::init()
+void SimTrader::init()
 {
-    this->_task_thread = thread(&GMSimTrader::processTask, this);
+    this->_task_thread = thread(&SimTrader::processTask, this);
 }
 
-void GMSimTrader::exit()
+void SimTrader::exit()
 {
     this->_active = true;
     this->_task_thread.join();
 }
 //关注委托状态变化
-void GMSimTrader::on_order_status(Order *order)
+void SimTrader::on_order_status(Order *order)
 {
     LOG(INFO)<<"call back in order status:"<<order->symbol<<std::endl;
     Task task = Task();
@@ -26,7 +26,7 @@ void GMSimTrader::on_order_status(Order *order)
 };
 
 //关注执行回报, 如成交, 撤单拒绝等
-void GMSimTrader::on_execution_report(ExecRpt *rpt)
+void SimTrader::on_execution_report(ExecRpt *rpt)
 {
     LOG(INFO)<<"call back in execution:"<<rpt->symbol<<std::endl;
     Task task = Task();
@@ -40,24 +40,24 @@ void GMSimTrader::on_execution_report(ExecRpt *rpt)
     this->_task_queue.push(task);
 }
 
-void GMSimTrader::on_trade_data_connected()
+void SimTrader::on_trade_data_connected()
 {
     this->connected_ = true;
     LOG(INFO) << "connected to server in connect callback....\n";
 }
 
-void GMSimTrader::on_trade_data_disconnected()
+void SimTrader::on_trade_data_disconnected()
 {
     this->connected_ = false;
     LOG(INFO) << "disconnected to server....\n";
 }
 
-void GMSimTrader::on_account_status(AccountStatus *account_status)
+void SimTrader::on_account_status(AccountStatus *account_status)
 {
     LOG(INFO) << "change of accounts : " << account_status->state << std::endl;
 }
 
-void GMSimTrader::process_execution_report(Task *task)
+void SimTrader::process_execution_report(Task *task)
 {
     if (task->task_data)
     {
@@ -78,7 +78,7 @@ void GMSimTrader::process_execution_report(Task *task)
     }
 }
 
-void GMSimTrader::process_order_status(Task *task)
+void SimTrader::process_order_status(Task *task)
 {
     if (task->task_data)
     {
@@ -102,7 +102,7 @@ void GMSimTrader::process_order_status(Task *task)
     }
 }
 
-void GMSimTrader::processTask()
+void SimTrader::processTask()
 {
     LOG(INFO)<<"Start process order task\n";
     try
@@ -124,6 +124,7 @@ void GMSimTrader::processTask()
             }
             case ONSIMORDERSTATUS:
             {
+                
                 this->process_order_status(&task);
             }
             case ONSIMEXECUTIONREPORT:

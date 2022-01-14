@@ -197,29 +197,33 @@ void QTStrategyBase::on_event()
 					std::time_t now_time = std::time(nullptr);
 					std::time_t duration =  now_time - last_order_time;
 					// std::cout<<"duration:"<<duration<<"dur config:"<<p_strategy_config->order_duration<<std::endl;
-					if (duration > p_strategy_config->order_duration){
+					// if (duration > p_strategy_config->order_duration){
+					if (true){ //TODO ignore duration first
 						// LOG(INFO)<<"dur:"<<duration<<">"<<p_strategy_config->order_duration<<"check order signal";
 						std::string _symbol = v_rev[0];
 						// std::string full_symbol = "DCE."+_symbol; //FIXME remove exchange hardcode 
 						// std::vector<Position *> v_pos = this->simtrade_ptr->get_positions(full_symbol);
-						double _total_cost = 0.0;
+						// double _total_cost = 0.0;
 						// long long _total_vol = 0;
-						int _pos_size = 0;
+						// int _pos_size = 0;
 						OrderData* p_orderdata = p_sig->get_signal(v_rev);
-						if(p_orderdata->status == 1){
-							if(this->mode==1){
-								//insert sim order
+
+						if(this->mode==1){
+							// LOG(INFO)<<"insert order to queue,side:"<<p_orderdata->side<<",signal:"<<p_orderdata->status;
+							//insert sim order
+							if(p_orderdata->status == LONG_SIGNAL || p_orderdata->status==SHORT_SIGNAL){
 								insert_order_sim(p_orderdata);
-							}else if(this->mode == 2){
-								//insert ctp live order, TODO to be added, check the order parameter
-								// insert_limit_order(p_orderdata->price,)
 							}
-							// LOG(INFO)<<"Start order volume,now:";
-							// _order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
-							// LOG(INFO)<<"Order return:status:"<<_order.status<<",rej reason:"<<_order.ord_rej_reason<<",rej details:"<<_order.ord_rej_reason_detail<<", create at:"<<_order.created_at<<",update at:"<<_order.updated_at;
-							// p_order = simtrade_ptr->insert_order()
-							// last_order_time = _order.updated_at;
+						}else if(this->mode == 2){
+							//insert ctp live order, TODO to be added, check the order parameter
+							// insert_limit_order(p_orderdata->price,)
 						}
+						// LOG(INFO)<<"Start order volume,now:";
+						// _order = simtrade_ptr->order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect,p_orderdata->price, simtrade_account_id.c_str());
+						// LOG(INFO)<<"Order return:status:"<<_order.status<<",rej reason:"<<_order.ord_rej_reason<<",rej details:"<<_order.ord_rej_reason_detail<<", create at:"<<_order.created_at<<",update at:"<<_order.updated_at;
+						// p_order = simtrade_ptr->insert_order()
+						// last_order_time = _order.updated_at;
+						
 
 						// for(auto it = v_pos.begin(); it!=v_pos.end(); ++it){
 							// Position *_tmp = *it;
@@ -436,12 +440,23 @@ void QTStrategyBase::insert_limit_order_fok(TThostFtdcPriceType limit_price, TTh
 	// this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 
-void QTStrategyBase::insert_order_sim(OrderData* p_order_data){
+void QTStrategyBase::insert_order_sim(OrderData* p_order_data){	
+	// LOG(INFO)<<"in insert order sim, symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal:"<<p_order_data->status;
 	DataField data = DataField();
 	data.data_type = ORDERFIELDSIM;
-	data._data = p_order_data;
-	LOG(INFO)<<"Insert order to order queue";
+	OrderData *_order_data = new OrderData();
+	*_order_data = *p_order_data;
+	data._data = _order_data;
+	// LOG(INFO)<<"order data addr in insert_order_sim:"<<p_order_data;
+	// LOG(INFO)<<"Insert order to order queue,symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",vol:"<<p_order_data->volume;
 	this->p_order_queue->push(data);
+	// DataField _data_field = this->p_order_queue->pop();
+	// OrderData * _order_field = reinterpret_cast<OrderData*> (_data_field._data);
+	// std::cout<<"data type:"<<_data_field.data_type<<",addr:"<<_order_field<<std::endl;
+	// std::cout<<"symbol:"<<_order_field->symbol<<",side:"<<_order_field->side<<std::endl;
+	// 
+	// this->p_order_queue->push(data);
+	
 }
 
 std::tuple<std::vector<std::string>, std::vector<std::string>> QTStrategyBase::get_instrument_by_product(std::string product_id)
@@ -559,6 +574,7 @@ NO_SIGNAL:
 */
 int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 {
+	LOG(INFO)<<"start verify order conditioin";
 	std::vector<Position *> v_pos = simtrade_ptr->get_positions(p_orderdata->symbol);
 	LOG(INFO)<<"return for get_position,size:"<<v_pos.size();
 	if(p_orderdata->status == LONG_SIGNAL){ // long signal
@@ -574,11 +590,19 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 			}else if(p_curr_pos->side == OrderSide_Buy){//long signal and long position, open long untill vol_limit
 				p_orderdata->order_type = OrderType_Market;
 				p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
+				LOG(INFO)<<"long signal, open long position,order volume:"<<p_orderdata->volume;
 				if(p_orderdata->volume <= 0) return -1;
-				LOG(INFO)<<"long signal, open long position";
 				p_orderdata->side = OrderSide_Buy;
 				p_orderdata->position_effect = PositionEffect_Open;
 			}
+		}
+		if(v_pos.size()==0){//long signal and no positions,open long until vol_limit
+			p_orderdata->order_type = OrderType_Market;
+			p_orderdata->volume = p_strategy_config->vol_limit;
+			if(p_orderdata->volume <= 0) return -1;
+			LOG(INFO)<<"long signal, open long position";
+			p_orderdata->side = OrderSide_Buy;
+			p_orderdata->position_effect = PositionEffect_Open;
 		}
 	}else if (p_orderdata->status==SHORT_SIGNAL){ //short signal
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
@@ -593,11 +617,19 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 			}else if(p_curr_pos->side == OrderSide_Sell){//short signal and short position, open long untill vol_limit
 				p_orderdata->order_type = OrderType_Market;
 				p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
+				LOG(INFO)<<"short signal, open short position,order volume:"<<p_orderdata->volume;
 				if(p_orderdata->volume <= 0) return -1;
-				LOG(INFO)<<"short signal, open short position";
 				p_orderdata->side = OrderSide_Sell;
 				p_orderdata->position_effect = PositionEffect_Open;
 			}
+		}
+		if(v_pos.size()==0){ //short signal and no positions, open short until vol_limit
+			p_orderdata->order_type = OrderType_Market;
+			p_orderdata->volume = p_strategy_config->vol_limit;
+			if(p_orderdata->volume <= 0) return -1;
+			LOG(INFO)<<"short signal, open short position";
+			p_orderdata->side = OrderSide_Sell;
+			p_orderdata->position_effect = PositionEffect_Open;
 		}		
 	}else if (p_orderdata->status == NO_SIGNAL){//check whether stop profit/loss,由于仿真没法下条件单，这相当于手工实现条件单，实际上CTP可以下条件单
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
@@ -623,7 +655,7 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 
 void QTStrategyBase::process_order()
 {
-	LOG(INFO)<<"process_order";
+	LOG(INFO)<<"process_order:is active:"<<active_;
 	while(this->active_)
 	{
 		DataField data = this->p_order_queue->pop();
@@ -641,8 +673,8 @@ void QTStrategyBase::process_order()
 			}
 			case ORDERFIELDSIM://sim trade
 			{
-				LOG(INFO)<<"---start place order";
 				OrderData *p_orderdata = reinterpret_cast<OrderData *>(data._data);
+				LOG(INFO)<<"---start place order in process order:symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order addr in process order:"<<p_orderdata;
 				if(verify_order_condition(p_orderdata)==0){
 					this->simtrade_ptr->insert_order(p_orderdata);
 				}
