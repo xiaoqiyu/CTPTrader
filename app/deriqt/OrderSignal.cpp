@@ -27,7 +27,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 	std::string symbol = "DCE."+ _symbol;
 	
 	if(_is_long){ //get long signal
-		LOG(INFO)<<"long signal";
+		// LOG(INFO)<<"long signal";
 		p_orderdata->symbol = "DCE."+_symbol;//FIXME fix exchange hardcode
 		p_orderdata->order_type = OrderType_Limit;
 		p_orderdata->position_effect = PositionEffect_Open;
@@ -38,7 +38,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 		return p_orderdata; 
 		
 	}else if (_is_short){ //get short signal
-		LOG(INFO)<<"short signal"; 
+		// LOG(INFO)<<"short signal"; 
 		p_orderdata->symbol = "DCE."+_symbol;//FIXME fix exchange hardcode
 		p_orderdata->order_type = OrderType_Limit;
 		p_orderdata->position_effect = PositionEffect_Open;

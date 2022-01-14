@@ -52,6 +52,7 @@ public:
     {
         std::cout<<"queue size:"<<queue_.size()<<std::endl;
         LOG(INFO)<<"start push to task Queue";
+        sleep(2);
         unique_lock<mutex> mlock(mutex_);
         queue_.push(task);  //向队列中存入数据
         mlock.unlock();     //释放锁
