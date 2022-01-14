@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
     p_strategy->stop();
     p_strategy->release();
 
+    //REMARK test for git
 
     return 0;
 }
