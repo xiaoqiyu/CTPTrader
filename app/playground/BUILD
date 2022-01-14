@@ -67,3 +67,17 @@ cc_binary(
         "-lrt"
     ],
 )
+
+cc_binary(
+    name = "folly_blocking_q",
+    srcs = [
+		"folly_blocking_q.cpp"
+	],
+    deps = [
+        "@folly//:folly",
+        "@com_google_googletest//:gtest_main",
+	],
+    copts = [
+        "-std=c++14",
+    ],
+)
