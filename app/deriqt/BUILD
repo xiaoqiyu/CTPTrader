@@ -41,6 +41,7 @@ cc_binary(
 		"@boost//:system",
 		"@boost//:thread",
 		"@boost//:circular_buffer",
+        "@folly//:folly",
 	],
 	linkopts = [
     "-lrt"
