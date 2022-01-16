@@ -3,7 +3,8 @@
 #include <iostream>
 #include <codecvt>
 #include <locale>
-#include <folly/executors/UnboundedBlockingQueue.h>
+//#include <folly/executors/UnboundedBlockingQueue.h>
+#include <boost/thread/concurrent_queues/sync_queue.hpp>
 
 
 //任务结构体
@@ -36,7 +37,7 @@ class TerminatedError : std::exception
 class TaskQueue
 {
 private:
-    folly::UnboundedBlockingQueue<Task> queue_;       //标准库队列
+    boost::sync_queue<Task> queue_;
     bool _terminate = false;
 
 public:
@@ -45,14 +46,15 @@ public:
     {
         std::cout<<"queue size:"<<queue_.size()<<std::endl;
         LOG(INFO)<<"start push to task Queue";
-        queue_.add(task);  //向队列中存入数据
+        queue_.push(task);  //向队列中存入数据
         std::cout<<"complete push to task Queue, notify";<<std::endl;
     }
 
     //取出老的任务
     Task pop()
     {
-        Task task = queue_.take(); //获取队列中的最后一个任务
+        Task task;
+        queue_.pull(task); //获取队列中的最后一个任务
         return task;                //返回该任务
     }
 
@@ -74,13 +76,14 @@ public:
     //存入新的数据
     void push(const DataField &data)
     {
-        queue_.add(data);  //向队列中存入数据
+        queue_.push(data);  //向队列中存入数据
     }
 
     //取出老的任务
     DataField pop()
     {
-        DataField data = queue_.take(); //获取队列中的最后一个数据
+        DataField data;
+        queue_.pull(data); //获取队列中的最后一个数据
         return data;                //返回该数据
     }
 
