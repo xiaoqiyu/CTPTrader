@@ -6,6 +6,9 @@
 //#include <folly/executors/UnboundedBlockingQueue.h>
 #include <boost/thread/concurrent_queues/sync_queue.hpp>
 
+//boost::sync_queue example https://github.com/boostorg/thread/blob/develop/example/producer_consumer.cpp
+//for more careful usage, should catch sync_queue_is_closed exception
+
 
 //任务结构体
 struct Task
