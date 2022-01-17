@@ -19,7 +19,9 @@ void SimTrader::on_order_status(Order *order)
         *task_data = *order;
         task.task_data = task_data;
     }
-    this->_task_queue.push(task);
+    if(order->status == OrderStatus_New){//TODO check this
+        this->_task_queue.push(task);
+    }
 };
 
 //关注执行回报, 如成交, 撤单拒绝等
@@ -28,6 +30,7 @@ void SimTrader::on_execution_report(ExecRpt *rpt)
     LOG(INFO)<<"call back in execution:"<<rpt->symbol<<std::endl;
     Task task = Task();
     task.task_name = ONSIMEXECUTIONREPORT;
+    
     if(rpt)
     {
         std::cout<<"push exe report to queue"<<std::endl;
@@ -81,6 +84,7 @@ void SimTrader::process_execution_report(Task *task)
     {
         LOG(ERROR)<<"process execute error";
     }
+    sleep(1);
     LOG(INFO)<<"Order complete:symbol";
     order_complete_ = true;
     available_ = true;
@@ -90,7 +94,7 @@ void SimTrader::process_execution_report(Task *task)
 void SimTrader::process_order_status(Task *task)
 {
     LOG(INFO)<< "Process order status in gm trade----------------------------------";
-    std::vector<ptr_position> v_all_pos = get_positions();
+    // std::vector<ptr_position> v_all_pos = get_positions();
     // for (auto it = v_all_pos.begin(); it != v_all_pos.end(); ++it){
         // ptr_position _tmp_pos = *it;
         // std::cout<<_tmp_pos->symbol<<",vol:"<<_tmp_pos->volume<<",available:"<<_tmp_pos->available<<",vwap:"<<_tmp_pos->vwap<<std::endl;
@@ -99,7 +103,8 @@ void SimTrader::process_order_status(Task *task)
     if (task->task_data)
     {
         Order *task_data = reinterpret_cast<Order *>(task->task_data);
-        if(task_data->status == 1 && task_data->volume >0){
+        // if(task_data->status == 1 && task_data->volume >0)
+        if(task_data){
             // update_positions(task_data);//TODO check whether have to update positions here
             LOG(INFO)<<"Order reports";
             LOG(INFO) << "symbol: " << task_data->symbol << std::endl;
@@ -127,6 +132,7 @@ void SimTrader::processTask(){
     while(true)
     {
         Task task = this->_task_queue.pop();
+        LOG(INFO)<<"poped task:"<<task.task_name;
         switch (task.task_name)
         {
         case ONSIMCONNECTED:

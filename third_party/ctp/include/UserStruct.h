@@ -51,6 +51,7 @@ public:
     //存入新的任务
     void push(const Task &task)
     {
+        // std::cout<<"push task:"<<task.task_name<<std::endl;
         unique_lock<mutex> mlock(mutex_);
         queue_.push(task);  //向队列中存入数据
         mlock.unlock();     //释放锁
@@ -68,6 +69,7 @@ public:
             throw TerminatedError();
         Task task = queue_.front(); //获取队列中的最后一个任务
         queue_.pop();               //删除该任务
+        // std::cout<<"poped task:"<<task.task_name<<std::endl;
         return task;                //返回该任务
     }
 
@@ -92,6 +94,7 @@ public:
     //存入新的数据
     void push(const DataField &data)
     {
+        // std::cout<<"push data:"<<data.data_type<<std::endl;
         unique_lock<mutex> mlock(mutex_);
         queue_.push(data);  //向队列中存入数据
         mlock.unlock();     //释放锁
@@ -219,21 +222,20 @@ typedef TaskQueue* task_queue_ptr;
 typedef char FileName[50];
 
 
-// int test(std::string product_id, int mode){
-    // std::unordered_map<std::string, std::string> gm_exchange_map;
-    // std::unordered_map<std::string, std::string> ctp_exchange_map;
-    // std::string no_results;
-    // gm_exchange_map.insert(std::pair<std::string, std::string>("eg", "DCE"));
-    // if(mode == 1){//simtrade
-        // auto it = gm_exchange_map.find(product_id);
-        // if (it != gm_exchange_map.end()){
-            // return it->second;
-        // }
-    // }else if(mode == 2){
-        // auto it = ctp_exchange_map.find(product_id);
-        // if (it != ctp_exchange_map.end()){
-            // return it->second;
-        // }
-    // }
-    // return 0;
-// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

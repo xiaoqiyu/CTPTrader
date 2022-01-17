@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     std::string _strategy_name = "data_strategy";
     std::vector<std::string> v_instrumentID;
 
-    
     if (argc <= 1)
     {
         LOG(ERROR) << "Please enter a config name" ;
