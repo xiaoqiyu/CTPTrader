@@ -162,3 +162,9 @@
 #define LONG_SIGNAL 142
 #define SHORT_SIGNAL 143
 #define NO_SIGNAL 144
+#define CANCEL_ORDER_SIGNAL 145 
+#define CLOSE_ALL_SIGNAL 146
+
+
+//risk 
+#define RISK_INPUT 147

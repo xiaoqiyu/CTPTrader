@@ -10,6 +10,10 @@
 #include <fstream>
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
+#include <stdint.h>
+#include <ctime>
+#include <chrono>
 
 
 int main()
@@ -45,6 +49,7 @@ int main()
     // std::cout<<rr<<std::endl;
 
     //share_ptr demo
+    /*
     std::shared_ptr<int> p1 = std::make_shared<int>();
     *p1 = 78;
     std::cout<< "*p1="<<*p1<<std::endl;
@@ -81,6 +86,10 @@ int main()
     std::cout<<*p2<<","<<p2<<p2.use_count()<<std::endl;
     p2 = nullptr;
     std::cout<<p2<<p2.use_count()<<std::endl;
+*/
+    std::time_t now_time = std::time(nullptr);
+     tm *ltm = localtime(&now_time);
+    std::cout<<ltm->tm_hour<<":"<<ltm->tm_min<<std::endl;
     return 0;
 }
 

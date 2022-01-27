@@ -26,7 +26,8 @@ cc_binary(
 		"OrderSignal.h",
 		"OrderSignal.cpp",
 		"Factor.h",
-		"Factor.cpp"
+		"Factor.cpp",
+		"UserStruct.h"
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",

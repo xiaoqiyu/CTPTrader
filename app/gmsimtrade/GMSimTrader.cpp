@@ -21,6 +21,7 @@ void SimTrader::on_order_status(Order *order)
         Order *task_data = new Order();
         *task_data = *order;
         task.task_data = task_data;
+        std::cout<<task_data->order_id<<",status:"<<task_data->status<<",reason:"<<task_data->ord_rej_reason<<",details:"<<task_data->ord_rej_reason_detail<<std::endl;
     }
     this->_task_queue.push(task);
 };

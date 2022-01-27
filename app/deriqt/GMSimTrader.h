@@ -11,12 +11,14 @@
 #include "recordio_range.h"
 // #include "INIReader.h"
 #include <glog/logging.h>
+#include <unordered_map>
 #include "gmtrade.h"
 #include "UserStruct.h"
 #include "ThostFtdcUserApiStruct.h"
 #include "ThostFtdcUserApiDataType.h"
 
 typedef Position* ptr_position;
+typedef Order* ptr_order;
 
 
 class SimTrader:public gmtrade::Trade
@@ -30,6 +32,7 @@ private:
         bool connected_ = false; //连接交易前置
         bool login_ = false; //验证和登录完成
         bool available_ = true; //用于持仓查询控制
+        bool order_available_ =true; //用于委托查询控制
         bool order_complete_ = true; //用于控制订单流，同时只有一个order,
         int stop_profit = 5; 
         int stop_loss = 10; 
@@ -39,8 +42,11 @@ private:
         int multiplier  = 10; //FIXME remove hardcode, remove to config
         gmtrade::DataArray<Position> *p_pos;
         std::vector<ptr_position> all_positions;
+        std::vector<ptr_order> all_orders;
         double total_cost;
         std::string account_id;
+        unordered_map<std::string, long> order_vol_map;
+        unordered_map<std::string, long> execute_vol_map;
 
         
         
@@ -50,15 +56,17 @@ public:
     {
         LOG(INFO)<<"Constructor in Simtrader";    
         account_id = "a1a91403-2fc2-11ec-bd15-00163e0a4100";//FIXME remove hardcode
+        // this->cancel_all_orders();
         this->_task_thread = thread(&SimTrader::processTask, this);
     }
 
     void init_positions(std::string account_id)
     {
-        LOG(INFO)<<"simtrade init with account id:"<<account_id<<" Init positions";
+        LOG(INFO)<<"Connected: Init positions with account id=>"<<account_id;
 	    this->available_ = false;
         unique_lock<mutex> mlock(mutex_);
         gmtrade::DataArray<Position> *ps = this->get_position(account_id.c_str());
+
 
         if(ps->status()==0)
         {
@@ -95,12 +103,16 @@ public:
     void process_execution_report(Task *task);
     void update_positions(Order* order);
     void update_positions(ExecRpt*p_exe);
+    void update_orders(ptr_order p_order);
     std::vector<ptr_position> get_positions();
     std::vector<ptr_position> get_positions(const std::string& instrument_id);
     int get_position_details(const std::string& account_id);
+    std::vector<ptr_order> get_all_orders();
     std::vector<ptr_position> get_position_details(const std::string& account_id, const std::string& instrument_id);
     Order* insert_order(CThostFtdcInputOrderField *p_order_field_);
     Order* insert_order(OrderData * p_orderdata);
+    int cancel_all_orders();
+    int risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_strategy_conf);
 };
 
 

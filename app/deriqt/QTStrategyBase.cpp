@@ -115,13 +115,14 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		
 		// 登录账户id
 		simtrade_ptr->login(future_acc.c_str());
-		simtrade_ptr->init_positions(future_acc);
+		// simtrade_ptr->init_positions(future_acc);
 		//开始接收事件
 		int status = simtrade_ptr->start();
 		//判断状态
 		if (status == 0)
 		{
 		    LOG(INFO) << "Connected to simtrade server" << std::endl;
+			
 		}
 		else
 		{
@@ -158,6 +159,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		LOG(INFO)<<"Mode 1 &2: create order data queue";
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
+		this->p_risk_queue = new DataQueue();
 		this->p_sig = new OrderSignal();
 		this->p_strategy_config = new StrategyConfig(); //new and init the strategy config
 		p_strategy_config->close_type = std::stoi(reader.Get("strategy","close_type","0"));
@@ -167,6 +169,10 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_strategy_config->init_cash = std::stod(reader.Get("strategy", "init_cash","1000000"));
 		p_strategy_config->risk_ratio = std::stod(reader.Get("strategy", "risk_ratio","1000000"));
 		p_strategy_config->order_duration = std::stoi(reader.Get("strategy", "order_duration","20"));
+		p_strategy_config->signal_delay = std::stoi(reader.Get("strategy", "signal_delay","5"));
+		p_strategy_config->risk_duration = std::stoi(reader.Get("strategy", "risk_duration","60"));
+		p_strategy_config->cancel_order_delay = std::stoi(reader.Get("strategy", "cancel_order_delay","120"));
+
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
@@ -196,6 +202,19 @@ void QTStrategyBase::on_event()
 				if (this->mode == 1){//simtrade
 					std::time_t now_time = std::time(nullptr);
 					std::time_t duration =  now_time - last_order_time;
+
+					//push into risk queue
+					//FIXME comment risk
+					RiskInputData * p_risk_data = new RiskInputData();
+					p_risk_data->last_price = std::stod(v_rev[4]);
+					p_risk_data->update_time = v_rev[1];
+					p_risk_data->symbol = v_rev[0];
+					DataField data = DataField();
+					data.data_type = RISK_INPUT;
+					data._data = p_risk_data;
+					this->p_risk_queue->push(data);
+
+
 					// std::cout<<"duration:"<<duration<<"dur config:"<<p_strategy_config->order_duration<<std::endl;
 					// if (duration > p_strategy_config->order_duration){
 					if (true){ //TODO ignore duration first
@@ -207,11 +226,12 @@ void QTStrategyBase::on_event()
 						// long long _total_vol = 0;
 						// int _pos_size = 0;
 						OrderData* p_orderdata = p_sig->get_signal(v_rev);
-
+						p_orderdata->order_insert_time = now_time;
 						if(this->mode==1){
 							// LOG(INFO)<<"insert order to queue,side:"<<p_orderdata->side<<",signal:"<<p_orderdata->status;
 							//insert sim order
 							if(p_orderdata->status == LONG_SIGNAL || p_orderdata->status==SHORT_SIGNAL){
+								LOG(INFO)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
 								insert_order_sim(p_orderdata);
 							}
 						}else if(this->mode == 2){
@@ -265,6 +285,31 @@ void QTStrategyBase::on_event()
 	}
 	
 }//end of on_event
+
+
+void QTStrategyBase::on_risk()
+{
+	LOG(INFO)<<"Start risk thread";
+	try{
+		while(true){
+			DataField data = this->p_risk_queue->pop();
+			if(data.data_type==RISK_INPUT && data._data){
+				RiskInputData *p_risk_input = reinterpret_cast<RiskInputData *>(data._data);
+				std::string _update_time = p_risk_input->update_time;
+				double _last_price = p_risk_input->last_price;
+				int update_min = std::stoi(_update_time.substr(3,2));
+				int update_sec = std::stoi(_update_time.substr(6,2));
+				int _risk_monitor = (update_min*60 + update_sec)%p_strategy_config->risk_duration;
+				if(_risk_monitor == 0){//will call risk monitor to check
+					LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
+					simtrade_ptr->risk_monitor(p_risk_input, p_strategy_config);
+				}
+			}
+		}
+	}
+	catch (const TerminatedError &){
+	}
+}
 
 
 void QTStrategyBase::on_tick()
@@ -332,10 +377,12 @@ void QTStrategyBase::start()
 		LOG(INFO)<<"mode 1: Simtrade, listening to factor";
 		this->signal_thread = thread(&QTStrategyBase::on_event, this); 
 		this->order_thread = thread(&QTStrategyBase::process_order, this);
+		this->risk_monitor_thread = thread(&QTStrategyBase::on_risk, this);
 	}else if (this->mode == 2){
 		LOG(INFO)<<"mode 2: livetrade, listening to factor";
 		this->signal_thread = thread(&QTStrategyBase::on_event, this); 
 		this->order_thread = thread(&QTStrategyBase::process_order, this);
+		this->risk_monitor_thread = thread(&QTStrategyBase::on_risk, this);
 	}else{
 		LOG(ERROR)<<"invalid mode";
 	}
@@ -441,7 +488,7 @@ void QTStrategyBase::insert_limit_order_fok(TThostFtdcPriceType limit_price, TTh
 }
 
 void QTStrategyBase::insert_order_sim(OrderData* p_order_data){	
-	// LOG(INFO)<<"in insert order sim, symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal:"<<p_order_data->status;
+	LOG(INFO)<<"[insert_order_sim] in insert order sim, symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal:"<<p_order_data->status;
 	DataField data = DataField();
 	data.data_type = ORDERFIELDSIM;
 	OrderData *_order_data = new OrderData();
@@ -450,11 +497,11 @@ void QTStrategyBase::insert_order_sim(OrderData* p_order_data){
 	// LOG(INFO)<<"order data addr in insert_order_sim:"<<p_order_data;
 	// LOG(INFO)<<"Insert order to order queue,symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",vol:"<<p_order_data->volume;
 	this->p_order_queue->push(data);
+	// std::cout<<"?????????????//debug p order queue"<<std::endl;
 	// DataField _data_field = this->p_order_queue->pop();
+	// std::cout<<"?????get data field:"<<_data_field.data_type<<std::endl;
 	// OrderData * _order_field = reinterpret_cast<OrderData*> (_data_field._data);
-	// std::cout<<"data type:"<<_data_field.data_type<<",addr:"<<_order_field<<std::endl;
-	// std::cout<<"symbol:"<<_order_field->symbol<<",side:"<<_order_field->side<<std::endl;
-	// 
+	// std::cout <<"????????order field:"<<_order_data->side<<std::endl;
 	// this->p_order_queue->push(data);
 	
 }
@@ -574,14 +621,20 @@ NO_SIGNAL:
 */
 int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 {
-	LOG(INFO)<<"start verify order conditioin";
+	LOG(INFO)<<"[verify_order_condition] calling verify order conditioin.................";
+	std::time_t now_time = std::time(nullptr);
+	int signal_delay = now_time - p_orderdata->order_insert_time;
+	if(signal_delay > p_strategy_config->signal_delay){
+		LOG(INFO)<<"[verify_order_condition] Skip order with signal delay =>"<<signal_delay<<",delay config=>"<<p_strategy_config->signal_delay;
+		return OrderVerify_unvalid;
+	}
 	std::vector<Position *> v_pos = simtrade_ptr->get_positions(p_orderdata->symbol);
-	LOG(INFO)<<"return for get_position,size:"<<v_pos.size();
+	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
 	if(p_orderdata->status == LONG_SIGNAL){ // long signal
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			Position* p_curr_pos = *it;
 			if(p_curr_pos->side == OrderSide_Sell){//long signal and short position, close the position for all vol by stop_profit
-				LOG(INFO)<<"long signal, close short position";
+				LOG(INFO)<<"[verify_order_condition] long signal, close short position";
 				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->price = p_curr_pos->vwap - p_strategy_config->stop_profit;
 				p_orderdata->volume = p_curr_pos->volume;
@@ -590,8 +643,8 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 			}else if(p_curr_pos->side == OrderSide_Buy){//long signal and long position, open long untill vol_limit
 				p_orderdata->order_type = OrderType_Market;
 				p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
-				LOG(INFO)<<"long signal, open long position,order volume:"<<p_orderdata->volume;
-				if(p_orderdata->volume <= 0) return -1;
+				LOG(INFO)<<"[verify_order_condition] long signal, open long position,order volume=>"<<p_orderdata->volume;
+				if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 				p_orderdata->side = OrderSide_Buy;
 				p_orderdata->position_effect = PositionEffect_Open;
 			}
@@ -599,8 +652,8 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		if(v_pos.size()==0){//long signal and no positions,open long until vol_limit
 			p_orderdata->order_type = OrderType_Market;
 			p_orderdata->volume = p_strategy_config->vol_limit;
-			if(p_orderdata->volume <= 0) return -1;
-			LOG(INFO)<<"long signal, open long position";
+			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
+			LOG(INFO)<<"[verify_order_condition] long signal, open long position, order volume=>"<<p_strategy_config->vol_limit;
 			p_orderdata->side = OrderSide_Buy;
 			p_orderdata->position_effect = PositionEffect_Open;
 		}
@@ -608,7 +661,7 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			Position* p_curr_pos = *it;
 			if(p_curr_pos->side == OrderSide_Buy){//short signal and long position, close the position for all vol by stop_profit
-				LOG(INFO)<<"short signal, close long position";
+				LOG(INFO)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->volume;
 				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->price = p_curr_pos->vwap + p_strategy_config->stop_profit;
 				p_orderdata->volume = p_curr_pos->volume;
@@ -617,8 +670,8 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 			}else if(p_curr_pos->side == OrderSide_Sell){//short signal and short position, open long untill vol_limit
 				p_orderdata->order_type = OrderType_Market;
 				p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
-				LOG(INFO)<<"short signal, open short position,order volume:"<<p_orderdata->volume;
-				if(p_orderdata->volume <= 0) return -1;
+				LOG(INFO)<<"[verify_order_condition] short signal, open short position,order volume=>"<<p_orderdata->volume;
+				if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 				p_orderdata->side = OrderSide_Sell;
 				p_orderdata->position_effect = PositionEffect_Open;
 			}
@@ -626,8 +679,8 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		if(v_pos.size()==0){ //short signal and no positions, open short until vol_limit
 			p_orderdata->order_type = OrderType_Market;
 			p_orderdata->volume = p_strategy_config->vol_limit;
-			if(p_orderdata->volume <= 0) return -1;
-			LOG(INFO)<<"short signal, open short position";
+			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
+			LOG(INFO)<<"[verify_order_condition] short signal, open short position, order volume=>"<<p_strategy_config->vol_limit;
 			p_orderdata->side = OrderSide_Sell;
 			p_orderdata->position_effect = PositionEffect_Open;
 		}		
@@ -650,23 +703,25 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		}		
 
 	}
-	return 0;
+	return OrderVerify_valid;
 }
 
 void QTStrategyBase::process_order()
 {
-	LOG(INFO)<<"process_order:is active:"<<active_;
-	while(this->active_)
+	LOG(INFO)<<"[process_order] calling process_order:is active:"<<active_;
+	// while(this->active_)
+	while(true) //FIXME hack for debug
 	{
 		DataField data = this->p_order_queue->pop();
 		if (data._data)
 		{
+			LOG(INFO)<<"[process_order] get order data, data field is:"<<data.data_type<<","<<data._data;
 			switch (data.data_type)
 			{
 			case ORDERFIELDCTP://live trade
 			{
 				CThostFtdcInputOrderField *p_order_field_ = reinterpret_cast<CThostFtdcInputOrderField *>(data._data);
-				if(verify_order_condition(p_order_field_)==0){
+				if(verify_order_condition(p_order_field_)==OrderVerify_valid){
 					this->p_trader_handler->ReqOrderInsert(p_order_field_, nRequestID);
 				}
 				break;
@@ -674,8 +729,8 @@ void QTStrategyBase::process_order()
 			case ORDERFIELDSIM://sim trade
 			{
 				OrderData *p_orderdata = reinterpret_cast<OrderData *>(data._data);
-				LOG(INFO)<<"---start place order in process order:symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order addr in process order:"<<p_orderdata;
-				if(verify_order_condition(p_orderdata)==0){
+				LOG(INFO)<<"[process_order] -----------start place order in process order:symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status;
+				if(verify_order_condition(p_orderdata)==OrderVerify_valid){
 					this->simtrade_ptr->insert_order(p_orderdata);
 				}
 				break;

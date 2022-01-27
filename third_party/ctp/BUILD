@@ -10,7 +10,6 @@ cc_library(
      "include/ThostFtdcTraderApi.h",
      "include/ThostFtdcUserApiDataType.h",
      "include/ThostFtdcUserApiStruct.h",
-     "include/UserStruct.h",
   ],
   srcs = [
     "lib/libthostmduserapi_se.so",

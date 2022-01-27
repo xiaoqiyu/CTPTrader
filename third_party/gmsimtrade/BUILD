@@ -7,7 +7,6 @@ cc_library(
   hdrs = [
      "include/gmtrade_def.h",
      "include/gmtrade.h",
-     "include/UserStruct.h"
 
   ],
   srcs = [

@@ -57,15 +57,39 @@ int main(int argc, char *argv[])
 
 
     Order _order;
-    std::string symbol = "DCE.m2201";
-    // _order = mt.order_volume(symbol.c_str(),1,OrderSide_Buy,OrderType_Market,PositionEffect_Open,56.15,account_id.c_str());
-// LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
-
-    _order = mt.order_volume(symbol.c_str(),1,OrderSide_Sell,OrderType_Market,PositionEffect_Close,56.15,account_id.c_str());
+    std::string symbol = "DCE.m2205";
+    _order = mt.order_volume(symbol.c_str(),1,OrderSide_Buy,OrderType_Limit,PositionEffect_Open,3010,account_id.c_str());
     LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
+    sleep(5);
+    std::cout<<"order id:"<<_order.order_id<<std::endl;
+
+    symbol = "DCE.eg2205";
+    _order = mt.order_volume(symbol.c_str(),1,OrderSide_Buy,OrderType_Limit,PositionEffect_Open,4810,account_id.c_str());
+    LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
+    sleep(20);
+    std::cout<<"order id:"<<_order.order_id<<std::endl;
+
+    int ret = mt.order_cancel(_order.order_id, account_id.c_str());
+    // int ret = mt.order_cancel_all();
+    std::cout<<"return for cancel order:"<<ret<<std::endl;
+
+    // gmtrade::DataArray<Order>* ret_order = mt.get_unfinished_orders(account_id.c_str());
+    // std::cout<<"unfinished order cnt is:"<<ret_order->count()<<std::endl;
+    // if(ret_order->status()==0){
+        // for(int i=0; i<ret_order->count();++i){
+            // Order &_tmp = ret_order->at(i);
+            // int ret = mt.order_cancel(_tmp.order_id, account_id.c_str());
+            // std::cout<<"return for cancel order:"<<ret<<std::endl;
+        // }
+    // ret_order->release();
+    // }
+    // 
+
+    // _order = mt.order_volume(symbol.c_str(),1,OrderSide_Sell,OrderType_Market,PositionEffect_Close,56.15,account_id.c_str());
+    // LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
     // usleep(20000);
-_order = mt.order_volume(symbol.c_str(),1,OrderSide_Sell,OrderType_Market,PositionEffect_Close,56.15,account_id.c_str());
-LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
+    // _order = mt.order_volume(symbol.c_str(),1,OrderSide_Sell,OrderType_Market,PositionEffect_Close,56.15,account_id.c_str());
+    // LOG(INFO)<<_order.status<<","<<_order.ord_rej_reason_detail<<std::endl;
 
     
     getchar();

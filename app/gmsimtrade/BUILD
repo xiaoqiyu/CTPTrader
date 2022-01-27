@@ -10,6 +10,7 @@ cc_binary(
         "recordio.h",
         "recordio.cpp",
         "recordio_range.h",
+        "UserStruct.h"
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",
@@ -32,6 +33,7 @@ cc_binary(
         "recordio.h",
         "recordio.cpp",
         "recordio_range.h",
+        "UserStruct.h"
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",

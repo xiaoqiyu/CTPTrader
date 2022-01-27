@@ -92,6 +92,7 @@ class QTStrategyBase
 public: //strategy function
 	void on_tick(); 
 	void on_event();
+	void on_risk();
 	
 
 public: //stategy management
@@ -183,6 +184,7 @@ protected:
 	thread data_thread;
 	thread order_thread;
 	thread signal_thread;
+	thread risk_monitor_thread;
 	std::vector<std::vector<double>> v_factor; //cached factor list
 	void calculate_kline();
 
@@ -197,6 +199,7 @@ private:
 	vector<recordio::RecordWriter> v_kline_writer;
 	vector<TickToKlineHelper *> v_t2k_helper;
 	data_queue_ptr p_order_queue = nullptr;
+	data_queue_ptr p_risk_queue = nullptr;
 	bool start_ = false;
 	bool active_ = false;
 	std::string broker_id;
