@@ -81,7 +81,8 @@
         "csetjmp": "cpp",
         "charconv": "cpp",
         "cuchar": "cpp",
-        "version": "cpp"
+        "version": "cpp",
+        "build": "cpp"
     },
 
 

@@ -12,23 +12,25 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
     double _spread = std::stod(v_rev[7]);
     double _mid = std::stod(v_rev[8]);
     double _vwap = std::stod(v_rev[9]);
-    double _slope = std::stod(v_rev[10]);
-	
-	OrderData* p_orderdata = new OrderData();
+    double _slope_long = std::stod(v_rev[10]);
+	double _slope_short = std::stod(v_rev[11]);
+	std::string _exchangeid = v_rev[12];
 
+	OrderData* p_orderdata = new OrderData();
+// 
 	// LOG(INFO)<<"Recieve:"<<_symbol<<",update_time:"<<_update_time<<",update msecc:"<<_update_milsec<<",volume:"<<_volume
-    // <<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap<<",slope:"<<_slope;
+    // <<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap;
 	// long long total_vol = 0;
 	bool _is_long = false;
 	bool _is_short = false;
 	_is_long = _mid-_last_price>1.0&& _spread>1.0; // get long signal, model and factor apply here
 	_is_short = _last_price-_mid>1.0 &&_spread>1.0; // get short signal, model and factor apply here
 
-	std::string symbol = "DCE."+ _symbol;
 	
 	if(_is_long){ //get long signal
-		// LOG(INFO)<<"long signal";
-		p_orderdata->symbol = "DCE."+_symbol;//FIXME fix exchange hardcode
+		p_orderdata->exchangeid = _exchangeid;
+		p_orderdata->symbol = _symbol;
+		// p_orderdata->symbol = _exchangeid+"."+_symbol; //REMARK GM SIM format
 		p_orderdata->order_type = OrderType_Limit;
 		p_orderdata->position_effect = PositionEffect_Open;
 		p_orderdata->side = OrderSide_Buy;
@@ -38,8 +40,9 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 		return p_orderdata; 
 		
 	}else if (_is_short){ //get short signal
-		// LOG(INFO)<<"short signal"; 
-		p_orderdata->symbol = "DCE."+_symbol;//FIXME fix exchange hardcode
+		// p_orderdata->symbol = _exchangeid+"."+_symbol;
+		p_orderdata->symbol = _symbol;
+		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->order_type = OrderType_Limit;
 		p_orderdata->position_effect = PositionEffect_Open;
 		p_orderdata->side = OrderSide_Sell;
@@ -51,8 +54,6 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 		p_orderdata->status = NO_SIGNAL;	
 		p_orderdata->price = _last_price;
 	}
-
-
 	return p_orderdata;
 }
 

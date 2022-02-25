@@ -10,7 +10,7 @@ void SimTrader::exit()
 //关注委托状态变化
 void SimTrader::on_order_status(Order *order)
 {
-    // LOG(INFO)<<"call back in order status:"<<order->symbol<<order->status<<order->ord_rej_reason<<order->ord_rej_reason_detail;
+    LOG(INFO)<<"call back in order status:"<<order->symbol<<order->status<<order->ord_rej_reason<<order->ord_rej_reason_detail;
     Task task = Task();
     task.task_name = ONSIMORDERSTATUS;
     if (order)
@@ -18,16 +18,18 @@ void SimTrader::on_order_status(Order *order)
         Order *task_data = new Order();
         *task_data = *order;
         task.task_data = task_data;
-    }
-    if(order->status == OrderStatus_New){//TODO check this
         this->_task_queue.push(task);
     }
+    // if(order->status == OrderStatus_New){//TODO check this
+        // this->_task_queue.push(task);
+    // }
 };
 
 //关注执行回报, 如成交, 撤单拒绝等
 void SimTrader::on_execution_report(ExecRpt *rpt)
 {
     LOG(INFO)<<"[on_execution_report] call back in execution:"<<rpt->symbol<<std::endl;
+    std::cout<<"on exe report, side=>"<<rpt->side<<",vol"<<rpt->volume<<std::endl;
     Task task = Task();
     task.task_name = ONSIMEXECUTIONREPORT;
     
@@ -64,11 +66,11 @@ void SimTrader::on_account_status(AccountStatus *account_status)
 void SimTrader::process_execution_report(Task *task)
 {
     LOG(INFO)<<"***********************Execution Reports************************************";
+    std::cout<<"????????execute reports,task->task_data=>"<<task->task_data<<",order_complete=>"<<order_complete_<<std::endl;
     if (task->task_data)
     {
-        // std::cout<<"????????????????in process execute report:"<<task->task_data<<std::endl;
         ExecRpt *task_data = reinterpret_cast<ExecRpt *>(task->task_data);
-        // std::cout<<"????????????????in process execute report:"<<task_data->volume<<","<<task_data->exec_type<< std::endl;
+        std::cout<<"???in exe task data: =>"<<task_data->volume<<std::endl;
         // if(task_data->exec_type == ExecType_Unknown && task_data->volume==0){ //FIXME double check the handling of the unknown type, why has unknown type
             // 
             // int ret = cancel_all_orders();
@@ -78,8 +80,8 @@ void SimTrader::process_execution_report(Task *task)
             // }
             // LOG(INFO)<<"Unknow exe type, ignore the callback, cancel order ret=>"<<ret<<"order_complete=>"<<order_complete_;
         // }
+        LOG_IF(ERROR, task_data->side==OrderSide_Unknown)<<"[process_execution_report] Error execution side";
         if (task_data->volume>0 && task_data->exec_type == ExecType_Trade){
-            // std::cout<<"???????????start process Execution report"<<std::endl;
             update_positions(task_data);
             LOG(INFO) << "order id=>"<<task_data->order_id;
             LOG(INFO) << "exe id=>"<<task_data->exec_id;
@@ -104,10 +106,11 @@ void SimTrader::process_execution_report(Task *task)
                 LOG(INFO)<<"Order id:"<<it_order->first<<",order volume:"<<it_order->second<<",acc exe volume:"<<it_exe->second;
                 if(it_order->second == it_exe->second){
                     order_complete_ = true;
-                    LOG(INFO)<<"in process execution reports:order completed, reset:"<<order_complete_<<",available:"<<available_<<",order vol:"<<it_order->second<<",exe acc vol:"<<it_exe->second;
+                    LOG(INFO)<<"[process_execution_report] order completed=>"<<order_complete_<<",available:"<<available_<<",order vol:"<<it_order->second<<",exe acc vol:"<<it_exe->second;
                 }
             }
         }
+        LOG(INFO)<<"***********************End Execution Reports, order_complete=>"<<order_complete_<<"************************************";
         
         //FIXME why double delete, where to delete?????
         // delete task_data;
@@ -145,7 +148,7 @@ void SimTrader::process_order_status(Task *task)
                 order_complete_ = true;
                 available_ = true;
                 order_available_ = true;
-                LOG(INFO)<<"?????reset order complete in order cancel,order complete:"<<order_complete_<<",available:"<<available_<<",order available:"<<order_available_;
+                LOG(INFO)<<"reset order complete in order cancel,order complete:"<<order_complete_<<",available:"<<available_<<",order available:"<<order_available_;
 	            cond_.notify_all(); 
                 
             }
@@ -155,6 +158,7 @@ void SimTrader::process_order_status(Task *task)
             LOG(INFO) << "status=> " << task_data->status;
             LOG(INFO) << "side=> " << task_data->side;
             LOG(INFO) << "position effect=> " <<task_data->position_effect; 
+            LOG(INFO) << "order type=> " <<task_data->order_type; 
             LOG(INFO) << "volume=> " << task_data->volume;
             LOG(INFO) << "filled_amount=> " << task_data->filled_amount;
             LOG(INFO) << "filled_commission=> " << task_data->filled_commission;
@@ -162,8 +166,10 @@ void SimTrader::process_order_status(Task *task)
             LOG(INFO) << "filled_vwap=> " << task_data->filled_vwap;
             LOG(INFO) << "created_at=> " << task_data->created_at;
             LOG(INFO) << "updated_at=> " << task_data->updated_at;
+            LOG(INFO) << "order_complete_=>"<<order_complete_;
             
         }
+        LOG(INFO)<< "**************************End Order Reports***********************************";
         delete task_data;
     }
     if (task->task_error)
@@ -222,6 +228,9 @@ void SimTrader::update_orders(ptr_order p_order){
             _tmp->target_percent = p_order->target_percent;
         }
     }
+    if(p_order->status = OrderStatus_Filled && p_order->filled_volume>0){ //TODO check this, when this is called after execution callback, then this reset order complete will release the thread
+        this->order_complete_ = true;
+    }
     this->order_available_ = true;
     mlock.unlock();     //释放锁
     cond_.notify_one(); //通知正在阻塞等待的线程
@@ -273,26 +282,6 @@ void SimTrader::update_positions(ExecRpt*p_exe){
     std::string exe_symbol = p_exe->symbol;
     float exe_price = p_exe->price;
     
-    // update execute vol by order id
-    auto it  = execute_vol_map.find(p_exe->order_id);
-    long updated_vol = p_exe->volume;
-    if (it != execute_vol_map.end()){
-        updated_vol += it->second;
-        LOG(INFO)<<"[update_positions] Update exe acc vol by order id:"<<p_exe->order_id<<",before=>"<<it->second<<"exe vol=>"<<p_exe->volume<<"after=>"<<updated_vol;
-        LOG(INFO)<<"---------- update map before insert=>"<<it->first<<",vol=>"<<updated_vol;
-        it->second = updated_vol;
-        // execute_vol_map.insert(std::pair<std::string, long>(it->first, updated_vol));
-        auto it1 = execute_vol_map.find(p_exe->order_id);
-        LOG(INFO)<<"--------------update map after insert=>"<<it1->first<<",vol=>"<<it1->second<<",order id:"<<p_exe->order_id;
-    }else{
-        LOG(INFO)<<"--------------init map before insert=>"<<p_exe->order_id<<",vol=>"<<updated_vol;
-        execute_vol_map.insert(std::pair<std::string, long>(p_exe->order_id, updated_vol));
-        LOG(INFO)<<"[update_positions] Add exe acc vol by order id:"<<p_exe->order_id<<",exe vol=>"<<p_exe->volume<<",updated vol:"<<updated_vol;
-        auto it2 = execute_vol_map.find(p_exe->order_id);
-        LOG(INFO)<<"--------------init map after insert=>"<<it2->first<<"vol=>"<<it2->second<<",order id:"<<p_exe->order_id;
-    }
-
-
     long exe_vol = p_exe->volume;//open 
     if(p_exe->position_effect == PositionEffect_Close) exe_vol = -exe_vol;
     LOG(INFO)<<"[update_positions] Start update positions,curr pos size:"<<all_positions.size();
@@ -331,6 +320,7 @@ void SimTrader::update_positions(ExecRpt*p_exe){
         p_pos->volume_today = p_exe->volume;
         p_pos->side = p_exe->side;
         //TODO add other value updates 
+        LOG(INFO)<<"[update_positions] new add pos,vwap=>"<<p_pos->vwap<<",vol=>"<<p_pos->volume<<",side=>"<<p_pos->side;
         all_positions.push_back(p_pos);
         LOG(INFO)<<"[update_positions] after add new transaction,all position size=>"<<all_positions.size()<<",curr pos vol=>"<<p_pos->volume;
     }
@@ -338,7 +328,6 @@ void SimTrader::update_positions(ExecRpt*p_exe){
     LOG(INFO)<<"*****************************[update_positions] complete update position, avaible_=>"<<available_;
     mlock.unlock();     //释放锁
     cond_.notify_all(); //通知正在阻塞等待的线程
-    
 }
 
 std::vector<ptr_position> SimTrader::get_positions(){
@@ -424,6 +413,11 @@ Order* SimTrader::insert_order(CThostFtdcInputOrderField *p_order_field_){
     
     _order = order_volume(p_order_field_->InstrumentID, p_order_field_->VolumeTotalOriginal,
     order_side, order_type,position_effect,p_order_field_->LimitPrice, account_id.c_str());
+    std::cout<<"[insert_order]order status:"<<_order.status<<std::endl;
+    if(_order.status != OrderStatus_New){
+        order_complete_ = true;
+        LOG(INFO)<<"[insert_order] order status not new, and reset order complete, with status=>"<<_order.status<<"order_complete_=>"<<order_complete_;
+    }
     unique_lock<mutex> mlock(mutex_);
 	cond_.wait(mlock, [&]() {
 		return order_complete_;
@@ -437,22 +431,37 @@ Order* SimTrader::insert_order(CThostFtdcInputOrderField *p_order_field_){
 Order* SimTrader::insert_order(OrderData * p_orderdata){
     order_complete_ = false;
     Order _order;
-    LOG(INFO)<<"insert order in simtrade:symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side;
+    // FIXME double check
+    // assert(p_orderdata->volume>0 && p_orderdata->price>1000);
+    LOG(INFO)<<"[insert order] symbol=>"<<p_orderdata->symbol<<",side=>"<<p_orderdata->side<<",volume=>"<<p_orderdata->volume<<",price=>"<<p_orderdata->price;
     _order = order_volume(p_orderdata->symbol.c_str(), p_orderdata->volume,p_orderdata->side, p_orderdata->order_type,p_orderdata->position_effect, p_orderdata->price, account_id.c_str());
-    LOG(INFO)<<"Get order status:"<<_order.status<<",rej:"<<_order.ord_rej_reason<<",rej details:"<<_order.ord_rej_reason_detail;
-    unique_lock<mutex> mlock(mutex_);
-	cond_.wait(mlock, [&]() {
-		return order_complete_;
-	}); 	
-    
+    LOG(INFO)<<"[insert_order] Order status:"<<_order.status<<",rej:"<<_order.ord_rej_reason<<",rej details:"<<_order.ord_rej_reason_detail;
     Order* p_ret = &_order;
-    LOG(INFO)<<"Order complete:"<<order_complete_<<",order symbol:"<<p_ret->symbol<<",status:"<<p_ret->status<<",side:"<<p_ret->side<<",position effect:"<<p_ret->position_effect;
+    
+    LOG(INFO)<<"[insert_order] Order complete:"<<order_complete_<<",order symbol:"<<p_ret->symbol<<",status:"<<p_ret->status<<",side:"<<p_ret->side<<",position effect:"<<p_ret->position_effect;
+
+    if(p_ret->status = OrderStatus_New){
+        std::cout<<"????????????????? insert order, wait for complete=>"<<order_complete_<<std::endl;
+        unique_lock<mutex> mlock(mutex_);
+	    cond_.wait(mlock, [&]() {
+	    	return order_complete_;
+	    }); 	
+        std::cout<<"????????????????? insert order, stop waiting for complete=>"<<order_complete_<<std::endl;
+    }else{//FIXME double check more detailed status
+        order_complete_ = true;
+        std::cout<<"????????????????? insert order, not new order, reset order complete=>"<<order_complete_<<std::endl;
+    }
     return p_ret;
 }
 
 int SimTrader::cancel_all_orders(){
     int ret = order_cancel_all();
     LOG(INFO)<<"[cancel_all_orders] returns=>"<<ret;
+    //TODO double check the reset here, it should be in order callback, but order callback has some issue, not called
+    if(ret == 0){
+        order_complete_ = true;
+        cond_.notify_all();
+    }
     // int ret;
     // std::cout<<account_id<<std::endl;
     // gmtrade::DataArray<Order>* ret_order = get_unfinished_orders(account_id.c_str());
@@ -485,62 +494,73 @@ else:
 */
 int SimTrader::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_strategy_conf){
     LOG(INFO)<<"[risk_monitor] Start risk monitor:connected_=>"<<connected_;
-    while(connected_){
+    if(connected_){
         std::time_t now_time = std::time(nullptr);
         tm *ltm = localtime(&now_time);
         if(ltm->tm_hour == 14 && ltm->tm_min == 55){//收盘撤销订单
             LOG(INFO)<<"[risk_monitor] market closed, close all positions";
             order_cancel_all();
             order_close_all();
+        }else if(ltm->tm_sec < 2){ //整分钟时候未必会调用,所以尝试设置多两秒buffer
+            int ret = cancel_all_orders();
+            LOG(INFO)<<"[risk_monitor] cancel all orders for mintues with return =>"<<ret;
         }else{
             //超时撤销委托
             gmtrade::DataArray<Order>* ret_order = get_unfinished_orders(account_id.c_str());
-            std::cout<<"[risk_monitor] unfinished order cnt is:"<<ret_order->count()<<std::endl;
+            // std::cout<<"[risk_monitor] unfinished order cnt is:"<<ret_order->count()<<std::endl;
             if(ret_order->status()==0){
                 for(int i=0; i<ret_order->count();++i){
                     Order &_tmp = ret_order->at(i);
                     std::time_t order_delay = now_time - _tmp.updated_at;
+                    std::cout<<"order delay=>"<<order_delay<<",order update time=>"<<_tmp.updated_at<<",now time=>"<<now_time<<std::endl;
                     int ret;
                     if(order_delay > p_strategy_conf->cancel_order_delay){
                         ret = cancel_all_orders();//FIXME should call order_cancle, but order_cancel has some issue
                         // ret = order_cancel(_tmp.order_id, account_id.c_str());
-                        sleep(5);
+                        sleep(2);
                         LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<_tmp.order_id<<"order vol=>"<<_tmp.volume;
                     }
                 }
             ret_order->release();
             }
             double _last_price = p_risk_input->last_price;
+            std::string _exchangeid = p_risk_input->exchangeid;
             //止盈止损
             std::vector<ptr_position> ret_all_pos = get_positions();
             for(auto it = ret_all_pos.begin(); it != ret_all_pos.end(); ++it){
                 ptr_position  _cur_pos = *it;
                 double stop_profit_bc = p_strategy_conf->stop_profit;
                 double stop_loss_bc = p_strategy_conf->stop_loss;
-                bool stop_profit = (_cur_pos->side=PositionSide_Long && _last_price-_cur_pos->vwap >stop_profit_bc) || (_cur_pos->side=PositionSide_Short && _last_price-_cur_pos->vwap<-stop_profit_bc);
-                bool stop_loss = (_cur_pos->side=PositionSide_Long && _last_price-_cur_pos->vwap <-stop_loss_bc) || (_cur_pos->side=PositionSide_Short && _last_price-_cur_pos->vwap>stop_loss_bc);
+                bool stop_profit = (_cur_pos->side==PositionSide_Long && _last_price-_cur_pos->vwap >stop_profit_bc) || (_cur_pos->side==PositionSide_Short && _last_price-_cur_pos->vwap<-stop_profit_bc);
+                bool stop_loss = (_cur_pos->side==PositionSide_Long && _last_price-_cur_pos->vwap <-stop_loss_bc) || (_cur_pos->side==PositionSide_Short && _last_price-_cur_pos->vwap>stop_loss_bc);
                 // if(stop_profit || stop_loss)
+                LOG(INFO)<<"[risk_monitor] cur pos side=>"<<_cur_pos->side<<",cur pos vwap=>"<<_cur_pos->vwap<<",cur pos vol=>"<<_cur_pos->volume<<",last price=>"<<_last_price;
                 OrderData* p_order = new OrderData();
                 p_order->order_type = OrderType_Limit;
                 p_order->volume = _cur_pos->volume;
                 p_order->position_effect = PositionEffect_Close;
-                p_order->symbol = p_risk_input->symbol;
+                p_order->symbol = _exchangeid + "."+p_risk_input->symbol;
                 if(_cur_pos->side == PositionSide_Long && stop_profit){//long position and stop profit
                     p_order->side = OrderSide_Sell;
-                    p_order->price = _cur_pos->vwap + stop_profit_bc;
+                    // p_order->price = _cur_pos->vwap + stop_profit_bc; //TODO  double check this
+                    p_order->price = _last_price;
                 }else if(_cur_pos->side == PositionSide_Long && stop_loss){
                     p_order->side = OrderSide_Sell;
-                    p_order->price = _cur_pos->vwap - stop_loss_bc;
+                    // p_order->price = _cur_pos->vwap - stop_loss_bc; //TODO  double check this
+                    p_order->price = _last_price;
                 }else if(_cur_pos->side == PositionSide_Short && stop_profit){
                     p_order->side = OrderSide_Buy;
-                    p_order->price = _cur_pos->vwap - stop_profit_bc;
+                    // p_order->price = _cur_pos->vwap - stop_profit_bc;//TODO  double check this
+                    p_order->price = _last_price;
                 }else if(_cur_pos->side == PositionSide_Short && stop_loss){
                     p_order->side = OrderSide_Buy;
-                    p_order->price = _cur_pos->vwap + stop_loss_bc;
+                    // p_order->price = _cur_pos->vwap + stop_loss_bc;//TODO  double check this
+                    p_order->price = _last_price;
                 }else{
-                    LOG(WARNING)<<"[risk_monitor] position invalid:"<<"position side=>"<<_cur_pos->side<<",stop profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
+                    
+                    // LOG(WARNING)<<"[risk_monitor] position invalid:"<<"position side=>"<<_cur_pos->side<<",stop profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
                 }
-                if(stop_profit || stop_loss){
+                if((stop_profit || stop_loss) && (p_order->volume>0 && p_order->price>1.0)){
                     LOG(INFO) <<"[risk_monitor] insert order for stop_profit or loss,stop_profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
                     Order* p_order_ret = new Order();
                     p_order_ret = insert_order(p_order);

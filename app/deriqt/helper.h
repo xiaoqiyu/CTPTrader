@@ -84,22 +84,22 @@ static void formatStringEx(std::wstring &dst, const std::wstring &format, Args..
 
 
 
-std::string get_exchange_map(std::string product_id, int mode){
-    std::unordered_map<std::string, std::string> gm_exchange_map;
-    std::unordered_map<std::string, std::string> ctp_exchange_map;
-    std::string no_results;
-    gm_exchange_map.insert(std::pair<std::string, std::string>("eg", "DCE"));
-    if(mode == 1){//simtrade
-        auto it = gm_exchange_map.find(product_id);
-        if (it != gm_exchange_map.end()){
-            return it->second;
-        }
-    }else if(mode == 2){
-        auto it = ctp_exchange_map.find(product_id);
-        if (it != ctp_exchange_map.end()){
-            return it->second;
-        }
-    }
-    return no_results;
-}
+// std::string get_exchange_map(std::string product_id, int mode){
+    // std::unordered_map<std::string, std::string> gm_exchange_map;
+    // std::unordered_map<std::string, std::string> ctp_exchange_map;
+    // std::string no_results;
+    // gm_exchange_map.insert(std::pair<std::string, std::string>("eg", "DCE"));
+    // if(mode == 1){//simtrade
+        // auto it = gm_exchange_map.find(product_id);
+        // if (it != gm_exchange_map.end()){
+            // return it->second;
+        // }
+    // }else if(mode == 2){
+        // auto it = ctp_exchange_map.find(product_id);
+        // if (it != ctp_exchange_map.end()){
+            // return it->second;
+        // }
+    // }
+    // return no_results;
+// }
 

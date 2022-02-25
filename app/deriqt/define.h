@@ -164,7 +164,8 @@
 #define NO_SIGNAL 144
 #define CANCEL_ORDER_SIGNAL 145 
 #define CLOSE_ALL_SIGNAL 146
+#define STOP_SIGNAL 147
 
 
 //risk 
-#define RISK_INPUT 147
+#define RISK_INPUT 148

@@ -34,12 +34,6 @@ private:
         bool available_ = true; //用于持仓查询控制
         bool order_available_ =true; //用于委托查询控制
         bool order_complete_ = true; //用于控制订单流，同时只有一个order,
-        int stop_profit = 5; 
-        int stop_loss = 10; 
-        int fee_open = 2; 
-        int fee_close_today = 2;
-        int fee_close_yesterday = 2;
-        int multiplier  = 10; //FIXME remove hardcode, remove to config
         gmtrade::DataArray<Position> *p_pos;
         std::vector<ptr_position> all_positions;
         std::vector<ptr_order> all_orders;
@@ -72,17 +66,20 @@ public:
         {
             //TODO CHECK wheather no need lock, called before start, and no callback event yet
             LOG(INFO)<<"Init positions with existing positions,before size:"<<all_positions.size();
+            LOG(INFO)<<"*************************Init Positions*******************************";
+            int _total_vol = 0;
             for (int i = 0; i<ps->count(); i++)
             {
-            
                 ptr_position _curr_pos= &(ps->at(i));
                 if (_curr_pos->volume>0){ //only get the positions that has volumes
+                    LOG(INFO)<<_curr_pos->symbol<<",vol:"<<_curr_pos->volume<<",available:"<<_curr_pos->available<<",vwap:"<<_curr_pos->vwap<<",side:"<<_curr_pos->side;
                     this->all_positions.push_back(_curr_pos);
+                    _total_vol += _curr_pos->volume;
                 }
-                LOG(INFO)<<_curr_pos->symbol<<",vol:"<<_curr_pos->volume<<",available:"<<_curr_pos->available<<",vwap:"<<_curr_pos->vwap<<",side:"<<_curr_pos->side;
+                
             }
             ps->release();
-            LOG(INFO)<<"Complte init positions with existing positions, size:"<<all_positions.size();
+            LOG(INFO)<<"********Complte init positions, size=>"<<all_positions.size()<<"total vol=>"<<_total_vol<<"************";
             
         }
         this->available_ = true;

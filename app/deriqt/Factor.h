@@ -2,6 +2,7 @@
 #include<boost/circular_buffer.hpp>
 #include<vector>
 #include<iostream>
+#include "helper.h"
 #include "ThostFtdcUserApiStruct.h"
 #include <glog/logging.h>
 
@@ -15,7 +16,8 @@ public:
 	~Factor();
     int update_factor(CThostFtdcDepthMarketDataField* pDepthMarketData,char* str_factor)
     {
-        int offset = 0;
+        // std::cout<<"mkt:"<<pDepthMarketData->LastPrice<<std::endl;
+        long offset = 0;
         if (NULL != pDepthMarketData){
             double _curr_last = pDepthMarketData->LastPrice;
             double _prev_max = _curr_last;
@@ -29,7 +31,6 @@ public:
                 _prev_vwap = this->v_last_factor[5];
                 _prev_slope = this->v_last_factor[6];
             }
-
 
             // current factor calculate
             int cir_size = last_price_circular_ptr->size();
@@ -68,7 +69,7 @@ public:
 	        for (auto it = this->v_curr_factor.begin(); it!=this->v_curr_factor.end();++it){
 	        	offset += sprintf(str_factor+offset, "%f,", *it);
 	        }
-
+            
             //update the last cached factor to the current factor
             v_last_factor.clear();
             v_last_factor.assign(v_curr_factor.begin(), v_curr_factor.end());

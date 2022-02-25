@@ -72,41 +72,24 @@ namespace shm
 // }
 // 
 
-// std::string get_exchange_id_order11(int mode=1, std::string product_id="eg"){
-    // if(mode == 1){
-        //  if(product_id == "eg"){
-            //  return "DCE";
-        //  }
-        // 
-    // }else if(mode == 2){
-        // return "mode 2";
-    // }else{
-        // return "invalid mode";
-    // }
-    // return "invalid mode";
-    // 
-// }
-
 class QTStrategyBase
 {
 public: //strategy function
 	void on_tick(); 
 	void on_event();
 	void on_risk();
+
 	
 
 public: //stategy management
-	QTStrategyBase(const std::string &name,  int mode, const char* shared_memory_name, uint32_t size):name(name), mode(mode){
+	QTStrategyBase(const std::string &name,  int mode, const char* shared_memory_name, uint32_t size, int strategy_class):name(name), mode(mode),strategy_class(strategy_class){
 
-		LOG(INFO)<<"constructor in base";		
+		LOG(INFO)<<"[QTStrategyBase] name=>"<<name<<",mode=>"<<mode<<",shared_memory_name=>"<<shared_memory_name<<",size=>"<<size<<",strategy class=>"<<strategy_class;		
 		segmet_ptr.reset(new bip::managed_shared_memory(bip::open_or_create, shared_memory_name, size));
 		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
-		//TODO check factor init 
+		//FIXME check factor init 
 		p_factor = new Factor(12, 5);
-		// if(mode==0){
-			// this->p_shm_queue
-		// }
 	};
 	virtual ~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
@@ -119,16 +102,25 @@ public: //stategy management
 
 public: //order function
 	//TThostFtdcDirectionType：char,'0':buy,'1':sell
+	void place_order(OrderData* p_order_data);//order main entrance, will insert order to the order data queue,with p_OrderData as parameter
+	int cancel_all_orders();//cancel all unfinished orders
+	int close_all_orders();//close all current positions
+	// std::vector<ptr_position> get_local_positions(const std::string& instrument_id);// return positions by instrument id that are locally updated  
+	// std::vector<ptr_position> get_local_positions();// return all positions that are locally updated   
+	
+	//following order funcs not used now
 	void insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void insert_market_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcOrderPriceTypeType OrderPriceType, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
-	void order(int stop_loss_percents = 0, int stop_profit_percent = 0);
 	void insert_limit_order_gfd(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
 	void insert_limit_order_fok(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
-	void insert_order_sim(OrderData* p_order_data);
+	
+	// void insert_order_sim(OrderData* p_order_data);
 	void process_order();
-	int verify_order_condition(CThostFtdcInputOrderField *p_order_field_);//check whether to place order(live mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
-	int verify_order_condition(OrderData* p_orderdata);//check whether to place  order(sim mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
+	int verify_order_condition_ctp(OrderData* p_orderdata);//check whether to place order(ctp mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
+	int verify_order_condition(OrderData* p_orderdata);//check whether to place  order(gm mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
 
+	int risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_strategy_conf);
+	
 public: //qry for product/instrument/account
     std::tuple<std::vector<std::string>, std::vector<std::string>> get_instrument_by_product(std::string product_id);
 	std::vector<CThostFtdcInvestorPositionField *> get_investor_position(std::string investor_id, std::string broker_id);
@@ -147,7 +139,7 @@ public: //qry for product/instrument/account
 
 	std::vector<CThostFtdcInstrumentField*> get_instruments(std::vector<std::string> _v_instrument_id)
 	{
-		LOG(INFO)<<"GET INSTRUMENTS:"<<_v_instrument_id[0];
+		LOG(INFO)<<"[get_instruments] product id=>"<<_v_instrument_id[0];
 		return p_trader_handler->get_instruments(_v_instrument_id);
 	}
 
@@ -177,6 +169,8 @@ public: //qry for product/instrument/account
 		reader.Close();
 	}
 	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
+
+
 
 protected:
 	trader_util_ptr p_trader_handler = nullptr;
@@ -208,6 +202,7 @@ private:
 	int mode;
 	std::string task_tag;
 	std::unordered_map<std::string, std::string> m_main_futures;
+	std::unordered_map<std::string, std::string> m_product_exchangeid;
 	int option_size = 10;
 	std::vector<std::string> v_main_contract_ids;
 	std::vector<std::string> v_option_ids;
@@ -225,4 +220,8 @@ private:
 	std::time_t  last_order_time = std::time(nullptr);
 	std::string simtrade_token;
 	StrategyConfig * p_strategy_config;
+	int strategy_class; //0 for future, 1 for option
+
+	double up_limit_price = 0.0;//TODO replace this with info from CTP query
+	double down_limit_price = 0.0;//TODO replace this with info from CTP query
 };

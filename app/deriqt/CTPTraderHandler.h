@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <vector>
 #include <cstring>
+#include "stdio.h"
+#include "stdlib.h"
 #include "ThostFtdcTraderApi.h"
 #include "UserStruct.h"
 #include "ThostFtdcUserApiDataType.h"
@@ -36,12 +38,34 @@ private:
     DataQueue *p_order_data_queue = nullptr; //下单数据队列，数据类型为CThostFtdcInputOrderField
     std::string broker_id;
     std::string user_id;
+    int front_id;
+    int sessision_id;
     FileName _conf_file_name = {'\0'};
     std::vector<CThostFtdcDepthMarketDataField*> v_depth_market_data;
     std::vector<CThostFtdcInstrumentField*> v_instruments;
+    double up_limit_price;
+    double down_limit_price;
+    
     std::vector<CThostFtdcInvestorPositionField *> v_investor_position_fields;
     std::vector<CThostFtdcTradingAccountField*> v_trading_account;
     std::string task_tag;
+    bool pos_available_ = true; //用于持仓查询控制
+    bool order_available_ =true; //用于委托查询控制
+    bool order_complete_ = true; //用于控制订单流，同时只有一个order
+    gmtrade::DataArray<Position> *p_pos;
+
+    // std::vector<ptr_position> all_positions;
+    // std::vector<ptr_order> all_orders;
+
+    std::vector<ptr_OrderField> v_all_orders;
+
+    std::string account_id;
+    unordered_map<std::string, long> order_vol_map;
+    unordered_map<std::string, long> execute_vol_map;
+
+
+    std::unordered_map<std::string, ptr_OrderField> m_all_orders;
+
 
 public:
     CTPTraderHandler(){};
@@ -71,7 +95,7 @@ public:
             CThostFtdcQryDepthMarketDataField mkt_fields = {0};
 	        std::strcpy(mkt_fields.InstrumentID, (*it).c_str());
             ReqQryDepthMarketData(&mkt_fields, nRequestID++);
-            sleep(3);
+            sleep(5);
         }
         return v_depth_market_data;
     }
@@ -92,7 +116,7 @@ public:
             int ret = ReqQryInstrument(&pQryInstrument, nRequestID++);
             LOG(INFO)<<"RETURN FOR REQ instrument:"<<ret;
             LOG_IF(ERROR, ret!=0)<<"Error in ReqQryInstrument in get_instruments";
-            sleep(3);
+            sleep(5);
         }
         LOG(INFO)<<"INSTRUMENT LEN:"<<v_instruments.size();
         return v_instruments;
@@ -624,7 +648,7 @@ public:
 
     void release();
 
-    void init(const std::string& task_tag);
+    void init(const std::string& task_tag, const std::string& broker_id, const std::string& user_id);
 
     int join();
 
@@ -657,6 +681,9 @@ public:
 
     //请求录入报单
     int ReqOrderInsert(CThostFtdcInputOrderField *pInputOrder, int nRequestID);
+    
+    ///报单操作请求，主要是支持撤单，不支持修改？？
+    int ReqOrderAction(CThostFtdcInputOrderActionField *pInputOrderAction, int nRequestID);
 
     //请求查询主力合约
     void ReqQryMainContract(std::vector<std::string> productID, int nRequestID);
@@ -675,13 +702,56 @@ public:
 
     ///请求查询投资者持仓明细
 	int ReqQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID);
-
+    
     std::vector<CThostFtdcInvestorPositionField *> get_investor_position(std::string investor_id, std::string broker_id);
 
     std::vector<CThostFtdcTradingAccountField*> get_account(std::string investor_id, std::string broker_id);
 
     int req_trade(std::string investor_id, std::string broker_id);
-
     int get_position_details(std::string investor_id, std::string broker_id);
+
+    //position maintain API
+    //TODO  TBD
+    int init_positions(const std::string& investor_id, const std::string& broker_id){
+        this->v_investor_position_fields = get_investor_position(investor_id, broker_id);
+        LOG(INFO)<<"*************init position***********************";
+        auto it = v_investor_position_fields.begin();
+        for(; it!=v_investor_position_fields.end(); ){
+            ptr_Position p_cur_pos = *it;
+            if(p_cur_pos->TodayPosition == 0){
+                it = v_investor_position_fields.erase(it);
+            }else{
+                ++it;
+                LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost;
+            }
+        }
+        LOG(INFO)<<"*************end init position***********************";
+    };
+
+    void init_price_limits(double up_limit_price, double down_limit_price){
+        //FIXME query the price limit from depth market fields
+        this->up_limit_price = up_limit_price;
+        this->down_limit_price = down_limit_price;
+    }
+    void update_positions(CThostFtdcTradeField* p_trade);
+
+    //order and pos query API
+    std::vector<ptr_Position> get_positions();
+    std::vector<ptr_Position> get_positions(const std::string& instrument_id);
+    std::vector<ptr_OrderField> get_all_orders();
+
+    //order API
+    int insert_order(OrderData * p_orderdata);
+    int cancel_order(ptr_OrderIDRef p_orderidref);
+    int cancel_all_orders();
+    
+    int close_position(ptr_Position p_pos);
+    int close_all_positions();
+
+    //order format API
+    std::string get_order_id1(ptr_OrderIDRef p_orderidref); //return the id before the order is inserted to the exchange;
+                                               //format:"FrontID_SessionID_OrderRef" TODO remove leading empty string
+    std::string get_order_id2(ptr_OrderIDRef p_orderidref); //return the id after callback from the exchange;
+                                               //format: "ExchangeID_OrderSysID TODO remove leading emptry string
 
 };

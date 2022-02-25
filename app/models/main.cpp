@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[])
 {
+    read_instruments();
     std::string dirname = "/home/kiki/projects/DERIQT_F/cache/mkt/";
     std::string trade_date="";
     std::string product_id = "";
@@ -21,14 +22,5 @@ int main(int argc, char *argv[])
         }
     
     }
-    // if (argc > 1){
-    //     std::string _prod_id = argv[1];
-    //     std::string _trade_date = argv[2];    
-    //     data_preprocessing(_prod_id, _trade_date);
-    // }
-
-    // std::string _f ="cu_depth_market_data_20210621.recordio";
-    // data_preprocessing(_f);
-    
     return 0;
 }

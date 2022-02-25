@@ -27,11 +27,6 @@ private:
 	bool ready_ = false;
 	bool login_ = false;
 	bool active_ = false;
-	//TODO check this
-	// vector<thread> data_thread_lst;
-	// vector<QTStrategyBase *> strtegy_handler_lst;
-	// thread data_thread_lst[100];
-	// MktDataHandler* handler_lst[100];
 	//TODO 不用作为成员变量
 	mutex mutex_;
 	condition_variable cond_; //条件变量

@@ -10,6 +10,8 @@
 #include <vector>
 #include <unordered_map>
 #include "define.h"
+#include "gmtrade.h"
+#include "ThostFtdcUserApiStruct.h"
 #include <boost/thread/concurrent_queues/sync_queue.hpp>
 
 using namespace std;
@@ -171,6 +173,7 @@ typedef struct{
 struct OrderData
 {
 	std::string symbol;     
+    std::string exchangeid;
 	int volume;
 	int side;
 	int order_type;
@@ -181,6 +184,8 @@ struct OrderData
     std::time_t order_insert_time;
     OrderData(){
         status=-1;
+        price = 0.0;
+        volume = 0;
     }
 
 };
@@ -196,6 +201,7 @@ struct RiskInputData
 {
     std::string symbol;
     std::string update_time;
+    std::string exchangeid;
     double last_price;
 };
 
@@ -206,10 +212,57 @@ enum OrderVerify
 	OrderVerify_unvalid = -1,
 };
 
+struct OrderIDRef{
+    int FrontID;
+    int SessionID;
+    char OrderRef[13];
+    char ExchangeID[9];
+    char TraderID[21];
+    char OrderLocalID[13];
+    char OrderSysID[21];
+};
+
+typedef OrderIDRef* ptr_OrderIDRef;
+struct OrderField{
+    ptr_OrderIDRef p_orderid_ref;
+    // ptr_Order p_order;
+    std::string order_id;
+    //委托数量
+    TThostFtdcVolumeType	VolumeTotalOriginal;
+    //限价
+    TThostFtdcPriceType	LimitPrice;
+    //买卖方向
+    // #define THOST_FTDC_DEN_Buy '0'
+    // #define THOST_FTDC_DEN_Sell '1'
+    TThostFtdcDirectionType	Direction;
+    //组合投机套保标志
+    TThostFtdcCombHedgeFlagType	CombHedgeFlag;
+    //报单类型 THOST_FTDC_TC_IOC '1' 立即完成，否则撤销
+    TThostFtdcOrderTypeType	OrderType;
+    //已成交数量
+    TThostFtdcVolumeType	VolumeTraded;
+    //剩余数量
+    TThostFtdcVolumeType	VolumeTotal;
+    ///组合开平标志 THOST_FTDC_OF_Open
+    TThostFtdcCombOffsetFlagType	CombOffsetFlag;
+    //已成交均价
+    TThostFtdcPriceType	Price;
+    ///报单状态
+    TThostFtdcOrderStatusType	OrderStatus;
+    // /最后修改时间
+	// TThostFtdcTimeType	UpdateTime;
+    // 订单插入时间
+    // TThostFtdcTimeType	InsertTime;
+    //本地维护的订单插入时间
+    std::time_t InsertTime;
+    
+};
+typedef OrderField* ptr_OrderField;
+typedef CThostFtdcInvestorPositionField PositionField;
 
 
 
-
+typedef PositionField* ptr_Position;
 
 
 

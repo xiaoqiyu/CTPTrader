@@ -91,10 +91,10 @@ void get_depth_market()
 
 void read_instruments()
 {
-    std::ifstream ifs( "/home/kiki/projects/CTPTrader/instruments.recordio", std::ios::binary);
+    std::ifstream ifs( "/home/kiki/projects/DERIQT_F/cache/m_instrument_20211207.recordio", std::ios::binary);
     recordio::RecordReader reader(&ifs);
     std::string buffer;
-    const std::string p_file_name = "/home/kiki/projects/CTPTrader/cache/p_instruments.txt"; 
+    const std::string p_file_name = "/home/kiki/projects/DERIQT_F/cache/p_instruments.txt"; 
     std::ofstream fout;
     fout.open(p_file_name, std::ios::out);
     while (reader.ReadBuffer(buffer)) {
@@ -195,8 +195,15 @@ void data_preprocessing(std::string file_name)
         // "BidPrice3", "BidVolume3",
         // "AskPrice3", "AskVolume3", "BidPrice4", "BidVolume4", "AskPrice4", "AskVolume4", "BidPrice5", "BidVolume5",
         // "AskPrice5", "AskVolume5"]
+
+        ///交易所代码
+	// TThostFtdcExchangeIDType	ExchangeID;
+	///保留的无效字段
+	// TThostFtdcOldExchangeInstIDType	reserve2;
+    	///合约在交易所的代码
+	// TThostFtdcExchangeInstIDType	ExchangeInstID;
         fout <<"InstrumentID"<<","<<"UpdateTime"<<","<<"Turnover"<<","<<"Volume"<<","<< "LastPrice"<<","<<
-        "AveragePrice"<<","<< "AskPrice1"<<","<<"AskVolume1"<<","<<"BidPrice1"<<","<<"BidVolume1"<<std::endl;
+        "AveragePrice"<<","<< "AskPrice1"<<","<<"AskVolume1"<<","<<"BidPrice1"<<","<<"BidVolume1"<<","<<"ExchangeID"<<","<<"Oldexchangetype"<<","<<"ExchangeInstID"<<std::endl;
         while (reader.ReadBuffer(buffer))
         {
             // _size = fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
@@ -207,7 +214,7 @@ void data_preprocessing(std::string file_name)
             fout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<","
             <<p_mkt->Turnover<<","<<p_mkt->Volume<<","<<p_mkt->LastPrice<<","<<p_mkt->AveragePrice<<","
             <<p_mkt->AskPrice1<<","<<p_mkt->AskVolume1<<","<<p_mkt->BidPrice1<<","
-            <<p_mkt->BidVolume1<<std::endl;
+            <<p_mkt->BidVolume1<<","<<p_mkt->ExchangeID<<","<<p_mkt->reserve2<<","<<p_mkt->ExchangeInstID<<std::endl;
         }
         fout.close();
         reader.Close();
