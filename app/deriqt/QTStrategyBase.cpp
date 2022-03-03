@@ -244,7 +244,7 @@ void QTStrategyBase::on_risk()
 				int _risk_monitor = (ltm->tm_min*60 + ltm->tm_sec)%p_strategy_config->risk_duration;
 				// std::cout<<"on risk update time=>"<<_update_time<<std::endl;
 				if(_risk_monitor == 0){//will call risk monitor to check
-					LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
+					// LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
 					this->risk_monitor(p_risk_input, p_strategy_config);
 				}
 			}
@@ -577,7 +577,7 @@ STOP_SIGNAL:
 */
 int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 {
-	LOG(INFO)<<"[verify_order_condition] calling verify order conditioin.................";
+	// LOG(INFO)<<"[verify_order_condition] calling verify order conditioin.................";
 	std::time_t now_time = std::time(nullptr);
 	int signal_delay = now_time - p_orderdata->order_insert_time;
 	if(signal_delay > p_strategy_config->signal_delay){
@@ -586,7 +586,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	}
 	// std::vector<Position *> v_pos = simtrade_ptr->get_positions(p_orderdata->symbol);
 	std::vector<ptr_Position> v_pos = p_trader_handler->get_positions(p_orderdata->symbol);
-	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
+	// LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
 	int _total_pos_vol = 0;
 	// bool except = false; //FIXME remove this hack for system error, ugply but work for now
 	// for(auto it=v_pos.begin(); it!=v_pos.end();++it){
@@ -704,7 +704,7 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 	std::vector<Position *> v_pos = simtrade_ptr->get_positions(p_orderdata->symbol);
 	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
 	int _total_pos_vol = 0;
-	bool except = false; //FIXME remove this hack for system error, ugply but work for now
+	bool except = false; //REMARK gm callback issue remove this hack for system error, ugply but work for now
 	for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 		Position* p_curr_pos = *it;
 		// std::cout<<"??????????????cur pos in verify, vol=>"<<p_curr_pos->volume<<",side=>"<<p_curr_pos->side<<",vwap=>"<<p_curr_pos->vwap<< std::endl;
@@ -801,7 +801,7 @@ void QTStrategyBase::process_order()
 		DataField data = this->p_order_queue->pop();
 		if (data._data)
 		{
-			LOG(INFO)<<"[process_order] get order data, data field is:"<<data.data_type<<","<<data._data;
+			// LOG(INFO)<<"[process_order] get order data, data field is:"<<data.data_type<<","<<data._data;
 			switch (data.data_type)
 			{
 			case ORDERFIELDCTP://ctp trade
@@ -979,7 +979,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 
     std::time_t now_time = std::time(nullptr);
     tm *ltm = localtime(&now_time);
-	LOG(INFO)<<"[risk_monitor] Start risk monitor, min=>"<<ltm->tm_min<<",sec=>"<<ltm->tm_sec;
+	// LOG(INFO)<<"[risk_monitor] Start risk monitor, min=>"<<ltm->tm_min<<",sec=>"<<ltm->tm_sec;
     if(ltm->tm_hour == 14 && ltm->tm_min == 55){//收盘撤销订单
         LOG(INFO)<<"[risk_monitor] market closed, close all positions";
 		this->cancel_all_orders();
@@ -1054,7 +1054,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			for(auto it = v_ret_orders.begin(); it != v_ret_orders.end(); ++it){
     			ptr_OrderField p_cur_order = *it;
     			std::time_t order_delay = now_time - p_cur_order->InsertTime;
-    			LOG(INFO)<<"[risk monitor] order delay=>"<<order_delay<<",order update time=>"<<p_cur_order->InsertTime<<",now time=>"<<now_time<<"order delay conf=>"<<p_strategy_conf->cancel_order_delay;
+    			// LOG(INFO)<<"[risk monitor] order delay=>"<<order_delay<<",order update time=>"<<p_cur_order->InsertTime<<",now time=>"<<now_time<<"order delay conf=>"<<p_strategy_conf->cancel_order_delay;
     			int ret;
 				// std::cout<<"???????????order status=>"<<p_cur_order->OrderStatus<<std::endl;
     			if(order_delay > p_strategy_conf->cancel_order_delay && p_cur_order->OrderStatus != THOST_FTDC_OST_AllTraded && p_cur_order->OrderStatus != THOST_FTDC_OST_Canceled){
@@ -1069,7 +1069,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			    bool stop_profit = (_cur_pos->PosiDirection ==THOST_FTDC_PD_Long && _last_price-_cur_pos->OpenCost >stop_profit_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-_cur_pos->OpenCost<-stop_profit_bc);
 			    bool stop_loss = (_cur_pos->PosiDirection==THOST_FTDC_PD_Long && _last_price-_cur_pos->OpenCost <-stop_loss_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-_cur_pos->OpenCost>stop_loss_bc);
 			    // if(stop_profit || stop_loss)
-			    LOG(INFO)<<"[risk_monitor] cur pos side=>"<<_cur_pos->PosiDirection<<",cur pos vwap=>"<<_cur_pos->OpenCost<<",cur pos vol=>"<<_cur_pos->TodayPosition<<",last price=>"<<_last_price;
+			    // LOG(INFO)<<"[risk_monitor] cur pos side=>"<<_cur_pos->PosiDirection<<",cur pos vwap=>"<<_cur_pos->OpenCost<<",cur pos vol=>"<<_cur_pos->TodayPosition<<",last price=>"<<_last_price;
 			    OrderData* p_order = new OrderData();
 			    p_order->order_type = OrderType_Limit;
 			    p_order->volume = _cur_pos->TodayPosition;

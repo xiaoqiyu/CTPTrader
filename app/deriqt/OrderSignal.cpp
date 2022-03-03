@@ -23,24 +23,23 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 	// long long total_vol = 0;
 	bool _is_long = false;
 	bool _is_short = false;
-	_is_long = _mid-_last_price>1.0&& _spread>1.0; // get long signal, model and factor apply here
-	_is_short = _last_price-_mid>1.0 &&_spread>1.0; // get short signal, model and factor apply here
+	_is_long = _mid-_last_price>0.5&& _spread>1.0; // get long signal, model and factor apply here
+	_is_short = _last_price-_mid>0.5 &&_spread>1.0; // get short signal, model and factor apply here
 
 	
 	if(_is_long){ //get long signal
 		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->symbol = _symbol;
-		// p_orderdata->symbol = _exchangeid+"."+_symbol; //REMARK GM SIM format
 		p_orderdata->order_type = OrderType_Limit;
 		p_orderdata->position_effect = PositionEffect_Open;
 		p_orderdata->side = OrderSide_Buy;
 		p_orderdata->price = _last_price;
 		p_orderdata->volume = 1;
 		p_orderdata->status = LONG_SIGNAL;	
+		std::cout<<"[get_signal] long signal update_time=>"<<_update_time<<"update milisec=>"<<_update_milsec<<std::endl;
 		return p_orderdata; 
 		
 	}else if (_is_short){ //get short signal
-		// p_orderdata->symbol = _exchangeid+"."+_symbol;
 		p_orderdata->symbol = _symbol;
 		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->order_type = OrderType_Limit;
@@ -49,6 +48,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 		p_orderdata->price = _last_price;
 		p_orderdata->volume = 1;
 		p_orderdata->status = SHORT_SIGNAL;
+		std::cout<<"[get_signal] short signal update_time=>"<<_update_time<<"update milisec=>"<<_update_milsec<<std::endl;
 		return p_orderdata; 
 	}else{//no signal, check whether to stop loss
 		p_orderdata->status = NO_SIGNAL;	

@@ -255,6 +255,12 @@ struct OrderField{
     // TThostFtdcTimeType	InsertTime;
     //本地维护的订单插入时间
     std::time_t InsertTime;
+    OrderField(){
+        Price = 0.0;
+        VolumeTraded = 0;
+        VolumeTotalOriginal = 0;
+
+    };
     
 };
 typedef OrderField* ptr_OrderField;

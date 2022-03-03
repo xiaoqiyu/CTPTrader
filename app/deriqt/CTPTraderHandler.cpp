@@ -1515,7 +1515,7 @@ void CTPTraderHandler::OnRtnOrder(CThostFtdcOrderField *pOrder)
 
 void CTPTraderHandler::OnRtnTrade(CThostFtdcTradeField *pTrade)
 {
-    std::cout<<"on rtn trade"<<std::endl;
+    // std::cout<<"on rtn trade"<<std::endl;
     Task task = Task();
     task.task_name = ONRTNTRADE;
     if (pTrade)
@@ -2394,6 +2394,10 @@ void CTPTraderHandler::processRspUserLogin(Task* task)
 	{
 		CThostFtdcRspUserLoginField* task_data = reinterpret_cast<CThostFtdcRspUserLoginField*>(task->task_data);
 		LOG(INFO)<<"[processRspUserLogin]"<<task_data->TradingDay<<",FrontID=>"<<task_data->FrontID<<",SessionID=>"<<task_data->SessionID;
+        std::time_t now_time = std::time(nullptr);
+        tm *ltm = localtime(&now_time);
+        strcpy(this->_login_time, task_data->LoginTime);
+        LOG(INFO)<<"Login Success,login_time=>"<<task_data->LoginTime<<",上期所=>"<<task_data->SHFETime<<",大商所=>"<<task_data->DCETime<<"郑商所=>"<<task_data->CZCETime<<",中金所=>"<<task_data->FFEXTime<<",上期能源=>"<<task_data->INETime<<",local time=>"<<ltm->tm_min<<":"<<ltm->tm_sec;
         this->front_id = task_data->FrontID;
         this->sessision_id = task_data->SessionID;
 		delete task_data;
@@ -2808,11 +2812,11 @@ void CTPTraderHandler::processRspQryOrder(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcOrderField* task_data = reinterpret_cast<CThostFtdcOrderField*>(task->task_data);
-		FILE *fp = fopen("orders.txt", "a");
-		fwrite(task_data, 1, sizeof(CThostFtdcOrderField), fp);
-		fclose(fp);
-		
-
+		// FILE *fp = fopen("orders.txt", "a");
+		// fwrite(task_data, 1, sizeof(CThostFtdcOrderField), fp);
+		// fclose(fp);
+		// 
+        //FIXME init orders
 		delete task_data;
 	}
 	if (task->task_error)
@@ -3731,6 +3735,15 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         order_available_ = false;
         std::time_t now_time = std::time(nullptr);
 		CThostFtdcOrderField* task_data = reinterpret_cast<CThostFtdcOrderField*>(task->task_data);
+        //if the order inserted before the trade handler login, ignore; 
+        //FIXME hardcode去规避一种case就是夜盘的成交回报第二天日盘收到回报
+        int ret_time_cmp = strcmp(task_data->InsertTime, _login_time); 
+        bool is_1st_equ = task_data->InsertTime[0] == _login_time[0];
+        // std::cout<<ret_time_cmp<<", check=>"<<task_data->InsertTime[0]<<","<<_login_time[0]<<",ret=>"<<is_1st_equ<<std::endl;
+        if(!(strcmp(task_data->InsertTime, _login_time) > 0 && task_data->InsertTime[0] == _login_time[0])){
+            // std::cout<<"ignore report"<<std::endl;
+            return;
+        }
         LOG(INFO)<<"*************Order Report******************";
         LOG(INFO)<<"Front ID=>"<<task_data->FrontID;
         LOG(INFO)<<"Session ID=>"<<task_data->SessionID;
@@ -3781,18 +3794,25 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             // strcpy(p_orderfield->OrderType, task_data->OrderType);
             strcpy(p_orderfield->CombOffsetFlag, task_data->CombOffsetFlag);
             // strcpy(p_orderfield->InsertTime, task_data->InsertTime);
-            p_orderfield->VolumeTraded = task_data->VolumeTraded;
+            //TODO  check this volume updated, updated in exe callback
+            // p_orderfield->VolumeTraded = task_data->VolumeTraded;
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
-            std::cout<<"[processRtnOrder] 3rd callback,order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
-            //成交完成或者成功撤单，释放下单控制锁
-            if((p_orderfield->VolumeTraded == p_orderfield->VolumeTotalOriginal && p_orderfield->OrderStatus==THOST_FTDC_OST_AllTraded)||p_orderfield->OrderStatus==THOST_FTDC_OST_Canceled){ 
-                //TODO reset order_complete, move to rtn_trade when trade volume confirm
-                LOG(INFO)<<"[processRtnOrder] order completed or canceled with order_id2=>"<<it2->first<<",status [0,tradded,5:canceled] =>"<<p_orderfield->OrderStatus;
+            // std::cout<<"[processRtnOrder] 3rd callback,order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
+            if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){
                 m_all_orders.erase(it2->first);
                 order_complete_ = true;
                 cond_.notify_all();
             }
+            //成交完成或者成功撤单，释放下单控制锁
+            //TODO double check whether to remove and reset for trade complete 
+            // if((p_orderfield->VolumeTraded == p_orderfield->VolumeTotalOriginal && p_orderfield->OrderStatus==THOST_FTDC_OST_AllTraded)||p_orderfield->OrderStatus==THOST_FTDC_OST_Canceled){ 
+                // TODO reset order_complete, move to rtn_trade when trade volume confirm
+                // LOG(INFO)<<"[processRtnOrder] order completed or canceled with order_id2=>"<<it2->first<<",status [0,tradded,5:canceled] =>"<<p_orderfield->OrderStatus;
+                // m_all_orders.erase(it2->first);
+                // order_complete_ = true;
+                // cond_.notify_all();
+            // }
         //the 2nd order callback, when the order is accepted by the exchange
         }else if(it1 != m_all_orders.end()){//order return from ctp exists,but from exchange not exist, update order id and order fields
             ptr_OrderField p_orderfield = it1->second;
@@ -3820,7 +3840,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             m_all_orders.erase(_order_id1);
             // strcpy(p_orderfield->order_id, _order_id2.c_str());
             p_orderfield->order_id = _order_id2;
-            std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
+            // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
             if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){
                 LOG(INFO)<<"[processRtnOrder] order canceled with order_id1=>"<<_order_id1;
                 m_all_orders.erase(_order_id1);
@@ -3853,7 +3873,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->order_id = _order_id2;
             p_orderfield->InsertTime = now_time;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id1, p_orderfield));
-            std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
+            // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
         }
         if(task_data->OrderStatus == THOST_FTDC_OST_Canceled){//成功撤单之后，释放下单控制锁
             order_complete_ = true;
@@ -3870,19 +3890,6 @@ void CTPTraderHandler::processRtnTrade(Task* task)
 	if (task->task_data)
 	{
 		CThostFtdcTradeField* task_data = reinterpret_cast<CThostFtdcTradeField*>(task->task_data);
-        LOG(INFO)<<"*********************Execution Report*************************";
-        LOG(INFO)<<"Orderref=>"<<task_data->OrderRef;
-        LOG(INFO)<<"ExchangeID=>"<<task_data->ExchangeID;
-        LOG(INFO)<<"TraderID=>"<<task_data->TraderID;
-        LOG(INFO)<<"OrderLocalID=>"<<task_data->OrderLocalID;
-        LOG(INFO)<<"OrderSysID=>"<<task_data->OrderSysID;
-
-        LOG(INFO)<<"Offset Flag [0:open,1:close,3:closetoday] =>"<<task_data->OffsetFlag;
-        LOG(INFO)<<"Trade Volume=>"<<task_data->Volume;
-        LOG(INFO)<<"Trade Price=>"<<task_data->Price;
-        LOG(INFO)<<"Trade Direction(0:buy,1:sell)=>"<<task_data->Direction;
-		LOG(INFO)<<"*********************End Execution Report*************************";
-
         OrderIDRef* p_orderidref = new OrderIDRef();
         strcpy(p_orderidref->OrderRef, task_data->OrderRef);
         strcpy(p_orderidref->ExchangeID, task_data->ExchangeID);
@@ -3895,14 +3902,38 @@ void CTPTraderHandler::processRtnTrade(Task* task)
         if(it != m_all_orders.end()){ //update order field
             ptr_OrderField p_orderfield = it->second;
             p_orderfield->CombOffsetFlag[0] = task_data->OffsetFlag;
+            //TODO test the update
+            double _udpate_price = (p_orderfield->Price*p_orderfield->VolumeTraded+task_data->Volume*task_data->Price)/(p_orderfield->VolumeTraded+task_data->Volume);
             //FIXME double check trade volume should be added or updated
-            p_orderfield->VolumeTraded = task_data->Volume;
-            p_orderfield->Price = task_data->Price;
+            p_orderfield->VolumeTraded += task_data->Volume;
+            p_orderfield->Price = _udpate_price;
             p_orderfield->Direction = task_data->Direction;
             LOG(INFO)<<"[exe report] order id=>"<<p_orderfield->order_id<<",volume=>"<<p_orderfield->VolumeTraded<<",price=>"<<p_orderfield->Price<<std::endl;
-            
+            update_positions(task_data);
+            LOG(INFO)<<"*********************Execution Report*************************";
+            LOG(INFO)<<"Orderref=>"<<task_data->OrderRef;
+            LOG(INFO)<<"ExchangeID=>"<<task_data->ExchangeID;
+            LOG(INFO)<<"TraderID=>"<<task_data->TraderID;
+            LOG(INFO)<<"OrderLocalID=>"<<task_data->OrderLocalID;
+            LOG(INFO)<<"OrderSysID=>"<<task_data->OrderSysID;
+            LOG(INFO)<<"Offset Flag [0:open,1:close,3:closetoday] =>"<<task_data->OffsetFlag;
+            LOG(INFO)<<"Trade Volume=>"<<task_data->Volume;
+            LOG(INFO)<<"Trade Price=>"<<task_data->Price;
+            LOG(INFO)<<"Trade Direction(0:buy,1:sell)=>"<<task_data->Direction;
+            LOG(INFO)<<"Trade Time=>"<<task_data->TradeTime;
+            LOG(INFO)<<"order vol traded=>"<<p_orderfield->VolumeTraded;
+            LOG(INFO)<<"order price=>"<<p_orderfield->Price;
+            LOG(INFO)<<"order total vol=>"<<p_orderfield->VolumeTotalOriginal;
+            LOG(INFO)<<"order status(0:all traded)=>"<<p_orderfield->OrderStatus;
+            LOG(INFO)<<"*********************End Execution Report*************************";
+            if((p_orderfield->VolumeTraded == p_orderfield->VolumeTotalOriginal && p_orderfield->OrderStatus==THOST_FTDC_OST_AllTraded)){ 
+                // TODO reset order_complete, move to rtn_trade when trade volume confirm
+                m_all_orders.erase(it->first);
+                order_complete_ = true;
+                cond_.notify_all();
+                LOG(INFO)<<"[processRtnTrade] order completed  with order_id=>"<<it->first<<",status [0,tradded,5:canceled] =>"<<p_orderfield->OrderStatus;
+            }
         }
-        update_positions(task_data);
         // std::cout<<"before delete in processRtnTrade"<<std::endl;
 		delete task_data;
         // std::cout<<"after delete in processRtnTrade"<<std::endl;
@@ -4592,7 +4623,6 @@ void CTPTraderHandler::processRtnChangeAccountByBank(Task* task)
 
 void CTPTraderHandler::processTask()
 {
-    std::cout<<"??????????????????processTask in TradeHandler"<<std::endl;
     try
     {
         while (this->_active)
@@ -5372,8 +5402,10 @@ void CTPTraderHandler::init(const std::string& task_tag, const std::string& brok
     LOG(INFO)<<"CTPTraderHandler Init with task_tag:"<<task_tag;
     this->_active = true;
     this->_task_thread = thread(&CTPTraderHandler::processTask, this);
-    SubscribePrivateTopic(THOST_TERT_RESUME);
-    SubscribePublicTopic(THOST_TERT_RESUME);
+    // SubscribePrivateTopic(THOST_TERT_RESUME);
+    // SubscribePublicTopic(THOST_TERT_RESUME);
+    SubscribePrivateTopic(THOST_TERT_RESTART);
+    SubscribePublicTopic(THOST_TERT_RESTART);
     this->task_tag = task_tag;
     this->broker_id = broker_id;
     this->user_id = user_id;
@@ -5762,7 +5794,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
         LOG(INFO)<<"[update_positions] after add new transaction,all position size=>"<<v_investor_position_fields.size()<<",curr pos vol=>"<<p_pos->TodayPosition;
     }
     this->pos_available_ = true;
-    LOG(INFO)<<"*****************************[update_positions] complete update position, avaible_=>"<<pos_available_;
+    LOG(INFO)<<"*****************************[update_positions] complete update position, pos_avaible_=>"<<pos_available_<<",order_complete_=>"<<order_complete_;
     mlock.unlock();     //释放锁
     cond_.notify_all(); //通知正在阻塞等待的线程
 }

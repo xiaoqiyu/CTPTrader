@@ -31,6 +31,8 @@ private:
     bool connected_ = false; //连接交易前置
     bool login_ = false; //验证和登录完成
     bool available_ = false; //用于交易查询的流控
+
+    TThostFtdcTimeType _login_time;
     //TODO add account info, and trade status and trade summary(maintain trading status), after pocesss, this will be updated
     std::vector<std::string> future_instrumentID;
     std::vector<std::string> option_instrumentID;
@@ -718,15 +720,20 @@ public:
         auto it = v_investor_position_fields.begin();
         for(; it!=v_investor_position_fields.end(); ){
             ptr_Position p_cur_pos = *it;
-            if(p_cur_pos->TodayPosition == 0){
+            // std::cout<<p_cur_pos->InstrumentID<<",open vol =>"<<p_cur_pos->OpenVolume<<"close vol=>"<<p_cur_pos->CloseVolume<<",today position=>"<<p_cur_pos->TodayPosition<<std::endl;
+            // if(p_cur_pos->TodayPosition == 0 && p_cur_pos->OpenVolume == p_cur_pos->CloseVolume){
+            if(p_cur_pos->TodayPosition == 0){ //FIXME double check the cond
                 it = v_investor_position_fields.erase(it);
             }else{
                 ++it;
-                LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost;
+                LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
             }
         }
         LOG(INFO)<<"*************end init position***********************";
     };
+
+
+    
 
     void init_price_limits(double up_limit_price, double down_limit_price){
         //FIXME query the price limit from depth market fields
