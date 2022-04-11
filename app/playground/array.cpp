@@ -1,4 +1,4 @@
-// #include<boost/circular_buffer.hpp>
+#include<boost/circular_buffer.hpp>
 #include <iostream>
 #include <vector>
 #include<memory>
@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <ctime>
 #include <chrono>
+#include <numeric>
+#include <assert.h>
 
 
 int main()
@@ -30,19 +32,26 @@ int main()
     // v_factor.assign(v_factor1.begin(),v_factor1.end());
     // v_factor = v_factor1;
     // std::cout<<v_factor[0]<<","<<v_factor[1]<<std::endl;
-    // boost::circular_buffer<int> cb(3);
-    // cb.push_back(1);
-    // cb.push_back(2);
-    // cb.push_back(3);
-    // cb.push_back(4);
+    boost::circular_buffer<int> cb(3);
+    cb.push_back(1);
+    cb.push_back(2);
+    cb.push_back(3);
+    cb.push_back(4);
 
     // assert(cb[0]==1);
     // assert(cb[1]==2);
-    // std::cout<<cb[0]<<","<<cb[1]<<","<<cb[2]<<std::endl;
-    // std::cout<<cb.front()<<","<<cb.back()<<std::endl;
-    // std::cout<<cb[0]<<","<<cb[1]<<","<<cb[2]<<std::endl;
+    std::cout<<cb[0]<<","<<cb[1]<<","<<cb[2]<<std::endl;
+    std::cout<<cb.front()<<","<<cb.back()<<std::endl;
+    std::cout<<cb[0]<<","<<cb[1]<<","<<cb[2]<<std::endl;
     // int sum = std::accumulate(cb.begin(), cb.end(), 0);
-
+    std::cout<<"capacity:"<<cb.capacity()<<std::endl;
+    int sum =0;
+    for (int it=1; it<=2; it++){
+        sum += cb[it];
+    }
+    // int sum = std::accumulate(cb.at(1), cb.at(2), 0);
+    
+    std::cout<<"sum is:"<<sum<<std::endl;
     // assert(cb.full());
     // std::cout<<cb.capacity()<<std::endl;
     // char *rr = get_chars();
@@ -88,7 +97,7 @@ int main()
     std::cout<<p2<<p2.use_count()<<std::endl;
 */
     std::time_t now_time = std::time(nullptr);
-     tm *ltm = localtime(&now_time);
+    tm *ltm = localtime(&now_time);
     std::cout<<ltm->tm_hour<<":"<<ltm->tm_min<<std::endl;
     return 0;
 }

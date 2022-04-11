@@ -1,6 +1,45 @@
 #include "OrderSignal.h"
 #include <vector>
 
+
+int _ma_rules(double _ma_diff_last, double _ma_diff_curr){
+	if (_ma_diff_last < 0 && _ma_diff_curr >0){
+		return LONG_SIGNAL;
+	}else if(_ma_diff_last > 0 && _ma_diff_curr <0){
+		return SHORT_SIGNAL;
+	}else{
+		return NO_SIGNAL;
+	}
+	return NO_SIGNAL;
+}
+int _reg_rules(double _log_return, double _mid_log_return){
+	
+}
+
+int get_com_signal(const std::vector<std::string>&v_rev){
+	std::string _symbol = v_rev[0];
+	std::string _update_time = v_rev[1];
+	int _update_milsec = std::stoi(v_rev[2]);
+	long _volume = std::stoi(v_rev[3]);
+	double _last_price = std::stod(v_rev[4]);
+	double _max = std::stod(v_rev[5]);
+	double _min = std::stod(v_rev[6]);
+	double _spread = std::stod(v_rev[7]);
+	double _mid = std::stod(v_rev[8]);
+	double _vwap = std::stod(v_rev[9]);
+	double _log_return = std::stod(v_rev[10]);
+	double _log_return_short = std::stod(v_rev[11]);
+	double _log_return_long = std::stod(v_rev[12]);
+	double _mid_log_return_short = std::stod(v_rev[13]);
+	double _mid_log_return_long = std::stod(v_rev[14]);
+	double _ma_short = std::stod(v_rev[15]);
+	double _ma_long = std::stod(v_rev[16]);
+	double _ma_ls_diff_last = std::stod(v_rev[17]);
+	double _ma_ls_diff_curr = std::stod(v_rev[18]);
+
+}
+
+
 OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 	std::string _symbol = v_rev[0];
 	std::string _update_time = v_rev[1];
@@ -12,14 +51,29 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
     double _spread = std::stod(v_rev[7]);
     double _mid = std::stod(v_rev[8]);
     double _vwap = std::stod(v_rev[9]);
-    double _slope_long = std::stod(v_rev[10]);
-	double _slope_short = std::stod(v_rev[11]);
+	double _log_return = std::stod(v_rev[10]);
+	double _log_return_short = std::stod(v_rev[11]);
+	double _log_return_long = std::stod(v_rev[12]);
+	double _mid_log_return_short = std::stod(v_rev[13]);
+	double _mid_log_return_long = std::stod(v_rev[14]);
+	double _ma_short = std::stod(v_rev[15]);
+	double _ma_long = std::stod(v_rev[16]);
+	double _curr_vol = std::stod(v_rev[17]);
+	double _curr_interest = std::stod(v_rev[18]);
+	double _ma_ls_diff_last = std::stod(v_rev[19]);
+	double _ma_ls_diff_curr = std::stod(v_rev[20]);
+	double _tick_direction = std::stod(v_rev[21]);
+
+	
 	std::string _exchangeid = v_rev[12];
 
 	OrderData* p_orderdata = new OrderData();
 // 
-	// LOG(INFO)<<"Recieve:"<<_symbol<<",update_time:"<<_update_time<<",update msecc:"<<_update_milsec<<",volume:"<<_volume
-    // <<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap;
+	LOG(INFO)<<"Recieve:"<<_symbol<<",update_time:"<<_update_time<<",update msecc:"<<_update_milsec<<",volume:"<<_volume
+    <<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap<<",log return:"
+	<<_log_return<<",log return short:"<<_log_return_short<<",log return long:"<<_log_return_long<<",mid log return short:"<<_mid_log_return_short
+	<<",mid log return long:"<<_mid_log_return_long<<",ma short:"<<_ma_short<<",ma long:"<<_ma_long<<",ma diff last:"<<_ma_ls_diff_last
+	<<",ma diff curr:"<<_ma_ls_diff_curr<<", curr_vol"<<_curr_vol<<",curr_interest:"<<_curr_interest<<",tick direction:"<<_tick_direction;
 	// long long total_vol = 0;
 	bool _is_long = false;
 	bool _is_short = false;

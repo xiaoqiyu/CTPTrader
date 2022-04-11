@@ -1,5 +1,5 @@
-#pragma once
 #include <string>
+#pragma once
 #include <queue>
 #include <thread>
 #include <mutex>
@@ -270,6 +270,20 @@ typedef CThostFtdcInvestorPositionField PositionField;
 
 typedef PositionField* ptr_Position;
 
+enum TickType{
+    DualOPen=0, //双开，成交>=0, 仓差>=0, |成交|==|仓差|
+    DualClose=1, //双平，成交>=0, 仓差<=0, |成交| == |仓差|
+    Transfer=2,//换手，多换、空换，取决于方向， 仓差=0，成交>=0
+    Open=3,//开仓, 成交>=0, 仓差>0, |成交|>|仓差|
+    Close=4,//平仓， 成交>=0, 仓差<0, |成交|>|仓差|
+    OtherType=5,//未知
+};
+
+enum TickDirection{
+    Buy=0,//主动买
+    Sell=1,//主动卖
+    Unknown=2,//未知
+};
 
 
 

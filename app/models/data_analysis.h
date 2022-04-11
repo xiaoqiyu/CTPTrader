@@ -162,6 +162,29 @@ std::vector<std::string> list_files(std::string dirname)
     return ret;
 }
 
+void read_positions(){
+    std::ifstream ifs( "/home/kiki/projects/DERIQT_F/cache/m_position_20220307.recordio", std::ios::binary);
+    recordio::RecordReader reader(&ifs);
+    std::string buffer;
+    while (reader.ReadBuffer(buffer)) {
+        // std::cout<<"read ins:"<<std::endl;
+        CThostFtdcInvestorPositionField pos_fields={0};
+        assert(buffer.size() == sizeof(pos_fields));
+        memcpy(&pos_fields, buffer.data(), buffer.size());
+        // fout<<instrument_fields.InstrumentID<<","<<instrument_fields.ProductClass<<std::endl;
+        std::cout
+            //  << instrument_fields.reserve1 << ","
+             << pos_fields.ExchangeID << ","
+             << pos_fields.InstrumentID<<","
+             << pos_fields.PosiDirection<<","
+             << pos_fields.TodayPosition<<","
+             <<pos_fields.OpenVolume<<","
+             <<pos_fields.CloseVolume<<","
+             <<pos_fields.OpenCost<<std::endl;
+    }
+    reader.Close();
+}
+
 
 
 // void data_preprocessing(std::string task_tag, std::string trade_date, std::string file_name)
@@ -203,7 +226,7 @@ void data_preprocessing(std::string file_name)
     	///合约在交易所的代码
 	// TThostFtdcExchangeInstIDType	ExchangeInstID;
         fout <<"InstrumentID"<<","<<"UpdateTime"<<","<<"Turnover"<<","<<"Volume"<<","<< "LastPrice"<<","<<
-        "AveragePrice"<<","<< "AskPrice1"<<","<<"AskVolume1"<<","<<"BidPrice1"<<","<<"BidVolume1"<<","<<"ExchangeID"<<","<<"Oldexchangetype"<<","<<"ExchangeInstID"<<std::endl;
+        "AveragePrice"<<","<< "AskPrice1"<<","<<"AskVolume1"<<","<<"BidPrice1"<<","<<"BidVolume1"<<","<<"OpenInterest"<<","<<"PreOpenInterest"<<std::endl;
         while (reader.ReadBuffer(buffer))
         {
             // _size = fread(p_mkt, 1, sizeof(CThostFtdcDepthMarketDataField), fp);
@@ -214,7 +237,7 @@ void data_preprocessing(std::string file_name)
             fout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<","
             <<p_mkt->Turnover<<","<<p_mkt->Volume<<","<<p_mkt->LastPrice<<","<<p_mkt->AveragePrice<<","
             <<p_mkt->AskPrice1<<","<<p_mkt->AskVolume1<<","<<p_mkt->BidPrice1<<","
-            <<p_mkt->BidVolume1<<","<<p_mkt->ExchangeID<<","<<p_mkt->reserve2<<","<<p_mkt->ExchangeInstID<<std::endl;
+            <<p_mkt->BidVolume1<<","<<p_mkt->OpenInterest<<","<<p_mkt->PreOpenInterest<<std::endl;
         }
         fout.close();
         reader.Close();

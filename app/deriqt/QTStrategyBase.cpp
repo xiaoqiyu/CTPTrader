@@ -20,6 +20,16 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		return 1;
 	}
 	
+	FileName _strategy_file = {'\0'};
+	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini";
+	strcpy(_strategy_file, _str_file_name.c_str());
+	INIReader reader_str(_strategy_file);
+	if (reader_str.ParseError() != 0)
+	{
+		LOG(FATAL)<< "[init] Fail to load config file in current directory:"<< _str_file_name;
+		return 1;
+	}
+
 
 	char mdAddr[40];
 	char ch[40];
@@ -29,8 +39,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->task_tag = _v_product_ids[0];
 	this->broker_id = reader.Get("user", "BrokerID", "9999");
 	this->user_id = reader.Get("user", "UserID", "123456");
-	this->up_limit_price = std::stod(reader.Get("strategy","up_limit_price","0.0"));
-    this->down_limit_price = std::stod(reader.Get("strategy","down_limit_price","0.0"));
+	this->up_limit_price = std::stod(reader_str.Get("strategy","up_limit_price","0.0"));
+    this->down_limit_price = std::stod(reader_str.Get("strategy","down_limit_price","0.0"));
 
 
 	LOG(INFO)<<"***************Start CTP Handler Init****************";
@@ -148,16 +158,16 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 
 		LOG(INFO)<<"[Init] Mode 1&2: create and init strategyconfig......";
 		this->p_strategy_config = new StrategyConfig(); //new and init the strategy config
-		p_strategy_config->close_type = std::stoi(reader.Get("strategy","close_type","0"));
-		p_strategy_config->stop_profit = std::stod(reader.Get("strategy", "stop_profit","1"));
-		p_strategy_config->stop_loss = std::stod(reader.Get("strategy", "stop_loss","1"));
-		p_strategy_config->vol_limit = std::stoi(reader.Get("strategy", "vol_limit","1"));
-		p_strategy_config->init_cash = std::stod(reader.Get("strategy", "init_cash","1000000"));
-		p_strategy_config->risk_ratio = std::stod(reader.Get("strategy", "risk_ratio","1000000"));
-		p_strategy_config->order_duration = std::stoi(reader.Get("strategy", "order_duration","20"));
-		p_strategy_config->signal_delay = std::stoi(reader.Get("strategy", "signal_delay","5"));
-		p_strategy_config->risk_duration = std::stoi(reader.Get("strategy", "risk_duration","60"));
-		p_strategy_config->cancel_order_delay = std::stoi(reader.Get("strategy", "cancel_order_delay","120"));
+		p_strategy_config->close_type = std::stoi(reader_str.Get("strategy","close_type","0"));
+		p_strategy_config->stop_profit = std::stod(reader_str.Get("strategy", "stop_profit","1"));
+		p_strategy_config->stop_loss = std::stod(reader_str.Get("strategy", "stop_loss","1"));
+		p_strategy_config->vol_limit = std::stoi(reader_str.Get("strategy", "vol_limit","1"));
+		p_strategy_config->init_cash = std::stod(reader_str.Get("strategy", "init_cash","1000000"));
+		p_strategy_config->risk_ratio = std::stod(reader_str.Get("strategy", "risk_ratio","1000000"));
+		p_strategy_config->order_duration = std::stoi(reader_str.Get("strategy", "order_duration","20"));
+		p_strategy_config->signal_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
+		p_strategy_config->risk_duration = std::stoi(reader_str.Get("strategy", "risk_duration","60"));
+		p_strategy_config->cancel_order_delay = std::stoi(reader_str.Get("strategy", "cancel_order_delay","120"));
 		LOG(INFO)<<"*********************Strategy Config*******************************";
 		LOG(INFO)<<"stop_profit=>"<<p_strategy_config->stop_profit;
 		LOG(INFO)<<"stop loss=>"<<p_strategy_config->stop_loss;
@@ -317,7 +327,6 @@ void QTStrategyBase::calculate_kline(){};
 
 void QTStrategyBase::start()
 {
-	
 	if(this->mode == 0){
 		LOG(INFO)<<"[start] mode 0: start subscribe mkt data";
 		this->p_md_handler->SubscribeMarketData();
@@ -586,7 +595,9 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	}
 	// std::vector<Position *> v_pos = simtrade_ptr->get_positions(p_orderdata->symbol);
 	std::vector<ptr_Position> v_pos = p_trader_handler->get_positions(p_orderdata->symbol);
-	// LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
+	
+	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
+
 	int _total_pos_vol = 0;
 	// bool except = false; //FIXME remove this hack for system error, ugply but work for now
 	// for(auto it=v_pos.begin(); it!=v_pos.end();++it){
@@ -600,8 +611,10 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 		// return OrderVerify_unvalid;
 	// }
 	for(auto it=v_pos.begin(); it != v_pos.end(); ++it){
+		std::cout<<(*it)->InstrumentID<<","<<(*it)->TodayPosition<<","<<(*it)->OpenVolume<<","<<(*it)->CloseVolume<<","<<(*it)->PosiDirection<<std::endl;
 		_total_pos_vol += (*it)->TodayPosition;
 	}
+	
 	if(p_orderdata->status == LONG_SIGNAL){ // long signal
 		LOG(INFO)<<"[verify_order_condition] check long signal";
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
@@ -642,6 +655,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 		LOG(INFO)<<"[verify_order_condition] check short signal";
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			ptr_Position p_curr_pos = *it;
+			std::cout<<"pos direction=>"<<p_curr_pos->PosiDirection<<std::endl;
 			if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Long){//short signal and long position, close the position for all vol by stop_profit
 				LOG(INFO)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->TodayPosition;
 				p_orderdata->order_type = OrderType_Limit;

@@ -224,4 +224,5 @@ private:
 
 	double up_limit_price = 0.0;//TODO replace this with info from CTP query
 	double down_limit_price = 0.0;//TODO replace this with info from CTP query
+	
 };

@@ -5426,7 +5426,9 @@ void CTPTraderHandler::release()
 
 int CTPTraderHandler::join()
 {
+    std::cout<<"before join in trade handler"<<std::endl;
     int i = this->_api->Join();
+    std::cout<<"after join in trade handler"<<std::endl;
     return i;
 };
 
@@ -5441,15 +5443,18 @@ int CTPTraderHandler::exit()
     strcpy(reqUserLogout.BrokerID, this->broker_id.c_str());
     strcpy(reqUserLogout.UserID, this->user_id.c_str());
 
-    std::cout<<"run 3"<<std::endl;
+    std::cout<<"run 3: start ReqUserLogout in CTPTraderHandler exit:"<<std::endl;
     this->ReqUserLogout(&reqUserLogout, nRequestID++);
-    sleep(5);
-    std::cout<<"run 0"<<std::endl;
+    
+    std::cout<<"run 0:after ReqUserLogout in CTPTraderHandler exit:"<<std::endl;
+    // sleep(1);
     this->_api->RegisterSpi(NULL);
     std::cout<<"run 1"<<std::endl;
     // this->_api->Release();
 	this->join();
+    std::cout<<"run 4:after join"<<std::endl;
 	this->release();
+    std::cout<<"run 5:after release"<<std::endl;
     this->_api = NULL;
     std::cout<<"run 2"<<std::endl;
 	for(auto it = v_depth_market_data.begin(); it != v_depth_market_data.end(); ++it)

@@ -716,7 +716,7 @@ public:
     //TODO  TBD
     int init_positions(const std::string& investor_id, const std::string& broker_id){
         this->v_investor_position_fields = get_investor_position(investor_id, broker_id);
-        LOG(INFO)<<"*************init position***********************";
+        LOG(INFO)<<"*************init position***********************"<<",size=>"<<v_investor_position_fields.size();
         auto it = v_investor_position_fields.begin();
         for(; it!=v_investor_position_fields.end(); ){
             ptr_Position p_cur_pos = *it;
@@ -726,14 +726,16 @@ public:
                 it = v_investor_position_fields.erase(it);
             }else{
                 ++it;
-                LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
             }
+        }
+        for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
+            ptr_Position p_cur_pos = *it1;
+            LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
         }
         LOG(INFO)<<"*************end init position***********************";
     };
 
 
-    
 
     void init_price_limits(double up_limit_price, double down_limit_price){
         //FIXME query the price limit from depth market fields

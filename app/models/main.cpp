@@ -5,6 +5,7 @@
 int main(int argc, char *argv[])
 {
     read_instruments();
+    read_positions();
     std::string dirname = "/home/kiki/projects/DERIQT_F/cache/mkt/";
     std::string trade_date="";
     std::string product_id = "";
