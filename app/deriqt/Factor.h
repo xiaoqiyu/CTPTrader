@@ -56,13 +56,11 @@ public:
             double _interest_close = 0.0;
             
             
-            
             // double _prev_slope = 0;
 
             double _curr_spread = pDepthMarketData->AskPrice1 - pDepthMarketData->BidPrice1;
             double _curr_vwap = pDepthMarketData->Turnover/pDepthMarketData->Volume;
             double _curr_mid = (pDepthMarketData->AskPrice1*pDepthMarketData->BidVolume1+pDepthMarketData->BidPrice1*pDepthMarketData->AskVolume1)/(pDepthMarketData->AskVolume1+pDepthMarketData->BidVolume1);
-            
             if (this->v_last_factor.size()>0){ // not the first tick, has factor cached 
                 // last, max, min, spread, mid_price,vwap, slope
                 _prev_max = this->v_last_factor[1];
@@ -71,22 +69,18 @@ public:
                 _log_return = std::log(_curr_last) - std::log(this->v_last_factor[0]);
                 _mid_log_return = std::log(_curr_mid) - std::log(this->v_last_factor[4]);
                 // _prev_slope = this->v_last_factor[6];
-            }else{
-                _ma_short = _curr_last;
-                _ma_long = _curr_last;
             }
-
+             
             // current factor calculate
             //snap factor calculate, order type,buy/sell type,etc
             int cir_size = last_price_circular_ptr->size();
 
             double _curr_max = std::max(_prev_max, _curr_last);
             double _curr_min = std::min(_prev_min, _curr_last);
-
-            _curr_vol = pDepthMarketData->Volume - v_last_mkt[2];
-            _curr_interest = pDepthMarketData->OpenInterest - v_last_mkt[3];
-
+            // std::cout<<"before direction"<<std::endl;
             if (v_last_mkt.size()>0){
+                _curr_vol = pDepthMarketData->Volume - v_last_mkt[2];
+                _curr_interest = pDepthMarketData->OpenInterest - v_last_mkt[3];
                 if(pDepthMarketData->LastPrice >= v_last_mkt[0]){//现价大于前卖一价，主动买
                     tick_direction = Buy;
                     _vol_buy = _curr_vol;
@@ -111,12 +105,18 @@ public:
                     tick_type = OtherType;
                 }
             }
-            int _tmp_idx = 0;
-            for (auto it = v_last_factor.begin(); it!= v_last_factor.end();++it){
-                std::cout<<_tmp_idx<<", "<<*it<<std::endl;
-                _tmp_idx+=1;
-            }
+            // std::cout<<"before check last vector"<<std::endl;
+            // int _tmp_idx = 0;
+            // for (auto it = v_last_factor.begin(); it!= v_last_factor.end();++it){
+                // std::cout<<_tmp_idx<<", "<<*it<<std::endl;
+                // _tmp_idx+=1;
+            // }
             std::cout<<"before windows calculate, cir_size=>"<<cir_size<<std::endl;
+            if (v_last_factor.size() > 0){
+                _ma_ls_diff_last = v_last_factor[11] - v_last_factor[12];
+            }else{
+                _ma_ls_diff_last = 0.0;
+            }
             //lag time series factor calculation
             if(cir_size>=long_windows){ //window length >= long
                 // _curr_slope_long = (_curr_last - last_price_circular_ptr->front())/long_windows;
@@ -133,7 +133,7 @@ public:
                 std::cout<<"curr mid:"<<_curr_mid<<",mid log return:"<<_mid_log_return<<",curr last:"<<_curr_last<<",curr log return:"<<_log_return<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<< std::endl;
                 std::cout<<"last 0"<<last_price_circular_ptr->at(1)<<","<<last_price_circular_ptr->at(0)<<std::endl;
                 std::cout<<"mid 0"<<mid_price_circular_ptr->at(1)<<","<<mid_price_circular_ptr->at(0)<<std::endl;
-                std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<std::endl;
+                std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<",ma diff curr:"<<_ma_ls_diff_curr<< std::endl;
                 
             }else if(cir_size >= short_windows){ //window length>short and window length<long
                 //update short windows lag factor
@@ -141,6 +141,8 @@ public:
                 // _mid_log_return_short = this->v_last_factor[10] + _mid_log_return_long - (std::log(mid_price_circular_ptr[1])-std::log(mid_price_circular_ptr[0]));
                 // _log_return_long = INFINITY;
                 std::cout<<"short windows"<<std::endl;
+                _ma_long = _curr_last;
+                _ma_ls_diff_curr = 0.0;
                 _log_return_short = this->v_last_factor[7] + _log_return - (std::log(last_price_circular_ptr->at(1))-std::log(last_price_circular_ptr->at(0)));
                 _mid_log_return_short = this->v_last_factor[9] + _mid_log_return - (std::log(mid_price_circular_ptr->at(1))-std::log(mid_price_circular_ptr->at(0)));
                 _ma_short = (this->v_last_factor[11] *short_windows - last_price_circular_ptr->at(0) + _curr_last)/short_windows;             
@@ -159,11 +161,6 @@ public:
                 _ma_short = _curr_last;
             }
 
-            if (v_last_factor.size() > 0){
-                _ma_ls_diff_last = v_last_factor[11] - v_last_factor[12];
-            }else{
-                _ma_ls_diff_last = 0.0;
-            }
 
             //time series cached factor
             last_price_circular_ptr->push_back(_curr_last);
@@ -205,8 +202,8 @@ public:
 	        for (auto it = this->v_curr_factor.begin(); it!=this->v_curr_factor.end();++it){
 	        	offset += sprintf(str_factor+offset, "%f,", *it);
 	        }
-            offset += sprintf(str_factor+offset, "%d,", _ma_ls_diff_last);//factor:19
-            offset += sprintf(str_factor+offset, "%d,", _ma_ls_diff_curr);//factor:20
+            offset += sprintf(str_factor+offset, "%f,", _ma_ls_diff_last);//factor:19
+            offset += sprintf(str_factor+offset, "%f,", _ma_ls_diff_curr);//factor:20
             offset += sprintf(str_factor+offset, "%d,", tick_direction);//factor:21
             
             // std::cout<<"after push afctor,len:"<<this->v_curr_factor.size()<<std::endl;

@@ -2,21 +2,42 @@
 #include <vector>
 
 
-int _ma_rules(double _ma_diff_last, double _ma_diff_curr){
+int OrderSignal::_ma_rules(double _ma_diff_last, double _ma_diff_curr){
 	if (_ma_diff_last < 0 && _ma_diff_curr >0){
-		return LONG_SIGNAL;
+		return 1;
 	}else if(_ma_diff_last > 0 && _ma_diff_curr <0){
-		return SHORT_SIGNAL;
+		return -1;
 	}else{
-		return NO_SIGNAL;
+		return 0;
 	}
-	return NO_SIGNAL;
-}
-int _reg_rules(double _log_return, double _mid_log_return){
-	
+	return 0;
 }
 
-int get_com_signal(const std::vector<std::string>&v_rev){
+// [models]
+// log_return = 0.9368
+// log_return_0 = 0.0174
+// wap_log_return = 0.8194
+// intercept = 000.00000119
+// std::stod(reader_str.Get("strategy","up_limit_price","0.0"));
+int OrderSignal::_reg_rules(double _log_return, double _mid_log_return){
+	double _log_return_coef = std::stod(config_ptr->Get("models","log_return","0.0"));
+	double _mid_log_return_coef = std::stod(config_ptr->Get("models","wap_log_return","0.0"));
+	double _intercept = std::stod(config_ptr->Get("models","intercept","0.0"));
+	double _reg_long_thread = std::stod(config_ptr->Get("strategy","reg_long_threshold","0.0"));
+	double _reg_short_thread = std::stod(config_ptr->Get("strategy","reg_short_threshold","0.0"));
+	double _score = _log_return_coef * _log_return + _mid_log_return_coef * _mid_log_return + _intercept;
+	
+	if (_score>= _reg_long_thread){
+		return 1;
+	}else if(_score <= -_reg_short_thread){
+		return -1;
+	}else{
+		return 0;
+	}
+	return 0;
+}
+
+int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev){
 	std::string _symbol = v_rev[0];
 	std::string _update_time = v_rev[1];
 	int _update_milsec = std::stoi(v_rev[2]);
@@ -34,8 +55,35 @@ int get_com_signal(const std::vector<std::string>&v_rev){
 	double _mid_log_return_long = std::stod(v_rev[14]);
 	double _ma_short = std::stod(v_rev[15]);
 	double _ma_long = std::stod(v_rev[16]);
-	double _ma_ls_diff_last = std::stod(v_rev[17]);
-	double _ma_ls_diff_curr = std::stod(v_rev[18]);
+	double _curr_vol = std::stod(v_rev[17]);
+	double _curr_interest = std::stod(v_rev[18]);
+	double _ma_ls_diff_last = std::stod(v_rev[19]);
+	double _ma_ls_diff_curr = std::stod(v_rev[20]);
+	double _tick_direction = std::stod(v_rev[21]);
+
+	//print and check the factor
+	LOG(INFO)<<"Recieve:"<<_symbol<<",update_time:"<<_update_time<<",update msecc:"<<_update_milsec<<",volume:"<<_volume
+	<<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap<<",log return:"
+	<<_log_return<<",log return short:"<<_log_return_short<<",log return long:"<<_log_return_long<<",mid log return short:"<<_mid_log_return_short
+	<<",mid log return long:"<<_mid_log_return_long<<",ma short:"<<_ma_short<<",ma long:"<<_ma_long<<",ma diff last:"<<_ma_ls_diff_last
+	<<",ma diff curr:"<<_ma_ls_diff_curr<<", curr_vol"<<_curr_vol<<",curr_interest:"<<_curr_interest<<",tick direction:"<<_tick_direction;
+	
+	double long_score = 0.0;
+	double short_score = 0.0;
+	int n_rules = 2;
+	double rule_weights = 0.5; //FIXME hardcode for weights
+	int ma_signal = _ma_rules(_ma_ls_diff_last, _ma_ls_diff_curr);
+	int reg_signal = _reg_rules(_log_return, _mid_log_return_short); //TODO check the factor
+	double score = ma_signal * rule_weights + reg_signal * rule_weights; //FIXME remove hardcode for we
+	
+	if (score >0){
+		return LONG_SIGNAL;
+	}else if(score < 0){
+		return SHORT_SIGNAL;
+	}else{
+		return NO_SIGNAL;
+	}
+	return NO_SIGNAL;
 
 }
 
@@ -44,44 +92,18 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 	std::string _symbol = v_rev[0];
 	std::string _update_time = v_rev[1];
 	int _update_milsec = std::stoi(v_rev[2]);
-	long _volume = std::stoi(v_rev[3]);
 	double _last_price = std::stod(v_rev[4]);
-	double _max = std::stod(v_rev[5]);
-	double _min = std::stod(v_rev[6]);
-    double _spread = std::stod(v_rev[7]);
-    double _mid = std::stod(v_rev[8]);
-    double _vwap = std::stod(v_rev[9]);
-	double _log_return = std::stod(v_rev[10]);
-	double _log_return_short = std::stod(v_rev[11]);
-	double _log_return_long = std::stod(v_rev[12]);
-	double _mid_log_return_short = std::stod(v_rev[13]);
-	double _mid_log_return_long = std::stod(v_rev[14]);
-	double _ma_short = std::stod(v_rev[15]);
-	double _ma_long = std::stod(v_rev[16]);
-	double _curr_vol = std::stod(v_rev[17]);
-	double _curr_interest = std::stod(v_rev[18]);
-	double _ma_ls_diff_last = std::stod(v_rev[19]);
-	double _ma_ls_diff_curr = std::stod(v_rev[20]);
-	double _tick_direction = std::stod(v_rev[21]);
-
-	
 	std::string _exchangeid = v_rev[12];
-
 	OrderData* p_orderdata = new OrderData();
-// 
-	LOG(INFO)<<"Recieve:"<<_symbol<<",update_time:"<<_update_time<<",update msecc:"<<_update_milsec<<",volume:"<<_volume
-    <<",last price:"<<_last_price<<",max:"<<_max<<",min:"<<_min<<",spread:"<<_spread<<",:mid:"<<_mid<<",vwap:"<<_vwap<<",log return:"
-	<<_log_return<<",log return short:"<<_log_return_short<<",log return long:"<<_log_return_long<<",mid log return short:"<<_mid_log_return_short
-	<<",mid log return long:"<<_mid_log_return_long<<",ma short:"<<_ma_short<<",ma long:"<<_ma_long<<",ma diff last:"<<_ma_ls_diff_last
-	<<",ma diff curr:"<<_ma_ls_diff_curr<<", curr_vol"<<_curr_vol<<",curr_interest:"<<_curr_interest<<",tick direction:"<<_tick_direction;
-	// long long total_vol = 0;
-	bool _is_long = false;
-	bool _is_short = false;
-	_is_long = _mid-_last_price>0.5&& _spread>1.0; // get long signal, model and factor apply here
-	_is_short = _last_price-_mid>0.5 &&_spread>1.0; // get short signal, model and factor apply here
+
+	predict_timer += 1;
+	if (predict_timer % 10 != 0){//not process FIXME remove hardcode
+		return p_orderdata;
+	}
 
 	
-	if(_is_long){ //get long signal
+	int ret_signal = get_com_signal(v_rev); //get the final signal
+	if(ret_signal == LONG_SIGNAL){ //get long signal
 		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->symbol = _symbol;
 		p_orderdata->order_type = OrderType_Limit;
@@ -92,8 +114,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev){
 		p_orderdata->status = LONG_SIGNAL;	
 		std::cout<<"[get_signal] long signal update_time=>"<<_update_time<<"update milisec=>"<<_update_milsec<<std::endl;
 		return p_orderdata; 
-		
-	}else if (_is_short){ //get short signal
+	}else if (ret_signal == SHORT_SIGNAL){ //get short signal
 		p_orderdata->symbol = _symbol;
 		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->order_type = OrderType_Limit;

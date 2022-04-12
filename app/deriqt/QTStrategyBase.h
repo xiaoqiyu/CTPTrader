@@ -89,7 +89,7 @@ public: //stategy management
 		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
 		//FIXME check factor init 
-		p_factor = new Factor(12, 5);
+		p_factor = new Factor(40, 20);
 	};
 	virtual ~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);

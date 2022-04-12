@@ -14,8 +14,9 @@ public:
 		FileName _strategy_file = {'\0'};
 		std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini";
 		strcpy(_strategy_file, _str_file_name.c_str());
-		INIReader reader_str(_strategy_file);
-		if (reader_str.ParseError() != 0)
+		config_ptr.reset(new INIReader(_strategy_file));
+		predict_timer = 0;//count by tick
+		if (config_ptr->ParseError() != 0)
 		{
 			LOG(FATAL)<< "[init] Fail to load config file in current directory:"<< _str_file_name;
 		}
@@ -34,5 +35,7 @@ private:
 	int order_type; //market, limit
 	double order_price;
 	std::string sec_id;
+	std::unique_ptr<INIReader> config_ptr;
+	int predict_timer;
 };
 

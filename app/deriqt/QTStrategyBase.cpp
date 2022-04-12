@@ -168,17 +168,9 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_strategy_config->signal_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
 		p_strategy_config->risk_duration = std::stoi(reader_str.Get("strategy", "risk_duration","60"));
 		p_strategy_config->cancel_order_delay = std::stoi(reader_str.Get("strategy", "cancel_order_delay","120"));
-		LOG(INFO)<<"*********************Strategy Config*******************************";
-		LOG(INFO)<<"stop_profit=>"<<p_strategy_config->stop_profit;
-		LOG(INFO)<<"stop loss=>"<<p_strategy_config->stop_loss;
-		LOG(INFO)<<"vol limit=>"<<p_strategy_config->vol_limit;
-		LOG(INFO)<<"init cash=>"<<p_strategy_config->init_cash;
-		LOG(INFO)<<"risk ratio=>"<<p_strategy_config->risk_ratio;
-		LOG(INFO)<<"order duration=>"<<p_strategy_config->order_duration;
-		LOG(INFO)<<"signal delay=>"<<p_strategy_config->signal_delay;
-		LOG(INFO)<<"risk duration=>"<<p_strategy_config->risk_duration;
-		LOG(INFO)<<"cancel order delay=>"<<p_strategy_config->cancel_order_delay;
-		LOG(INFO)<<"*********************Strategy Config*******************************";
+		LOG(INFO)<<"stop_profit=>"<<p_strategy_config->stop_profit<<"stop loss=>"<<p_strategy_config->stop_loss<<"vol limit=>"<<p_strategy_config->vol_limit
+		<<"init cash=>"<<p_strategy_config->init_cash<<"risk ratio=>"<<p_strategy_config->risk_ratio<<"order duration=>"<<p_strategy_config->order_duration
+		<<"signal delay=>"<<p_strategy_config->signal_delay<<"risk duration=>"<<p_strategy_config->risk_duration<<"cancel order delay=>"<<p_strategy_config->cancel_order_delay;
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
