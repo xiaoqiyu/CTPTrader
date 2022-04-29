@@ -27,7 +27,7 @@ public:
         sell_vol_circular_ptr.reset(new boost::circular_buffer<double>(long_windows));
     };
 	~Factor();
-    int update_factor(CThostFtdcDepthMarketDataField* pDepthMarketData,char* str_factor)
+    int update_factor(CThostFtdcDepthMarketDataField* pDepthMarketData,char* str_factor, int signal_flag)
     {
         // std::cout<<"mkt:"<<pDepthMarketData->LastPrice<<std::endl;
         long offset = 0;
@@ -54,7 +54,6 @@ public:
             double _vol_sell = 0.0;
             double _interest_open = 0.0;
             double _interest_close = 0.0;
-            
             
             // double _prev_slope = 0;
 
@@ -111,18 +110,18 @@ public:
                 // std::cout<<_tmp_idx<<", "<<*it<<std::endl;
                 // _tmp_idx+=1;
             // }
-            std::cout<<"before windows calculate, cir_size=>"<<cir_size<<std::endl;
-            if (v_last_factor.size() > 0){
-                _ma_ls_diff_last = v_last_factor[11] - v_last_factor[12];
-            }else{
-                _ma_ls_diff_last = 0.0;
-            }
+            // std::cout<<"before windows calculate, cir_size=>"<<cir_size<<std::endl;
+            // if (v_last_factor.size() > 0 && cir_size > long_windows){//TODO double check the condition
+                // _ma_ls_diff_last = v_last_factor[11] - v_last_factor[12];
+            // }else{
+                // _ma_ls_diff_last = 0.0;
+            // }
             //lag time series factor calculation
             if(cir_size>=long_windows){ //window length >= long
                 // _curr_slope_long = (_curr_last - last_price_circular_ptr->front())/long_windows;
                 // _curr_slope_short = (_curr_last - *last_price_circular_ptr[long_windows-short_windows])/short_windows; //TODO to 
                 //update long windows lag factor
-                std::cout<<"long windows"<<std::endl;
+                // std::cout<<"long windows"<<std::endl;
                 _log_return_long = this->v_last_factor[8] + _log_return - (std::log(last_price_circular_ptr->at(1))-std::log(last_price_circular_ptr->at(0)));
                 _mid_log_return_long = this->v_last_factor[10] + _mid_log_return - (std::log(mid_price_circular_ptr->at(1))-std::log(mid_price_circular_ptr->at(0)));
                 _log_return_short = this->v_last_factor[7] + _log_return - (std::log(last_price_circular_ptr->at(1))-std::log(last_price_circular_ptr->at(0)));
@@ -130,29 +129,29 @@ public:
                 _ma_long = (this->v_last_factor[12] *long_windows - last_price_circular_ptr->at(0) + _curr_last)/long_windows;
                 _ma_short = (this->v_last_factor[11] *short_windows - last_price_circular_ptr->at(0) + _curr_last)/short_windows;
                 _ma_ls_diff_curr = _ma_short - _ma_long;
-                std::cout<<"curr mid:"<<_curr_mid<<",mid log return:"<<_mid_log_return<<",curr last:"<<_curr_last<<",curr log return:"<<_log_return<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<< std::endl;
-                std::cout<<"last 0"<<last_price_circular_ptr->at(1)<<","<<last_price_circular_ptr->at(0)<<std::endl;
-                std::cout<<"mid 0"<<mid_price_circular_ptr->at(1)<<","<<mid_price_circular_ptr->at(0)<<std::endl;
-                std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<",ma diff curr:"<<_ma_ls_diff_curr<< std::endl;
+                _ma_ls_diff_last = v_last_factor[11] - v_last_factor[12]; //at this tick, last factor should be valid
+                // std::cout<<"curr mid:"<<_curr_mid<<",mid log return:"<<_mid_log_return<<",curr last:"<<_curr_last<<",curr log return:"<<_log_return<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<< std::endl;
+                // std::cout<<"last 0"<<last_price_circular_ptr->at(1)<<","<<last_price_circular_ptr->at(0)<<std::endl;
+                // std::cout<<"mid 0"<<mid_price_circular_ptr->at(1)<<","<<mid_price_circular_ptr->at(0)<<std::endl;
+                // std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<",ma diff curr:"<<_ma_ls_diff_curr<< std::endl;
                 
             }else if(cir_size >= short_windows){ //window length>short and window length<long
                 //update short windows lag factor
                 // _log_return_short = this->v_last_factor[8] + _log_return - (std::log(last_price_circular_ptr[1])-std::log(last_price_circular_ptr[0]));
                 // _mid_log_return_short = this->v_last_factor[10] + _mid_log_return_long - (std::log(mid_price_circular_ptr[1])-std::log(mid_price_circular_ptr[0]));
                 // _log_return_long = INFINITY;
-                std::cout<<"short windows"<<std::endl;
+                // std::cout<<"short windows"<<std::endl;
                 _ma_long = _curr_last;
-                _ma_ls_diff_curr = 0.0;
                 _log_return_short = this->v_last_factor[7] + _log_return - (std::log(last_price_circular_ptr->at(1))-std::log(last_price_circular_ptr->at(0)));
                 _mid_log_return_short = this->v_last_factor[9] + _mid_log_return - (std::log(mid_price_circular_ptr->at(1))-std::log(mid_price_circular_ptr->at(0)));
                 _ma_short = (this->v_last_factor[11] *short_windows - last_price_circular_ptr->at(0) + _curr_last)/short_windows;             
-                std::cout<<"curr mid:"<<_curr_mid<<",mid log return:"<<_mid_log_return<<",curr last:"<<_curr_last<<",curr log return:"<<_log_return<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<< std::endl;
-                std::cout<<"last 0"<<last_price_circular_ptr->at(1)<<","<<last_price_circular_ptr->at(0)<<std::endl;
-                std::cout<<"mid 0"<<mid_price_circular_ptr->at(1)<<","<<mid_price_circular_ptr->at(0)<<std::endl;
-                std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<std::endl;
+                // std::cout<<"curr mid:"<<_curr_mid<<",mid log return:"<<_mid_log_return<<",curr last:"<<_curr_last<<",curr log return:"<<_log_return<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<< std::endl;
+                // std::cout<<"last 0"<<last_price_circular_ptr->at(1)<<","<<last_price_circular_ptr->at(0)<<std::endl;
+                // std::cout<<"mid 0"<<mid_price_circular_ptr->at(1)<<","<<mid_price_circular_ptr->at(0)<<std::endl;
+                // std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<std::endl;
             }else{
                 //no lag facotr update
-                std::cout<<"less than short windows"<<std::endl;
+                // std::cout<<"less than short windows"<<std::endl;
                 // _log_return_long = 0.0;
                 // _mid_log_return_long = 0.0;
                 // _log_return_short = 0.0;
@@ -194,17 +193,19 @@ public:
             this->v_last_mkt.push_back(pDepthMarketData->OpenInterest);
 
 
-            //generate the factor shared  string
-	        offset += sprintf(str_factor+offset, "%s,", pDepthMarketData->InstrumentID); //factor:0
-	        offset += sprintf(str_factor+offset, "%s,", pDepthMarketData->UpdateTime); //factor:1
-	        offset += sprintf(str_factor+offset, "%d,", pDepthMarketData->UpdateMillisec);//facotor:2
-	        offset += sprintf(str_factor+offset, "%d,", pDepthMarketData->Volume);//factor:3
-	        for (auto it = this->v_curr_factor.begin(); it!=this->v_curr_factor.end();++it){
-	        	offset += sprintf(str_factor+offset, "%f,", *it);
-	        }
-            offset += sprintf(str_factor+offset, "%f,", _ma_ls_diff_last);//factor:19
-            offset += sprintf(str_factor+offset, "%f,", _ma_ls_diff_curr);//factor:20
-            offset += sprintf(str_factor+offset, "%d,", tick_direction);//factor:21
+            if (signal_flag == 0){
+                //generate the factor shared  string
+	            offset += sprintf(str_factor+offset, "%s,", pDepthMarketData->InstrumentID); //factor:0
+	            offset += sprintf(str_factor+offset, "%s,", pDepthMarketData->UpdateTime); //factor:1
+	            offset += sprintf(str_factor+offset, "%d,", pDepthMarketData->UpdateMillisec);//facotor:2
+	            offset += sprintf(str_factor+offset, "%d,", pDepthMarketData->Volume);//factor:3
+	            for (auto it = this->v_curr_factor.begin(); it!=this->v_curr_factor.end();++it){
+	            	offset += sprintf(str_factor+offset, "%f,", *it);
+	            }
+                offset += sprintf(str_factor+offset, "%f,", _ma_ls_diff_last);//factor:19
+                offset += sprintf(str_factor+offset, "%f,", _ma_ls_diff_curr);//factor:20
+                offset += sprintf(str_factor+offset, "%d,", tick_direction);//factor:21
+            }
             
             // std::cout<<"after push afctor,len:"<<this->v_curr_factor.size()<<std::endl;
             //update the last cached factor to the current factor
@@ -236,5 +237,6 @@ private:
     std::unique_ptr<boost::circular_buffer<double>> spread_circular_ptr; //spread long windows 时序 cache
     std::unique_ptr<boost::circular_buffer<double>> buy_vol_circular_ptr; //buy vol 时序 cache
     std::unique_ptr<boost::circular_buffer<double>> sell_vol_circular_ptr; // sell vol 时序 cache
+    
 };
 

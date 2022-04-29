@@ -11,11 +11,11 @@
 #include <string>
 #include <sys/types.h>
 #include "TickToKlineHelper.h"
-#include "DataStrategy.h"
-#include "TStrategy.h"
+#include "QTStrategyBase.h"
 #include <algorithm>
 #include <glog/logging.h>
 #include <sys/wait.h>
+#include <cstdlib>
 
 int nRequestID = 0;
 int DEBUG = 0;
@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
 
     google::InitGoogleLogging(argv[0]);
     FLAGS_log_dir = std::string("./log/");
+    //TODO remove hardcode of the path, with relative path
+    system("cp /mnt/c/projects/pycharm/option_future_research/research/daily_models/daily_cache.ini ~/projects/DERIQT_F/conf/");
 
 #ifdef false
     pid_t c_pid = fork();
@@ -162,14 +164,14 @@ int main(int argc, char *argv[])
         std::string _instrument_id;
         std::string mode = "0";
         std::string strategy_class = "0";//FIXME hardcode for future first, 0 for future, 1 for options(TBD)
-        std::string _strategy_name = "data_strategy";
+        std::string _strategy_name = "future_trend";
         std::vector<std::string> v_instrumentID;
         if (argc <= 1)
         {
             LOG(ERROR) << "[main] Please enter a config name!!!!!" ;
             _conf_file_name = "/home/kiki/projects/DERIQT/test.ini";
             v_instrumentID.push_back("rb2110");
-            _strategy_name = "data_strategy";
+            _strategy_name = "future_strategy";
         }
         else
         {
@@ -184,33 +186,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        QTStrategyBase *p_strategy = nullptr;
         std::string _shm_name = _strategy_name+_instrument_id;
-        if (_strategy_name == "data_strategy")
-        {
-            p_strategy = new DataStrategy("data_strategy", std::stoi(mode),_shm_name.c_str(), 65536,std::stoi(strategy_class));
-        }
-        else if (_strategy_name == "t_strategy")
-        {
-            p_strategy = new TStrategy("t_strategy", std::stoi(mode), _strategy_name.c_str(), 65536,std::stoi(strategy_class));
-        }
+        QTStrategyBase *p_strategy = new QTStrategyBase(_strategy_name, std::stoi(mode),_shm_name.c_str(), 65536,std::stoi(strategy_class));
         p_strategy->init(v_instrumentID, _conf_file_name);
-
-        sleep(5);
-        std::string _user_id = "105600687";
-        std::string _broker_id = "9040";
-
-        // LOG(INFO)<< "[main] query investor position";
-        // std::vector<CThostFtdcInvestorPositionField *>  ret_pos = p_strategy->get_investor_position(_user_id, _broker_id);
-        sleep(5);
-        LOG(INFO)<< "[main] query investor account";
-        // int ret_trades = p_strategy->req_trade(_user_id, _broker_id);
-        // sleep(5);
-        std::vector<CThostFtdcTradingAccountField*>  ret_account = p_strategy->get_account(_user_id, _broker_id);
-        // int ret_pos_detail = p_strategy->get_position_details(_user_id, _broker_id);
         sleep(5);
         LOG(INFO)<<"[main] start strategy for Strategy Trader.......";
-
         p_strategy->start();
         p_strategy->stop();
         p_strategy->release();

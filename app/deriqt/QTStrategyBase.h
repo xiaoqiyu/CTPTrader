@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <ctime>
 #include <chrono>
+#include <set>
 
 #include <boost/lockfree/spsc_queue.hpp> // ring buffer
 
@@ -88,10 +89,8 @@ public: //stategy management
 		segmet_ptr.reset(new bip::managed_shared_memory(bip::open_or_create, shared_memory_name, size));
 		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
-		//FIXME check factor init 
-		p_factor = new Factor(40, 20);
 	};
-	virtual ~QTStrategyBase(){};
+	~QTStrategyBase(){};
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
 	//start subscrible market data, and strategy
 	void start();
@@ -187,6 +186,8 @@ private:
 	unordered_map<std::string, int> m_filename_idx;
 	unordered_map<std::string, std::string> m_depth_filename;
 	unordered_map<std::string, std::string> m_kline_filename;
+	unordered_map<std::string, ptr_daily_cache> m_daily_cache;
+
 	vector<std::ofstream *> v_depth_outfile;
 	vector<std::ofstream *> v_kline_outfile;
 	vector<recordio::RecordWriter> v_depth_writer;
@@ -208,6 +209,7 @@ private:
 	std::vector<std::string> v_option_ids;
 	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
 	recordio::RecordWriter * p_depth_mkt_writer;
+	std::ofstream * cache_ptr;
 	std::unique_ptr<bip::managed_shared_memory> segmet_ptr;
     std::unique_ptr<shm::char_alloc> char_alloc_ptr;
 	std::unique_ptr<SimTrader> simtrade_ptr;
@@ -217,12 +219,12 @@ private:
 	Factor *p_factor;
 	std::vector<Order> v_order;
 	long factor_len = 1024;
+	long signal_delay;
 	std::time_t  last_order_time = std::time(nullptr);
 	std::string simtrade_token;
 	StrategyConfig * p_strategy_config;
 	int strategy_class; //0 for future, 1 for option
-
 	double up_limit_price = 0.0;//TODO replace this with info from CTP query
 	double down_limit_price = 0.0;//TODO replace this with info from CTP query
-	
+	long conf_signal_delay;
 };

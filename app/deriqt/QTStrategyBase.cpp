@@ -21,7 +21,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	}
 	
 	FileName _strategy_file = {'\0'};
-	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini";
+	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode for the conf path
 	strcpy(_strategy_file, _str_file_name.c_str());
 	INIReader reader_str(_strategy_file);
 	if (reader_str.ParseError() != 0)
@@ -30,7 +30,20 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		return 1;
 	}
 
+	conf_signal_delay = std::stoi(reader_str.Get("strategy","signal_delay","0"));
+	p_factor = new Factor(std::stoi(reader_str.Get("strategy","long_windows","0")), std::stoi(reader_str.Get("strategy","short_windows","0")));
 
+	// FileName _daily_cache_file = {'\0'};
+	std::string _cache_file_name = "/home/kiki/projects/DERIQT_F/conf/daily_cache.ini"; //FIXME remove hardcode for the conf path
+	// strcpy(_strategy_file, _str_file_name.c_str());
+	INIReader reader_daily_cache(_cache_file_name);
+	if (reader_daily_cache.ParseError() != 0)
+	{
+		LOG(FATAL)<< "[init] Fail to load config file in current directory:"<< _cache_file_name;
+		return 1;
+	}
+	
+	
 	char mdAddr[40];
 	char ch[40];
 	std::string trading_date;
@@ -39,6 +52,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->task_tag = _v_product_ids[0];
 	this->broker_id = reader.Get("user", "BrokerID", "9999");
 	this->user_id = reader.Get("user", "UserID", "123456");
+	//update limit price
 	this->up_limit_price = std::stod(reader_str.Get("strategy","up_limit_price","0.0"));
     this->down_limit_price = std::stod(reader_str.Get("strategy","down_limit_price","0.0"));
 
@@ -89,9 +103,74 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		LOG(INFO)<<"push option id in init(strategy base):"<<(*it);
 		this->v_instrummentID.push_back((*it));
 	}
-
 	LOG(INFO)<<"***************End CTP Handler Init****************";
 
+	LOG(INFO)<<"************** Start cache daily market*************";
+	// std::ofstream * cache_ptr = new std::ofstream();
+	FileName _cache_filename = {'\0'};
+	//FIXME remove hardcode the cache path
+	sprintf(_cache_filename, "/home/kiki/projects/DERIQT_F/cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
+    std::cout<<"read mkt file name:"<<_cache_filename<<std::endl;
+	std::ifstream ifs(_cache_filename, std::ios::binary);
+    recordio::RecordReader reader1(&ifs);
+	CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
+	std::string buffer;
+	while (reader1.ReadBuffer(buffer))
+    {
+        assert(buffer.size()==sizeof(CThostFtdcDepthMarketDataField));
+        memcpy(p_mkt, buffer.data(), buffer.size());
+		// std::cout<<p_mkt->InstrumentID<<","<<p_mkt->UpdateTime<<","<<p_mkt->LastPrice<<std::endl;
+		for (auto it = this->v_instrummentID.begin(); it != this->v_instrummentID.end(); ++it){
+			std::string curr_date = p_mkt->TradingDay;
+			std::string curr_ts = p_mkt->UpdateTime;
+			std::string cache_instrument_id = *it;
+			if(cache_instrument_id ==  p_mkt->InstrumentID){
+				auto it1 = this->m_daily_cache.find(*it);
+				if(it1 == this->m_daily_cache.end()){ 
+					if(curr_date==trading_date){
+						ptr_daily_cache _tmp_ptr = new daily_cache(); //FIXME add delete
+						_tmp_ptr->InstrumentID = cache_instrument_id;
+						_tmp_ptr->open_price = p_mkt->LastPrice;
+						m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(cache_instrument_id, _tmp_ptr));
+						std::cout<<"Got cache open price for instrument id:"<<*it<<":update time:"<<p_mkt->UpdateTime<<", open:"<<p_mkt->LastPrice<<std::endl;
+					}
+				}
+			}
+		}
+    }
+    reader1.Close();
+	//TODO add other daily cache
+
+	std::set<std::string> cache_sesstions = reader_daily_cache.Sections();
+	for (const auto &sec : cache_sesstions) 
+	{     
+		auto it = this->m_daily_cache.find(sec);
+		if (it != this->m_daily_cache.end()){ //instrument id exist
+			ptr_daily_cache _tmp_ptr =it->second;
+			_tmp_ptr->hh = std::stod(reader_daily_cache.Get(sec, "hh","0.0"));
+			_tmp_ptr->hc = std::stod(reader_daily_cache.Get(sec, "hc","0.0"));
+			_tmp_ptr->ll = std::stod(reader_daily_cache.Get(sec, "ll","0.0"));
+			_tmp_ptr->lc = std::stod(reader_daily_cache.Get(sec, "lc","0.0"));
+			_tmp_ptr->up_limit = std::stod(reader_daily_cache.Get(sec, "up_limit_price","0.0"));
+			_tmp_ptr->down_limit = std::stod(reader_daily_cache.Get(sec, "down_limit_price","0.0"));
+		}else{
+			ptr_daily_cache _tmp_ptr = new daily_cache();
+			_tmp_ptr->hh = std::stod(reader_daily_cache.Get(sec, "hh","0.0"));
+			_tmp_ptr->hc = std::stod(reader_daily_cache.Get(sec, "hc","0.0"));
+			_tmp_ptr->ll = std::stod(reader_daily_cache.Get(sec, "ll","0.0"));
+			_tmp_ptr->lc = std::stod(reader_daily_cache.Get(sec, "lc","0.0"));
+			_tmp_ptr->up_limit = std::stod(reader_daily_cache.Get(sec, "up_limit_price","0.0"));
+			_tmp_ptr->down_limit = std::stod(reader_daily_cache.Get(sec, "down_limit_price","0.0"));
+			m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(sec, _tmp_ptr));
+		}
+	}//end of session loop
+	for (auto it = this->m_daily_cache.begin(); it != this->m_daily_cache.end(); ++it){
+		std::cout<<it->first<<","<<it->second->open_price<<",hh:"<<it->second->hh<<',hc'<<it->second->hc<<std::endl;
+	}
+
+	LOG(INFO)<<"************** End cache daily market*************";
+
+	
 	
 	if(this->mode == 0){//mode 0 need to connect CTPMD to subscribe depth market data
 		LOG(INFO)<<"[Init] Mode 0: init CTP MD......";
@@ -211,7 +290,15 @@ void QTStrategyBase::on_event()
 					data._data = p_risk_data;
 					this->p_risk_queue->push(data);
 					std::string _symbol = v_rev[0];
-					OrderData* p_orderdata = p_sig->get_signal(v_rev);
+					auto it_daily = m_daily_cache.find(v_rev[0]);
+					ptr_daily_cache p_daily = new daily_cache();
+					if (it_daily != m_daily_cache.end()){
+						p_daily = it_daily->second; //REMARK any issue?? and if it is the first tick, update open 
+					}else{
+						p_daily->InstrumentID = v_rev[4];
+						p_daily->open_price = std::stod(v_rev[4]); //is not exist in cache, update the open(first tick),ignore the prev date tick
+					}
+					OrderData* p_orderdata = p_sig->get_signal(v_rev, p_daily);
 					p_orderdata->order_insert_time = now_time;
 					if(p_orderdata->status == LONG_SIGNAL || p_orderdata->status==SHORT_SIGNAL){
 						LOG(INFO)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
@@ -246,7 +333,7 @@ void QTStrategyBase::on_risk()
 				int _risk_monitor = (ltm->tm_min*60 + ltm->tm_sec)%p_strategy_config->risk_duration;
 				// std::cout<<"on risk update time=>"<<_update_time<<std::endl;
 				if(_risk_monitor == 0){//will call risk monitor to check
-					// LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
+					LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
 					this->risk_monitor(p_risk_input, p_strategy_config);
 				}
 			}
@@ -275,16 +362,24 @@ void QTStrategyBase::on_tick()
 					this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
 					bool _process_future = (this->strategy_class == 0) && (find(v_main_contract_ids.begin(), v_main_contract_ids.end(), pDepthMarketData->InstrumentID)!=v_main_contract_ids.end());
 					bool _process_option = (this->strategy_class == 1) && (find(v_option_ids.begin(), v_option_ids.end(), pDepthMarketData->InstrumentID)!=v_option_ids.end());
-					
+					// long config_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
+
 					if(_process_future || _process_option){
 						//calculate factor and push for simtrade and live trade mode
 						char s[factor_len];
-						long _offset = p_factor->update_factor(pDepthMarketData, s);		
-						auto it = m_product_exchangeid.find(pDepthMarketData->InstrumentID);
-						if(it != m_product_exchangeid.end()){
-							_offset += sprintf(s + _offset, "%s,", (it->second).c_str());
+						// std::cout<<this->signal_delay<<std::endl;
+						// std::cout<<this->signal_delay<<std::endl;
+						int signal_flag = this->signal_delay % conf_signal_delay; 
+						// std::cout<<"signal_flag=>"<<signal_flag<< std::endl;
+						long _offset = p_factor->update_factor(pDepthMarketData, s, signal_flag);	
+						if (_offset > 0){
+							// LOG(INFO)<<"Push signal with signal delay=>"<<this->signal_delay<<"offset=>"<<_offset<<",delay flag=>"<<signal_flag<<std::endl;
+							auto it = m_product_exchangeid.find(pDepthMarketData->InstrumentID);
+							if(it != m_product_exchangeid.end()){
+								_offset += sprintf(s + _offset, "%s,", (it->second).c_str());
+							}
+							p_queue->push(shm::shared_string(s, *char_alloc_ptr));
 						}
-						p_queue->push(shm::shared_string(s, *char_alloc_ptr));
 					}
 					
 					// KLineDataType *p_kline_data = new KLineDataType();
@@ -295,6 +390,7 @@ void QTStrategyBase::on_tick()
 					// 	int ret_write_buffer = v_kline_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(p_kline_data), sizeof(KLineDataType));
 					// }
 					// delete p_kline_data;
+					this->signal_delay += 1;
 					delete pDepthMarketData;
 				}
 				if (data.error)
@@ -607,8 +703,18 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 		_total_pos_vol += (*it)->TodayPosition;
 	}
 	
+	auto _tmp_daily_cache = this->m_daily_cache.find(p_orderdata->symbol);
+	double _up_limit_price = this->up_limit_price; //FIXME no need up limit price var
+	double _down_limit_price = this->down_limit_price; //FIXME no need down limit price var
+	if (_tmp_daily_cache != this->m_daily_cache.end()){
+		_up_limit_price = _tmp_daily_cache->second->up_limit;
+		_down_limit_price = _tmp_daily_cache->second->down_limit;
+	}
+	
+
 	if(p_orderdata->status == LONG_SIGNAL){ // long signal
 		LOG(INFO)<<"[verify_order_condition] check long signal";
+
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			ptr_Position p_curr_pos = *it;
 			if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Short){//long signal and short position, close the position for all vol by stop_profit
@@ -621,7 +727,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 				return OrderVerify_valid;
 			}else if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Long){//long signal and long position, open long untill vol_limit
 				p_orderdata->order_type = OrderType_Limit;
-				p_orderdata->price = this->up_limit_price; //it is used as market data, with the high limit price
+				p_orderdata->price = _up_limit_price; //it is used as market data, with the high limit price
 				//REMARK restrict vol limit for the whole account, not pos level
 				// p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
 				p_orderdata->volume = p_strategy_config->vol_limit - _total_pos_vol; //FIXME this only need to support for multi-strategy case
@@ -636,7 +742,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 		if(v_pos.size()==0){//long signal and no positions,open long until vol_limit
 			p_orderdata->order_type = OrderType_Limit;
 			p_orderdata->volume = p_strategy_config->vol_limit;
-			p_orderdata->price = this->up_limit_price; //it is used as market data, with the high limit price
+			p_orderdata->price = _up_limit_price; //it is used as market data, with the high limit price
 			LOG(INFO)<<"[verify_order_condition] long signal, open long position, order volume=>"<<p_strategy_config->vol_limit;
 			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 			p_orderdata->side = OrderSide_Buy;
@@ -658,7 +764,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 				return OrderVerify_valid;
 			}else if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Short){//short signal and short position, open long untill vol_limit
 				p_orderdata->order_type = OrderType_Limit;
-				p_orderdata->price = down_limit_price;
+				p_orderdata->price = _down_limit_price;
 				//REMARK restrict vol limit for the whole account, not pos level
 				// p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
 				p_orderdata->volume = p_strategy_config->vol_limit - _total_pos_vol;//FIXME this only need to support for multi-strategy case
@@ -671,7 +777,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 		}
 		if(v_pos.size()==0){ //short signal and no positions, open short until vol_limit
 			p_orderdata->order_type = OrderType_Limit;
-			p_orderdata->price = down_limit_price;
+			p_orderdata->price = _down_limit_price;
 			p_orderdata->volume = p_strategy_config->vol_limit;
 			LOG(INFO)<<"[verify_order_condition] short signal, open short position, order volume=>"<<p_strategy_config->vol_limit;
 			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;

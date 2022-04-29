@@ -99,6 +99,24 @@ int main()
     std::time_t now_time = std::time(nullptr);
     tm *ltm = localtime(&now_time);
     std::cout<<ltm->tm_hour<<":"<<ltm->tm_min<<std::endl;
+
+    // std::ofstream myfile;
+    // myfile.open ("example.txt",std::ios::out | std::ios::app | std::ios:std:::binary);
+    std::ofstream myfile ("cache/example.txt", std::ios::out | std::ios::app | std::ios::binary);
+    if (myfile.is_open()){
+        std::cout<<"file open"<<std::endl;
+        myfile << "Writing this to a file.\n";
+        myfile.close();
+    }
+
+    std::ifstream infile("cache/example.txt");
+    std::string line;
+    if(infile.is_open()){
+        while(std::getline(infile, line)){
+            std::cout<<line<<std::endl;
+        }
+        infile.close();
+    }
     return 0;
 }
 

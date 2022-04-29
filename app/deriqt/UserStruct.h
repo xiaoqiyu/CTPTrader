@@ -193,7 +193,7 @@ struct OrderData
 
 typedef DataQueue* data_queue_ptr;
 typedef TaskQueue* task_queue_ptr;
-typedef char FileName[50];
+typedef char FileName[100];
 
 
 
@@ -286,7 +286,18 @@ enum TickDirection{
 };
 
 
+struct daily_cache{
+    std::string InstrumentID;
+    double open_price;
+    double hh;
+    double hc;
+    double lc;
+    double ll;
+    double up_limit;
+    double down_limit;
+};
 
+typedef daily_cache* ptr_daily_cache;
 
 
 
