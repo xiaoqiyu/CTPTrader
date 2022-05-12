@@ -10,7 +10,10 @@ void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::string _conf_file_name)
 {
 	//初始
-	LOG(INFO)<<"Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name;
+	LOG(INFO)<<"Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name<<"strategy name:";
+
+
+
 	FileName _conf_file = {'\0'};
 	strcpy(_conf_file, _conf_file_name.c_str());
 	INIReader reader(_conf_file);
@@ -243,12 +246,11 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_strategy_config->vol_limit = std::stoi(reader_str.Get("strategy", "vol_limit","1"));
 		p_strategy_config->init_cash = std::stod(reader_str.Get("strategy", "init_cash","1000000"));
 		p_strategy_config->risk_ratio = std::stod(reader_str.Get("strategy", "risk_ratio","1000000"));
-		p_strategy_config->order_duration = std::stoi(reader_str.Get("strategy", "order_duration","20"));
 		p_strategy_config->signal_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
 		p_strategy_config->risk_duration = std::stoi(reader_str.Get("strategy", "risk_duration","60"));
 		p_strategy_config->cancel_order_delay = std::stoi(reader_str.Get("strategy", "cancel_order_delay","120"));
 		LOG(INFO)<<"stop_profit=>"<<p_strategy_config->stop_profit<<"stop loss=>"<<p_strategy_config->stop_loss<<"vol limit=>"<<p_strategy_config->vol_limit
-		<<"init cash=>"<<p_strategy_config->init_cash<<"risk ratio=>"<<p_strategy_config->risk_ratio<<"order duration=>"<<p_strategy_config->order_duration
+		<<"init cash=>"<<p_strategy_config->init_cash<<"risk ratio=>"<<p_strategy_config->risk_ratio
 		<<"signal delay=>"<<p_strategy_config->signal_delay<<"risk duration=>"<<p_strategy_config->risk_duration<<"cancel order delay=>"<<p_strategy_config->cancel_order_delay;
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
@@ -333,7 +335,7 @@ void QTStrategyBase::on_risk()
 				int _risk_monitor = (ltm->tm_min*60 + ltm->tm_sec)%p_strategy_config->risk_duration;
 				// std::cout<<"on risk update time=>"<<_update_time<<std::endl;
 				if(_risk_monitor == 0){//will call risk monitor to check
-					LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
+					// LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
 					this->risk_monitor(p_risk_input, p_strategy_config);
 				}
 			}

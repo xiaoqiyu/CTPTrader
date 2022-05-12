@@ -1502,6 +1502,7 @@ void CTPTraderHandler::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequest
 
 void CTPTraderHandler::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
+    std::cout<<"on rtn order:"<<std::endl;
     Task task = Task();
     task.task_name = ONRTNORDER;
     if (pOrder)
@@ -1515,7 +1516,7 @@ void CTPTraderHandler::OnRtnOrder(CThostFtdcOrderField *pOrder)
 
 void CTPTraderHandler::OnRtnTrade(CThostFtdcTradeField *pTrade)
 {
-    // std::cout<<"on rtn trade"<<std::endl;
+    std::cout<<"on rtn trade"<<std::endl;
     Task task = Task();
     task.task_name = ONRTNTRADE;
     if (pTrade)

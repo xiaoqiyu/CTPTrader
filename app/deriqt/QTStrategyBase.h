@@ -199,7 +199,7 @@ private:
 	bool active_ = false;
 	std::string broker_id;
 	std::string user_id;
-	std::string name;
+	std::string name; //strategy name
 	int mode;
 	std::string task_tag;
 	std::unordered_map<std::string, std::string> m_main_futures;
