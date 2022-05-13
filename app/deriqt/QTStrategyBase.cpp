@@ -24,7 +24,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	}
 	
 	FileName _strategy_file = {'\0'};
-	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode for the conf path
+	// std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode for the conf path
+	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/"+this->name+".ini"; //FIXME remove hardcode for the conf path
 	strcpy(_strategy_file, _str_file_name.c_str());
 	INIReader reader_str(_strategy_file);
 	if (reader_str.ParseError() != 0)
@@ -236,7 +237,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
 		this->p_risk_queue = new DataQueue();
-		this->p_sig = new OrderSignal();
+		this->p_sig = new OrderSignal(this->name);
 
 		LOG(INFO)<<"[Init] Mode 1&2: create and init strategyconfig......";
 		this->p_strategy_config = new StrategyConfig(); //new and init the strategy config
@@ -264,10 +265,10 @@ void QTStrategyBase::on_event()
 	LOG(INFO)<<"[on_event] Start process signal: on event";
 	try
 	{
-		while(true)
+		while(active_) // TODO 线程安全？14:55是reset start_之后？？ 只有在策略start时候才会计算和产生下单信号，如果策略stop了，只会监听行情，不会计算信号和下单
 		{
 			shm::shared_string v(*char_alloc_ptr);
-    		if (p_queue->pop(v))
+    		if (p_queue->pop(v) && start_) //TODO double check the cond, when factor is not null the srategy is started; otherwise it wont cal signal and order
 			{
 				std::string msg = v.data();
 				std::vector<std::string> v_rev;
@@ -350,7 +351,7 @@ void QTStrategyBase::on_tick()
 {
 	try
 	{
-		while (true)
+		while (active_) //TODO 线程安全？只要进程是开启的就监听和处理行情
 		{
 			DataField data = this->p_md_handler->get_data_queue()->pop();
 			switch (data.data_type)
@@ -360,8 +361,9 @@ void QTStrategyBase::on_tick()
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					// std::cout<<"Rev tick=>"<<pDepthMarketData->LastPrice<<",vol=>"<<pDepthMarketData->Volume<<std::endl;
-					this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
+					
+					bool ret_write_buffer = this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
+					// std::cout<<"Rev tick=>"<<pDepthMarketData->LastPrice<<",vol=>"<<pDepthMarketData->Volume<<",write buffer ret:"<<ret_write_buffer<<std::endl;					
 					bool _process_future = (this->strategy_class == 0) && (find(v_main_contract_ids.begin(), v_main_contract_ids.end(), pDepthMarketData->InstrumentID)!=v_main_contract_ids.end());
 					bool _process_option = (this->strategy_class == 1) && (find(v_option_ids.begin(), v_option_ids.end(), pDepthMarketData->InstrumentID)!=v_option_ids.end());
 					// long config_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
@@ -619,6 +621,7 @@ void QTStrategyBase::stop()
 		LOG(ERROR)<<"[stop] Invalid mode in stop:"<<this->mode;
 	}
     sleep(3);
+	start_ = false;
 }
 
 //释放资源,退出应用程序时调用
@@ -642,6 +645,7 @@ void QTStrategyBase::release()
 	}else{
 		LOG(INFO)<<"[release] Invalid mode in relase:"<<this->mode;
 	}
+	active_ = false;
 	
 }
 
@@ -1098,6 +1102,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
         LOG(INFO)<<"[risk_monitor] market closed, close all positions";
 		this->cancel_all_orders();
 		this->close_all_orders();
+		start_ = false; //TODO double check whether this is safe
 	//TODO remove this ,double check, only cancel for the delayed order
     // }else if(ltm->tm_sec < 5){ //FIXME hardcode this delay buffer, should changed to be adapted,整分钟时候未必会调用,所以尝试设置多两秒buffer
 		// int ret = this->cancel_all_orders();

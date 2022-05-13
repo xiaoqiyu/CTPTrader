@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     system("cp /mnt/c/projects/pycharm/option_future_research/research/daily_models/daily_cache.ini ~/projects/DERIQT_F/conf/");
     system("cp /mnt/c/projects/pycharm/option_future_research/conf/strategy.ini ~/projects/DERIQT_F/conf/");
 
-// #ifdef false
+#ifdef true
     pid_t c_pid = fork();
 
     if (c_pid == -1) {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
             }
         }
         std::string _shm_name = _strategy_name+"_"+ v_instrumentID[0];
-        QTStrategyBase *p_strategy = new QTStrategyBase(_strategy_name, std::stoi(mode),_shm_name.c_str(), 65536,std::stoi(strategy_class));
+        QTStrategyBase *p_strategy = new QTStrategyBase(_shm_name, std::stoi(mode),_shm_name.c_str(), 65536,std::stoi(strategy_class));
         p_strategy->init(v_instrumentID, _conf_file_name);
         sleep(5);
         LOG(INFO)<<"[main] start strategy for Market Handler.......";
@@ -112,9 +112,9 @@ int main(int argc, char *argv[])
     }
     return EXIT_SUCCESS;
 
-// #endif
+#endif
 
-#ifdef false
+// #ifdef false
 
         std::string _conf_file_name;
         std::string _instrument_id;
@@ -151,6 +151,6 @@ int main(int argc, char *argv[])
         p_strategy->stop();
         p_strategy->release();
     
-#endif
+// #endif
     return 0;
 }

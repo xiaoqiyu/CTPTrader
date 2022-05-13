@@ -195,13 +195,13 @@ private:
 	vector<TickToKlineHelper *> v_t2k_helper;
 	data_queue_ptr p_order_queue = nullptr;
 	data_queue_ptr p_risk_queue = nullptr;
-	bool start_ = false;
-	bool active_ = false;
+	bool start_ = false; //when start is called, strategy starts, this will be set to true, when stop is called, this will be reset
+	bool active_ = false; //when init is callced(market and trade handler is called), the strategy is activem, when release is called, it will be reset
 	std::string broker_id;
 	std::string user_id;
 	std::string name; //strategy name
-	int mode;
-	std::string task_tag;
+	int mode; //0 for market subscribe only; 1 for gm simulation; 2 for ctp simulatation(conf is test.ini) and live trade(conf is ctp.ini)
+	std::string task_tag; //will be the first product id, e.g. when passed in rb,hc to the strategy, market will suscribe both rb and hc,but trade rb, and task_tag is set as rb
 	std::unordered_map<std::string, std::string> m_main_futures;
 	std::unordered_map<std::string, std::string> m_product_exchangeid;
 	int option_size = 10;

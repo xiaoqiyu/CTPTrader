@@ -17,6 +17,13 @@
 #include <numeric>
 #include <assert.h>
 
+bool startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    std::cout<<"lenpre:"<<lenpre<<",lenstr:"<<lenstr<<std::endl;
+    return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
+}
 
 int main()
 {
@@ -100,23 +107,29 @@ int main()
     tm *ltm = localtime(&now_time);
     std::cout<<ltm->tm_hour<<":"<<ltm->tm_min<<std::endl;
 
+    typedef char TThostFtdcInstrumentIDType[81];
+    std::string task_tag = "rb";
+    TThostFtdcInstrumentIDType ins_id = "rb2210";
+    bool ret = startsWith(task_tag.c_str(), ins_id);
+    std::cout<<"ret=>"<<ret<<std::endl;
+
     // std::ofstream myfile;
     // myfile.open ("example.txt",std::ios::out | std::ios::app | std::ios:std:::binary);
-    std::ofstream myfile ("cache/example.txt", std::ios::out | std::ios::app | std::ios::binary);
-    if (myfile.is_open()){
-        std::cout<<"file open"<<std::endl;
-        myfile << "Writing this to a file.\n";
-        myfile.close();
-    }
+    // std::ofstream myfile ("cache/example.txt", std::ios::out | std::ios::app | std::ios::binary);
+    // if (myfile.is_open()){
+        // std::cout<<"file open"<<std::endl;
+        // myfile << "Writing this to a file.\n";
+        // myfile.close();
+    // }
 
-    std::ifstream infile("cache/example.txt");
-    std::string line;
-    if(infile.is_open()){
-        while(std::getline(infile, line)){
-            std::cout<<line<<std::endl;
-        }
-        infile.close();
-    }
+    // std::ifstream infile("cache/example.txt");
+    // std::string line;
+    // if(infile.is_open()){
+        // while(std::getline(infile, line)){
+            // std::cout<<line<<std::endl;
+        // }
+        // infile.close();
+    // }
     return 0;
 }
 

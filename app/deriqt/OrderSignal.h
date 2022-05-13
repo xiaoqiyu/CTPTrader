@@ -7,12 +7,15 @@
 #include "UserStruct.h"
 #include "INIReader.h"
 
+
 class OrderSignal
 {
 public:
-	OrderSignal(){
+	OrderSignal(const std::string& name):strategy_name(name){
 		FileName _strategy_file = {'\0'};
-		std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode
+		// std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode
+
+		std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/"+name+".ini"; //FIXME remove hardcode
 		strcpy(_strategy_file, _str_file_name.c_str());
 		config_ptr.reset(new INIReader(_strategy_file));
 		if (config_ptr->ParseError() != 0)
@@ -45,9 +48,10 @@ private:
 	double open_price = 0.0;
 	std::string sec_id;
 	std::unique_ptr<INIReader> config_ptr;
-	std::vector<std::string> v_strategy_name;
+	std::vector<std::string> v_strategy_name;//substrategy/signal name list
 	float long_score_benchmark; //final score ratio of sum of sub strategy score 
 	float short_score_benchmark; //final score ratio of sum of sub strategy score 
 	int strategy_num;
+	std::string strategy_name;
 };
 

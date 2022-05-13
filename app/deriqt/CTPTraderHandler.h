@@ -19,6 +19,9 @@
 
 extern int nRequestID;
 
+
+
+
 class CTPTraderHandler : public CThostFtdcTraderSpi
 {
 private:
@@ -55,10 +58,6 @@ private:
     bool order_available_ =true; //用于委托查询控制
     bool order_complete_ = true; //用于控制订单流，同时只有一个order
     gmtrade::DataArray<Position> *p_pos;
-
-    // std::vector<ptr_position> all_positions;
-    // std::vector<ptr_order> all_orders;
-
     std::vector<ptr_OrderField> v_all_orders;
 
     std::string account_id;
@@ -736,7 +735,6 @@ public:
     };
 
 
-
     void init_price_limits(double up_limit_price, double down_limit_price){
         //FIXME query the price limit from depth market fields
         this->up_limit_price = up_limit_price;
@@ -762,5 +760,14 @@ public:
                                                //format:"FrontID_SessionID_OrderRef" TODO remove leading empty string
     std::string get_order_id2(ptr_OrderIDRef p_orderidref); //return the id after callback from the exchange;
                                                //format: "ExchangeID_OrderSysID TODO remove leading emptry string
+
+
+    //pre is the poduct_id, str is the instrument id
+    bool is_trade_product(const char *product_id, const char *symbol)
+    {
+        size_t lenpre = strlen(product_id),
+               lenstr = strlen(symbol);
+        return lenstr < lenpre ? false : memcmp(product_id, symbol, lenpre) == 0;
+    }
 
 };

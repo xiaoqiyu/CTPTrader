@@ -3080,42 +3080,6 @@ void CTPTraderHandler::processRspQryInstrument(Task* task)
 		recordio::RecordWriter writer(&ofs);
 		writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInstrumentField));
 		writer.Close();
-		//  ofs
-        //     //  << instrument_fields.reserve1 << ","
-        //      <<task_data->ExchangeID << ","
-        //     //  << instrument_fields.InstrumentName << ","
-        //     //  << instrument_fields.reserve2 << ","
-        //     //  << instrument_fields.reserve3 << ","
-        //      << task_data->ProductClass << ","
-        //      << task_data->DeliveryYear << ","
-        //      << task_data->DeliveryMonth << ","
-        //      << task_data->MaxMarketOrderVolume << ","
-        //      << task_data->MinMarketOrderVolume << ","
-        //      << task_data->MaxLimitOrderVolume << ","
-        //      << task_data->MinLimitOrderVolume << ","
-        //      << task_data->VolumeMultiple << ","
-        //      << task_data->PriceTick << ","
-        //      << task_data->CreateDate << ","
-        //      << task_data->OpenDate << ","
-        //      << task_data->ExpireDate << ","
-        //      << task_data->StartDelivDate << ","
-        //      << task_data->EndDelivDate << ","
-        //      << task_data->InstLifePhase << ","
-        //      << task_data->IsTrading << ","
-        //      << task_data->PositionType << ","
-        //      << task_data->PositionDateType << ","
-        //      << task_data->LongMarginRatio << ","
-        //      << task_data->ShortMarginRatio << ","
-        //      << task_data->MaxMarginSideAlgorithm << ","
-        //     //  << task_data->reserve4 << ","
-        //      << task_data->StrikePrice << ","
-        //      << task_data->OptionsType << ","
-        //      << task_data->UnderlyingMultiple << ","
-        //      << task_data->CombinationType << ","
-        //      << task_data->InstrumentID << ","
-        //      << task_data->ExchangeInstID << ","
-        //      << task_data->ProductID << ","
-        //      << task_data->UnderlyingInstrID <<std::endl;
 
 		v_instruments.push_back(task_data);
 	}
@@ -3783,8 +3747,15 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         auto it1 = m_all_orders.find(_order_id1);
         auto it2 = m_all_orders.find(_order_id2);
 
+        //rREMARK temp solution to whether maintain the order(for multi-strategy case); task tag is the product id of product the 
+        //current strategy trades. Thus if the instrumentID startswith the product ID(should double check the logic is correct??);
+        // then the order list will maintain the order in the first callback; for strategies that trade  same product should be
+        // included in the order table and position table since the position limit is grouped by product
+        bool trade_product = is_trade_product(this->task_tag.c_str(), task_data->InstrumentID);
+
         //3rd callback when trade status has updated, come with execution callback
         if (it2 != m_all_orders.end()){//order return from exchange exists,update the order fields, update  order field
+            LOG(INFO)<<"3th order callback, id2 exist";
             ptr_OrderField p_orderfield = it2->second;
             p_orderfield->VolumeTotalOriginal = task_data->VolumeTotalOriginal;
             p_orderfield->LimitPrice = task_data->LimitPrice;
@@ -3816,6 +3787,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             // }
         //the 2nd order callback, when the order is accepted by the exchange
         }else if(it1 != m_all_orders.end()){//order return from ctp exists,but from exchange not exist, update order id and order fields
+            LOG(INFO)<<"2nd order callback, id1 exist, order accepted by exchange";
             ptr_OrderField p_orderfield = it1->second;
             p_orderfield->p_orderid_ref->FrontID = this->front_id;
             p_orderfield->p_orderid_ref->SessionID = this->sessision_id;
@@ -3830,16 +3802,13 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->Direction = task_data->Direction;
             strcpy(p_orderfield->CombHedgeFlag, task_data->CombHedgeFlag);
             strcpy(p_orderfield->CombOffsetFlag, task_data->CombOffsetFlag);
-            // strcpy(p_orderfield->InsertTime, task_data->InsertTime);
             p_orderfield->OrderType = task_data->OrderType;
-            // strcpy(p_orderfield->OrderType, task_data->OrderType);
             p_orderfield->VolumeTraded = task_data->VolumeTraded;
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
             p_orderfield->InsertTime = now_time;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id2, p_orderfield));
             m_all_orders.erase(_order_id1);
-            // strcpy(p_orderfield->order_id, _order_id2.c_str());
             p_orderfield->order_id = _order_id2;
             // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
             if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){
@@ -3849,7 +3818,8 @@ void CTPTraderHandler::processRtnOrder(Task* task)
                 cond_.notify_all();
             }
         //the first order callback, when the order is accepted by CTP, but not yet submit to the exchagne
-        }else{//orer not exist, insert new order
+        }else if (trade_product){//orer not exist and the instrument is traded in the strategy(otherwise ignore, no need to maintain order an pos), insert new order
+            LOG(INFO)<<"1st order callback, and strategy tade the product";
             ptr_OrderField p_orderfield = new OrderField();
             p_orderfield->p_orderid_ref = new OrderIDRef();
             p_orderfield->p_orderid_ref->FrontID = this->front_id;
@@ -3864,13 +3834,10 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->Direction = task_data->Direction;
             strcpy(p_orderfield->CombHedgeFlag, task_data->CombHedgeFlag);
             strcpy(p_orderfield->CombOffsetFlag, task_data->CombOffsetFlag);
-            // strcpy(p_orderfield->InsertTime, task_data->InsertTime);
-            // strcpy(p_orderfield->OrderType, task_data->OrderType);
             p_orderfield->OrderType = task_data->OrderType;
             p_orderfield->VolumeTraded = task_data->VolumeTraded;
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
-            // strcpy(p_orderfield->order_id, _order_id1.c_str());
             p_orderfield->order_id = _order_id2;
             p_orderfield->InsertTime = now_time;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id1, p_orderfield));
