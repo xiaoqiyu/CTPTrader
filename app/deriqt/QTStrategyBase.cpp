@@ -265,50 +265,66 @@ void QTStrategyBase::on_event()
 	LOG(INFO)<<"[on_event] Start process signal: on event";
 	try
 	{
-		while(active_) // TODO 线程安全？14:55是reset start_之后？？ 只有在策略start时候才会计算和产生下单信号，如果策略stop了，只会监听行情，不会计算信号和下单
+		bool _terminate = false;
+		while(!_terminate) 
 		{
 			shm::shared_string v(*char_alloc_ptr);
-    		if (p_queue->pop(v) && start_) //TODO double check the cond, when factor is not null the srategy is started; otherwise it wont cal signal and order
+			std::time_t now_time = std::time(nullptr);
+    		if (p_queue->pop(v)) 
 			{
 				std::string msg = v.data();
-				std::vector<std::string> v_rev;
-				char c = ',';
-				std::stringstream sstr(msg);
-				std::string token;
-				while(getline(sstr, token, c)){
-					v_rev.push_back(token);
-				}
-
-				if (this->mode == 1 || this->mode == 2){//simtrade/live trade
-					std::time_t now_time = std::time(nullptr);
-					std::time_t duration =  now_time - last_order_time;
-					//push into risk queue
-					RiskInputData * p_risk_data = new RiskInputData();
-					p_risk_data->last_price = std::stod(v_rev[4]);
-					p_risk_data->update_time = v_rev[1];
-					p_risk_data->symbol = v_rev[0];
-					p_risk_data->exchangeid = v_rev[12];
-					DataField data = DataField();
-					data.data_type = RISK_INPUT;
-					data._data = p_risk_data;
-					this->p_risk_queue->push(data);
-					std::string _symbol = v_rev[0];
-					auto it_daily = m_daily_cache.find(v_rev[0]);
-					ptr_daily_cache p_daily = new daily_cache();
-					if (it_daily != m_daily_cache.end()){
-						p_daily = it_daily->second; //REMARK any issue?? and if it is the first tick, update open 
-					}else{
-						p_daily->InstrumentID = v_rev[4];
-						p_daily->open_price = std::stod(v_rev[4]); //is not exist in cache, update the open(first tick),ignore the prev date tick
-					}
-					OrderData* p_orderdata = p_sig->get_signal(v_rev, p_daily);
+				if (msg== "null\n"){ 
+					_terminate = true;
+					OrderData* p_orderdata = new OrderData();
+					p_orderdata->status = TERMINATE_SIGNAL;
 					p_orderdata->order_insert_time = now_time;
-					if(p_orderdata->status == LONG_SIGNAL || p_orderdata->status==SHORT_SIGNAL){
-						LOG(INFO)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
-						place_order(p_orderdata);
-					}//end of handle signal
+					place_order(p_orderdata);
+				}else{
+					std::vector<std::string> v_rev;
+					char c = ',';
+					std::stringstream sstr(msg);
+					std::string token;
+					while(getline(sstr, token, c)){
+						v_rev.push_back(token);
+					}
+
+					if (this->mode == 1 || this->mode == 2){//simtrade/live trade
+						
+						std::time_t duration =  now_time - last_order_time;
+						//push into risk queue
+						RiskInputData * p_risk_data = new RiskInputData();
+						p_risk_data->last_price = std::stod(v_rev[4]);
+						p_risk_data->update_time = v_rev[1];
+						p_risk_data->symbol = v_rev[0];
+						p_risk_data->exchangeid = v_rev[12];
+						DataField data = DataField();
+						data.data_type = RISK_INPUT;
+						data._data = p_risk_data;
+						this->p_risk_queue->push(data);
+						std::string _symbol = v_rev[0];
+						auto it_daily = m_daily_cache.find(v_rev[0]);
+						ptr_daily_cache p_daily = new daily_cache();
+						if (it_daily != m_daily_cache.end()){
+							p_daily = it_daily->second; //REMARK any issue?? and if it is the first tick, update open 
+						}else{
+							p_daily->InstrumentID = v_rev[4];
+							p_daily->open_price = std::stod(v_rev[4]); //is not exist in cache, update the open(first tick),ignore the prev date tick
+						}
+						OrderData* p_orderdata = p_sig->get_signal(v_rev, p_daily);
+						p_orderdata->order_insert_time = now_time;
+						if(p_orderdata->status == LONG_SIGNAL || p_orderdata->status==SHORT_SIGNAL){
+							LOG(INFO)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
+							place_order(p_orderdata);
+						}//end of handle signal
+					}
 				}//end of input risk and handle signal
 			}//end of handle pop
+			//if get the terminate signal, stop the whle and join the thread
+			if(_terminate)
+			{
+				LOG(INFO)<<"break on_event";
+				break;
+			}
 		}//end of while
 	}
 	catch(const std::exception& e)
@@ -351,9 +367,11 @@ void QTStrategyBase::on_tick()
 {
 	try
 	{
-		while (active_) //TODO 线程安全？只要进程是开启的就监听和处理行情
+		bool _terminate = false;
+		while (!_terminate) 
 		{
 			DataField data = this->p_md_handler->get_data_queue()->pop();
+			char s[factor_len];
 			switch (data.data_type)
 			{
 			case FDEPTHMKT: //期货期权深度行情数据
@@ -361,20 +379,20 @@ void QTStrategyBase::on_tick()
 				if (data._data)
 				{
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
-					
 					bool ret_write_buffer = this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
-					// std::cout<<"Rev tick=>"<<pDepthMarketData->LastPrice<<",vol=>"<<pDepthMarketData->Volume<<",write buffer ret:"<<ret_write_buffer<<std::endl;					
+					//FIXME remove hardcode of the timestampe, eod for trade, but still cache depth market
+					if (std::strcmp(pDepthMarketData->UpdateTime, "14:55:00") == 0 && std::strcmp(pDepthMarketData->UpdateTime, "21:00:00") <0){
+						std::strcpy(s, "null\n");//TODO remove hardcode msg
+						p_queue->push(shm::shared_string(s, *char_alloc_ptr));
+						_terminate = true;
+						LOG(INFO)<<"Break strategy when eod, but still subscribe depth market";
+						break;
+					}
+					
 					bool _process_future = (this->strategy_class == 0) && (find(v_main_contract_ids.begin(), v_main_contract_ids.end(), pDepthMarketData->InstrumentID)!=v_main_contract_ids.end());
 					bool _process_option = (this->strategy_class == 1) && (find(v_option_ids.begin(), v_option_ids.end(), pDepthMarketData->InstrumentID)!=v_option_ids.end());
-					// long config_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
-
 					if(_process_future || _process_option){
-						//calculate factor and push for simtrade and live trade mode
-						char s[factor_len];
-						// std::cout<<this->signal_delay<<std::endl;
-						// std::cout<<this->signal_delay<<std::endl;
 						int signal_flag = this->signal_delay % conf_signal_delay; 
-						// std::cout<<"signal_flag=>"<<signal_flag<< std::endl;
 						long _offset = p_factor->update_factor(pDepthMarketData, s, signal_flag);	
 						if (_offset > 0){
 							// LOG(INFO)<<"Push signal with signal delay=>"<<this->signal_delay<<"offset=>"<<_offset<<",delay flag=>"<<signal_flag<<std::endl;
@@ -385,15 +403,7 @@ void QTStrategyBase::on_tick()
 							p_queue->push(shm::shared_string(s, *char_alloc_ptr));
 						}
 					}
-					
-					// KLineDataType *p_kline_data = new KLineDataType();
-					// bool ret = this->v_t2k_helper[_idx]->KLineFromRealtimeData(pDepthMarketData, p_kline_data);
-					// int w_kline;
-					// if(ret)
-					// {
-					// 	int ret_write_buffer = v_kline_writer[_idx].WriteBuffer(reinterpret_cast<const char*>(p_kline_data), sizeof(KLineDataType));
-					// }
-					// delete p_kline_data;
+					//TODO calculate K line
 					this->signal_delay += 1;
 					delete pDepthMarketData;
 				}
@@ -404,10 +414,27 @@ void QTStrategyBase::on_tick()
 				}
 				break;
 			}
+			case INVALID_MSG: //end of market
+			{
+				std::strcpy(s, "null\n");//TODO remove hardcode msg
+				p_queue->push(shm::shared_string(s, *char_alloc_ptr));
+				_terminate = true;
+				LOG(INFO)<<"Break on_tick, end of subscribe market";
+				break;
+			}
+
 			default:
 				break;
 			}
+			//if got the invalied data type, break the while and join the thread
+			if (_terminate)
+			{
+				LOG(INFO)<<"break on_tick";
+				break; 
+			}
 		}
+
+
 	}
 	catch (const TerminatedError &)
 	{
@@ -422,8 +449,8 @@ void QTStrategyBase::start()
 	if(this->mode == 0){
 		LOG(INFO)<<"[start] mode 0: start subscribe mkt data";
 		this->p_md_handler->SubscribeMarketData();
+		//FIXME exit ctp TD in md
 		p_trader_handler->exit();
-		// p_trader_handler->release();
 		
 	}else if(this->mode == 1 || this->mode == 2){
 		LOG(INFO)<<"[start] mode 1&2: Simtrade, listening to factor";
@@ -545,7 +572,7 @@ void QTStrategyBase::insert_limit_order_fok(TThostFtdcPriceType limit_price, TTh
 // }
 
 void QTStrategyBase::place_order(OrderData* p_order_data){
-	LOG(INFO)<<"[place_order] symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal(long:142,short:143,stop:147):"<<p_order_data->status;
+	LOG(INFO)<<"[place_order] symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal(long:142,short:143,stop:147,terminate:148):"<<p_order_data->status;
 	DataField data = DataField();
 	
 	OrderData *_order_data = new OrderData();
@@ -629,17 +656,13 @@ void QTStrategyBase::release()
 {
 	if (this->mode == 0){
 		LOG(INFO)<<"[release] Mode 0: delete t2k helper";
-		//REMARK ADD this when kline is added
-		// for(auto iter=v_t2k_helper.begin(); iter!=v_t2k_helper.end(); ++iter)
-		// {
-			// delete *iter;
-		// }
 		LOG(INFO)<<"[release] Mode 0 in relase:stop CTP MD";
 		this->p_md_handler->exit();
 	}else if(this->mode == 1 || this->mode==2){
 		LOG(INFO)<<"[release] Mode 1&2: delete order queue in release";
 		delete p_order_queue;
-		//TODO delete other queue;
+		delete p_risk_queue;
+		delete p_queue;
 		this->p_trader_handler->exit();
 
 	}else{
@@ -693,17 +716,6 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
 
 	int _total_pos_vol = 0;
-	// bool except = false; //FIXME remove this hack for system error, ugply but work for now
-	// for(auto it=v_pos.begin(); it!=v_pos.end();++it){
-		// Position* p_curr_pos = *it;
-		// ptr_Position p_curr_pos = *it;
-		// if(p_curr_pos->side == OrderSide_Unknown) except = true;
-		// _total_pos_vol += p_curr_pos->volume;
-	// }
-	// if(except && _total_pos_vol >= p_strategy_config->vol_limit){
-		// LOG(INFO)<<"[verify_order_condition] Except for position side and Exceed vol limit, return unvalid order";
-		// return OrderVerify_unvalid;
-	// }
 	for(auto it=v_pos.begin(); it != v_pos.end(); ++it){
 		std::cout<<(*it)->InstrumentID<<","<<(*it)->TodayPosition<<","<<(*it)->OpenVolume<<","<<(*it)->CloseVolume<<","<<(*it)->PosiDirection<<std::endl;
 		_total_pos_vol += (*it)->TodayPosition;
@@ -913,8 +925,8 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 void QTStrategyBase::process_order()
 {
 	LOG(INFO)<<"[process_order] calling process_order:is active:"<<active_;
-	// while(this->active_)
-	while(true) //FIXME hack for debug
+	bool _terminate = false;
+	while(!_terminate) 
 	{
 		DataField data = this->p_order_queue->pop();
 		if (data._data)
@@ -925,6 +937,10 @@ void QTStrategyBase::process_order()
 			case ORDERFIELDCTP://ctp trade
 			{
 				OrderData *p_orderdata = reinterpret_cast<OrderData *>(data._data);
+				if(p_orderdata->status == TERMINATE_SIGNAL){
+					_terminate = true;
+					break;
+				}
 				LOG(INFO)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
 				if(verify_order_condition_ctp(p_orderdata)==OrderVerify_valid){
 					this->p_trader_handler->insert_order(p_orderdata);
@@ -934,6 +950,10 @@ void QTStrategyBase::process_order()
 			case ORDERFIELDSIM://gm simulation
 			{
 				OrderData *p_orderdata = reinterpret_cast<OrderData *>(data._data);
+				if(p_orderdata->status == TERMINATE_SIGNAL){
+					_terminate = true;
+					break;
+				}
 				LOG(INFO)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
 				if(verify_order_condition(p_orderdata)==OrderVerify_valid){
 					this->simtrade_ptr->insert_order(p_orderdata);
@@ -944,6 +964,11 @@ void QTStrategyBase::process_order()
 				break;
 			}//end of switch
 		}//end of if 
+		if(_terminate) 
+		{
+			LOG(INFO)<<"break process order";
+			break;
+		}
 	}//end of while
 }//end of process_order
 

@@ -234,10 +234,11 @@ void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMa
 {
 	// std::cout<<"rev:"<<pDepthMarketData->LastPrice<<", id:"<<pDepthMarketData->InstrumentID<<std::endl;
 	DataField data = DataField();
-	data.data_type = FDEPTHMKT;
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
+	data.data_type = FDEPTHMKT;
 	*mkt_data = *pDepthMarketData;
 	data._data = mkt_data;
+	//TODO check the tick that repeated or not in trading time after check the data
 	this->p_mktdata_cache_queue->push(data);
 }
 

@@ -56,23 +56,6 @@ namespace shm
 }
 
 
-
-//TODO check multiple definition errors
-// std::vector<std::string> split_str(std::string s, char c)
-// {
-    // std::string strInstruments = reader.Get("md", "InstrumentID", "rb2110,m2109");
-    // std::vector<std::string> v;
-	// std::stringstream sstr(s);
-	// std::string token;
-	// int cnt = 0;
-    // while (getline(sstr, token, c))
-    // {
-    //    v.push_back(token);
-    // }
-    // return v;
-// }
-// 
-
 class QTStrategyBase
 {
 public: //strategy function
@@ -80,7 +63,6 @@ public: //strategy function
 	void on_event();
 	void on_risk();
 
-	
 
 public: //stategy management
 	QTStrategyBase(const std::string &name,  int mode, const char* shared_memory_name, uint32_t size, int strategy_class):name(name), mode(mode),strategy_class(strategy_class){
@@ -91,6 +73,7 @@ public: //stategy management
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
 	};
 	~QTStrategyBase(){};
+	
 	int init(std::vector<std::string> &_v_ins, const std::string _conf_file_name);
 	//start subscrible market data, and strategy
 	void start();

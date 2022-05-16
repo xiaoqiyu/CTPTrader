@@ -47,7 +47,7 @@ class TaskQueue
 {
 private:
     queue<Task> queue_;       //标准库队列
-    // boost::sync_queue<Task> queue_;
+    // boost::sync_queue<Task> queue_; // boost sync queue
     mutex mutex_;             //互斥锁
     condition_variable cond_; //条件变量
     bool _terminate = false;

@@ -165,7 +165,11 @@
 #define CANCEL_ORDER_SIGNAL 145 
 #define CLOSE_ALL_SIGNAL 146
 #define STOP_SIGNAL 147
+#define TERMINATE_SIGNAL 148
 
 
 //risk 
-#define RISK_INPUT 148
+#define RISK_INPUT 149
+
+//data type
+#define INVALID_MSG 150

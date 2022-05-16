@@ -9,6 +9,33 @@
    - mode 2: live trade through CTP
 6. Strategy Evaluations;
 
+# Run a strategy
+1. config file
+    - test.ini: account login information
+    - daily_cache.ini: contract statics updated daily
+    - '{}_{}.ini'.format(strategy_name, product_id), e.g. 'future_trend_rb.ini', params for running the strategy, each sub strategy in in one subsection
+2.  Strategy run demo: "GLOG_logtostderr=1 ./bazel-bin/app/deriqt/CTPTrader 2 rb  /xx/xx/../test.ini"
+    2.1 entrance point: check demo main.cpp 
+    2.2 Market process:
+        - Start a QTStrategyBase objStrategy;
+        - objStrategy.init(): init of the ctp trade and market handler, and other resource allocation
+        - objStrategy.start(): start subscribe the depth market, cache, calculate factor, and push to share mem Q
+        - objStrategy.stop(): join thread
+        - objStrategy.release(): release resource 
+
+
+    2.3 Trade process: 
+        - Start a QTStrategyBase objStrategy
+        - objStrategy.init(): init of the ctp trade handler, and other resource allocation
+        - objStrategy.start(): start listen to factor in share mem Q, calculate signal, and place order 
+            - ctp main thread
+            - task_thread: process ctp callback
+            - signal_thread: get factor and calculate signal, push order to order queue
+            - risk_monitor_thread: check account risk factor 
+        - objStrategy.stop(): join thread
+        - objStrategy.release(): release resource 
+
+
 
 # 项目包括
 1. 连接CTP的行情前置和交易前置；
