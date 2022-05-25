@@ -2873,8 +2873,9 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
         recordio::RecordWriter writer(&ofs);
         writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInvestorPositionField));
         writer.Close();
+        std::cout<<"????pos,direction=>"<<task_data->PosiDirection<<"open vol=>"<<task_data->OpenVolume<<"close vol=>"<<task_data->CloseVolume<<"today position=>"<<task_data->TodayPosition<<"addr=>"<<task_data<<std::endl;
 		v_investor_position_fields.push_back(task_data);
-		delete task_data;
+		// delete task->task_data; //FIXME new a obj or not delete this
 	}
 	if (task->task_error)
 	{
@@ -3697,9 +3698,11 @@ void CTPTraderHandler::processRtnOrder(Task* task)
     //TODO handle other OrderStatus??
 	if (task->task_data)
 	{
+
         order_available_ = false;
         std::time_t now_time = std::time(nullptr);
 		CThostFtdcOrderField* task_data = reinterpret_cast<CThostFtdcOrderField*>(task->task_data);
+        LOG(INFO)<<"Get task data in process rtn order"<<task_data->InstrumentID;
         //if the order inserted before the trade handler login, ignore; 
         //FIXME hardcode去规避一种case就是夜盘的成交回报第二天日盘收到回报
         int ret_time_cmp = strcmp(task_data->InsertTime, _login_time); 
@@ -3755,7 +3758,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
 
         //3rd callback when trade status has updated, come with execution callback
         if (it2 != m_all_orders.end()){//order return from exchange exists,update the order fields, update  order field
-            LOG(INFO)<<"3th order callback, id2 exist";
+            LOG(INFO)<<"3th order callback, id2 exist,id2=>"<<it2->first<<"m_all_orders_size=>"<<m_all_orders.size();
             ptr_OrderField p_orderfield = it2->second;
             p_orderfield->VolumeTotalOriginal = task_data->VolumeTotalOriginal;
             p_orderfield->LimitPrice = task_data->LimitPrice;
@@ -3845,6 +3848,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         }
         if(task_data->OrderStatus == THOST_FTDC_OST_Canceled){//成功撤单之后，释放下单控制锁
             order_complete_ = true;
+            LOG(INFO)<<"Reset order_complete for cancel order callback, with order complete=>"<<order_complete_;
             cond_.notify_all();
         }
         order_available_ = true;
@@ -3855,8 +3859,10 @@ void CTPTraderHandler::processRtnOrder(Task* task)
 
 void CTPTraderHandler::processRtnTrade(Task* task)
 {
+    std::cout<<"in processRtnTrade"<<std::endl;
 	if (task->task_data)
 	{
+        std::cout<<"get processRtnTrade data"<<std::endl;
 		CThostFtdcTradeField* task_data = reinterpret_cast<CThostFtdcTradeField*>(task->task_data);
         OrderIDRef* p_orderidref = new OrderIDRef();
         strcpy(p_orderidref->OrderRef, task_data->OrderRef);
@@ -4593,16 +4599,24 @@ void CTPTraderHandler::processTask()
 {
     try
     {
-        while (this->_active)
+        bool _terminate = false;
+        while (!_terminate)
         {
             Task task = this->_task_queue.pop();
             switch (task.task_name)
             {
+            
+            case ONRSPTERMINATE://when get the terminate signal, it will break from the thead
+            {
+                _terminate = true;
+                break;
+            }
             case ONFRONTCONNECTED:
             {
                 this->processFrontConnected(&task);
                 break;
             }
+
 
             case ONFRONTDISCONNECTED:
             {
@@ -5348,6 +5362,10 @@ void CTPTraderHandler::processTask()
                 break;
             }
             }
+        if(_terminate){
+            LOG(INFO)<<"[processTask] break the processTask while and thread";
+            break;//break while, end thread
+        }
         }
     }
     catch (const TerminatedError &)
@@ -5394,37 +5412,46 @@ void CTPTraderHandler::release()
 
 int CTPTraderHandler::join()
 {
-    std::cout<<"before join in trade handler"<<std::endl;
+    LOG(INFO)<<"[join] before join in trade handler";
     int i = this->_api->Join();
-    std::cout<<"after join in trade handler"<<std::endl;
+    LOG(INFO)<<"[join] after join in trade handler";
     return i;
 };
 
 int CTPTraderHandler::exit()
 {
     this->_active = false;
-    this->_task_queue.terminate();
-    this->_task_thread.join();
-
 
 	CThostFtdcUserLogoutField reqUserLogout = {0};
     strcpy(reqUserLogout.BrokerID, this->broker_id.c_str());
     strcpy(reqUserLogout.UserID, this->user_id.c_str());
 
-    std::cout<<"run 3: start ReqUserLogout in CTPTraderHandler exit:"<<std::endl;
     this->ReqUserLogout(&reqUserLogout, nRequestID++);
+
+    //TODO improve this, leave time buffer to handle logout callback
+    sleep(1);
+    unique_lock<mutex> mlock(mutex_);
+    cond_.wait(mlock, [&]() {
+	    return available_;
+    }); 	
+    LOG(INFO)<<"[exit] complte logout";
+    //when strategy ends, it will push a ternminate signal to ctp, then it will breaks in the proscess task, thus terminate the task thread
+    Task task = Task();
+    task.task_name = ONRSPTERMINATE;
+    task.task_id = nRequestID ++;
+    this->_task_queue.push(task);
     
-    std::cout<<"run 0:after ReqUserLogout in CTPTraderHandler exit:"<<std::endl;
-    // sleep(1);
+    this->_task_thread.join();
+    this->_task_queue.terminate();
+    LOG(INFO)<<"[exit] after join task thread and terminate task queue";
     this->_api->RegisterSpi(NULL);
-    std::cout<<"run 1"<<std::endl;
-    // this->_api->Release();
+    LOG(INFO)<<"[exit] after spi register null";
 	this->join();
-    std::cout<<"run 4:after join"<<std::endl;
+    LOG(INFO)<<"[exit] after join in ctp trade handler";
 	this->release();
-    std::cout<<"run 5:after release"<<std::endl;
     this->_api = NULL;
-    std::cout<<"run 2"<<std::endl;
+    LOG(INFO)<<"[exit] after trade handler release, start to delete variables";
+    //TODO to be added
 	for(auto it = v_depth_market_data.begin(); it != v_depth_market_data.end(); ++it)
 	{
 		delete (*it);
@@ -5441,8 +5468,8 @@ int CTPTraderHandler::exit()
 	{
 		delete (*it);
 	}
-
-    return 1;
+    LOG(INFO)<<"[exit] complte exit";
+    return 0;
 };
 
 string CTPTraderHandler::getTradingDay()
@@ -5657,6 +5684,7 @@ int CTPTraderHandler::req_trade(std::string investor_id, std::string broker_id)
 }
 
 int CTPTraderHandler::insert_order(OrderData * p_orderdata){
+    LOG(INFO)<<"[insert_order] insert order with symbol=>"<<p_orderdata->symbol<<",vol=>"<<p_orderdata->volume<<",side=>"<<p_orderdata->side<<",price=>"<<p_orderdata->price;
     order_complete_ = false;
     CThostFtdcInputOrderField orderfield ={0};
     strcpy(orderfield.BrokerID, this->broker_id.c_str());//"9999"
@@ -5727,7 +5755,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
             LOG(INFO)<<"[update_positions] current positions:"<<p_curr_pos->InstrumentID<<",pos vwap:"<<p_curr_pos->OpenCost<<",pos vol:"<<p_curr_pos->OpenVolume<<",pos side:"<<p_curr_pos->PosiDirection;
             LOG(INFO)<<"[update_positions]to be added exe,check cond:"<<p_trade->InstrumentID<<",exe side:"<<p_trade->Direction<<",pos side:"<<p_curr_pos->PosiDirection;
 
-            bool _is_long = p_curr_pos->PosiDirection == THOST_FTDC_PD_Long && p_trade->Direction ==THOST_FTDC_D_Buy;
+            bool _is_long = p_curr_pos->PosiDirection == THOST_FTDC_PD_Long && p_trade->Direction == THOST_FTDC_D_Buy;
             bool _is_short = p_curr_pos->PosiDirection == THOST_FTDC_PD_Short && p_trade->Direction == THOST_FTDC_D_Sell;
             bool _is_same_direction = _is_long || _is_short;
             std::cout<<"pos idrection(2:long,3:short)=>"<<p_curr_pos->PosiDirection<<",trade direction(0:buy, 1:sell)=>"<<p_trade->Direction<<",is_logn=>"<<_is_long<<",_is_short=>"<<_is_short<<std::endl;
@@ -5745,6 +5773,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
                 p_curr_pos->TodayPosition += exe_vol;
                 //TODO add other value updates
                 LOG(INFO)<<"[update_positions] After update position,curr vol=>"<<p_curr_pos->TodayPosition;
+                break;
             }
         }
     }
@@ -5845,7 +5874,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& ins
 }
 
 int CTPTraderHandler::close_position(ptr_Position p_pos){
-
+    LOG(INFO)<<"[close_position] close position for symbol=>"<<p_pos->InstrumentID<<",vol=>"<<p_pos->TodayPosition<<", side=>"<<p_pos->PosiDirection;
     OrderData *p_orderdata = new OrderData();
     p_orderdata->volume = p_pos->TodayPosition;
     p_orderdata->exchangeid = p_pos->ExchangeID;
@@ -5860,18 +5889,19 @@ int CTPTraderHandler::close_position(ptr_Position p_pos){
     p_orderdata->position_effect = PositionEffect_Close;
     p_orderdata->symbol = p_pos->InstrumentID;
     int ret = insert_order(p_orderdata);
-    std::cout<<"close position return:"<<ret<<std::endl;
+    LOG(INFO)<<"[close_position] return for close position";
     return ret;
 }
     
 int CTPTraderHandler::close_all_positions(){
-    std::vector<ptr_Position> v_pos = get_positions();
+    std::vector<ptr_Position> v_pos = get_positions();//FIXME check whether to filter by product_id or symbol
     int ret = 0;
+    LOG(INFO)<<"[close_all_positions] close all positions with size=>"<<v_pos.size();
     for(auto it = v_pos.begin(); it!=v_pos.end(); ++it){
         ptr_Position p_cur_pos = *it;
         if(p_cur_pos->TodayPosition >0){
             ret = close_position(p_cur_pos);
         }
     }
-    return 0;
+    return ret;
 }

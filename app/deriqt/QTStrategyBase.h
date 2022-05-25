@@ -71,6 +71,7 @@ public: //stategy management
 		segmet_ptr.reset(new bip::managed_shared_memory(bip::open_or_create, shared_memory_name, size));
 		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
+		
 	};
 	~QTStrategyBase(){};
 	

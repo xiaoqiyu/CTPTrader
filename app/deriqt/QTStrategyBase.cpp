@@ -12,8 +12,6 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	//初始
 	LOG(INFO)<<"Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name<<"strategy name:";
 
-
-
 	FileName _conf_file = {'\0'};
 	strcpy(_conf_file, _conf_file_name.c_str());
 	INIReader reader(_conf_file);
@@ -26,6 +24,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	FileName _strategy_file = {'\0'};
 	// std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode for the conf path
 	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/"+this->name+".ini"; //FIXME remove hardcode for the conf path
+	std::cout<<"read strategy conf name:"<<_str_file_name<<std::endl;
 	strcpy(_strategy_file, _str_file_name.c_str());
 	INIReader reader_str(_strategy_file);
 	if (reader_str.ParseError() != 0)
@@ -56,10 +55,15 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->task_tag = _v_product_ids[0];
 	this->broker_id = reader.Get("user", "BrokerID", "9999");
 	this->user_id = reader.Get("user", "UserID", "123456");
-	//update limit price
-	this->up_limit_price = std::stod(reader_str.Get("strategy","up_limit_price","0.0"));
-    this->down_limit_price = std::stod(reader_str.Get("strategy","down_limit_price","0.0"));
 
+	// this->up_limit_price = std::stod(reader_str.Get("strategy","up_limit_price","0.0"));
+    // this->down_limit_price = std::stod(reader_str.Get("strategy","down_limit_price","0.0"));
+	// LOG(INFO)<<"up limit:"<<this->up_limit_price<<"down limit:"<<this->down_limit_price;
+	//when the stratey starts, pop and clear the stale depth market
+	shm::shared_string v_tmp(*char_alloc_ptr);
+	while(!p_queue->empty()){
+		p_queue->pop(v_tmp);
+	}
 
 	LOG(INFO)<<"***************Start CTP Handler Init****************";
 	//mode 0(subscribe depth market) and mode 2(live trade) need to connect to ctp td; mode 0 for query api, mode 2 for order api 
@@ -93,7 +97,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	LOG(INFO)<< "[Init] Trading date is: " << trading_date;
 
 	this->p_trader_handler->init_positions(this->user_id, this->broker_id);
-	this->p_trader_handler->init_price_limits(this->up_limit_price, this->down_limit_price);
+	
 
 	LOG(INFO)<<"[Init] Cache main instruments.....";
 	this->cache_main_instruments(_v_product_ids);
@@ -143,7 +147,6 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		}
     }
     reader1.Close();
-	//TODO add other daily cache
 
 	std::set<std::string> cache_sesstions = reader_daily_cache.Sections();
 	for (const auto &sec : cache_sesstions) 
@@ -157,6 +160,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 			_tmp_ptr->lc = std::stod(reader_daily_cache.Get(sec, "lc","0.0"));
 			_tmp_ptr->up_limit = std::stod(reader_daily_cache.Get(sec, "up_limit_price","0.0"));
 			_tmp_ptr->down_limit = std::stod(reader_daily_cache.Get(sec, "down_limit_price","0.0"));
+			_tmp_ptr->product_id = reader_daily_cache.Get(sec, "product_id","");
 		}else{
 			ptr_daily_cache _tmp_ptr = new daily_cache();
 			_tmp_ptr->hh = std::stod(reader_daily_cache.Get(sec, "hh","0.0"));
@@ -165,6 +169,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 			_tmp_ptr->lc = std::stod(reader_daily_cache.Get(sec, "lc","0.0"));
 			_tmp_ptr->up_limit = std::stod(reader_daily_cache.Get(sec, "up_limit_price","0.0"));
 			_tmp_ptr->down_limit = std::stod(reader_daily_cache.Get(sec, "down_limit_price","0.0"));
+			_tmp_ptr->product_id = reader_daily_cache.Get(sec, "product_id","");
 			m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(sec, _tmp_ptr));
 		}
 	}//end of session loop
@@ -174,7 +179,13 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 
 	LOG(INFO)<<"************** End cache daily market*************";
 
-	
+	ptr_daily_cache p_curr_daily_cache = NULL;
+	for (const auto &it : m_daily_cache){
+		if(it.second->product_id == this->task_tag){
+			p_curr_daily_cache = it.second; //TODO to be tested
+		}
+	} 
+	this->p_trader_handler->init_price_limits(p_curr_daily_cache);
 	
 	if(this->mode == 0){//mode 0 need to connect CTPMD to subscribe depth market data
 		LOG(INFO)<<"[Init] Mode 0: init CTP MD......";
@@ -273,6 +284,7 @@ void QTStrategyBase::on_event()
     		if (p_queue->pop(v)) 
 			{
 				std::string msg = v.data();
+				// LOG(INFO)<<"[on_event] rev msg:"<<msg;
 				if (msg== "null\n"){ 
 					_terminate = true;
 					OrderData* p_orderdata = new OrderData();
@@ -339,7 +351,8 @@ void QTStrategyBase::on_risk()
 {
 	LOG(INFO)<<"[on_risk] Start risk thread";
 	try{
-		while(true){
+		bool _terminate = false;
+		while(!_terminate){
 			DataField data = this->p_risk_queue->pop();
 			if(data.data_type==RISK_INPUT && data._data){
 				RiskInputData *p_risk_input = reinterpret_cast<RiskInputData *>(data._data);
@@ -349,12 +362,20 @@ void QTStrategyBase::on_risk()
     			tm *ltm = localtime(&now_time);
 				// int update_min = std::stoi(_update_time.substr(3,2));
 				// int update_sec = std::stoi(_update_time.substr(6,2));
+				if (ltm->tm_hour == 15 && ltm->tm_min>0){ //after one min of market close, it will terminate
+					_terminate = true;
+				}
 				int _risk_monitor = (ltm->tm_min*60 + ltm->tm_sec)%p_strategy_config->risk_duration;
 				// std::cout<<"on risk update time=>"<<_update_time<<std::endl;
 				if(_risk_monitor == 0){//will call risk monitor to check
 					// LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
-					this->risk_monitor(p_risk_input, p_strategy_config);
+					int ret = this->risk_monitor(p_risk_input, p_strategy_config);
+					if (ret== -1) {_terminate=true;}
 				}
+			}
+			if (_terminate){
+				LOG(INFO)<<"[on_risk] break on_risk";
+				break;
 			}
 		}
 	}
@@ -381,11 +402,10 @@ void QTStrategyBase::on_tick()
 					CThostFtdcDepthMarketDataField *pDepthMarketData = reinterpret_cast<CThostFtdcDepthMarketDataField *>(data._data);
 					bool ret_write_buffer = this->p_depth_mkt_writer->WriteBuffer(reinterpret_cast<const char*>(pDepthMarketData), sizeof(CThostFtdcDepthMarketDataField));
 					//FIXME remove hardcode of the timestampe, eod for trade, but still cache depth market
-					if (std::strcmp(pDepthMarketData->UpdateTime, "14:55:00") == 0 && std::strcmp(pDepthMarketData->UpdateTime, "21:00:00") <0){
+					if (std::strcmp(pDepthMarketData->UpdateTime, "14:55:00") >=0  && std::strcmp(pDepthMarketData->UpdateTime, "21:00:00") <0){
 						std::strcpy(s, "null\n");//TODO remove hardcode msg
 						p_queue->push(shm::shared_string(s, *char_alloc_ptr));
-						_terminate = true;
-						LOG(INFO)<<"Break strategy when eod, but still subscribe depth market";
+						// LOG(INFO)<<"Break strategy when eod, but still subscribe depth market";
 						break;
 					}
 					
@@ -446,6 +466,7 @@ void QTStrategyBase::calculate_kline(){};
 
 void QTStrategyBase::start()
 {
+	this->start_ = true;
 	if(this->mode == 0){
 		LOG(INFO)<<"[start] mode 0: start subscribe mkt data";
 		this->p_md_handler->SubscribeMarketData();
@@ -460,7 +481,6 @@ void QTStrategyBase::start()
 	}else{
 		LOG(ERROR)<<"[start] invalid mode";
 	}
-	this->start_ = true;
 }
 
 
@@ -642,8 +662,9 @@ void QTStrategyBase::stop()
 		this->data_thread.join();
 	}else if (this->mode == 1 || this->mode == 2){
 		LOG(INFO)<<"[stop] Mode 1&2: join order thread";
-		this->order_thread.join();
 		this->signal_thread.join();
+		this->order_thread.join();
+		this->risk_monitor_thread.join();
 	}else{
 		LOG(ERROR)<<"[stop] Invalid mode in stop:"<<this->mode;
 	}
@@ -660,16 +681,20 @@ void QTStrategyBase::release()
 		this->p_md_handler->exit();
 	}else if(this->mode == 1 || this->mode==2){
 		LOG(INFO)<<"[release] Mode 1&2: delete order queue in release";
+		p_order_queue->terminate();
 		delete p_order_queue;
+		std::cout<<"delete p order queue"<<std::endl;
+		p_risk_queue->terminate();
 		delete p_risk_queue;
+		std::cout<<"delete p risk queue"<<std::endl;
 		delete p_queue;
+		std::cout<<"delete p queue"<<std::endl;
 		this->p_trader_handler->exit();
 
 	}else{
 		LOG(INFO)<<"[release] Invalid mode in relase:"<<this->mode;
 	}
-	active_ = false;
-	
+	active_ = false;	
 }
 
 
@@ -722,8 +747,14 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	}
 	
 	auto _tmp_daily_cache = this->m_daily_cache.find(p_orderdata->symbol);
-	double _up_limit_price = this->up_limit_price; //FIXME no need up limit price var
-	double _down_limit_price = this->down_limit_price; //FIXME no need down limit price var
+	double _up_limit_price = 0.0;
+	double _down_limit_price = 0.0;
+	auto it = this->m_daily_cache.find(p_orderdata->symbol);
+	if(it != this->m_daily_cache.end()){
+		_up_limit_price = it->second->up_limit;
+		_down_limit_price = it->second->down_limit;
+	}
+	
 	if (_tmp_daily_cache != this->m_daily_cache.end()){
 		_up_limit_price = _tmp_daily_cache->second->up_limit;
 		_down_limit_price = _tmp_daily_cache->second->down_limit;
@@ -1128,6 +1159,8 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 		this->cancel_all_orders();
 		this->close_all_orders();
 		start_ = false; //TODO double check whether this is safe
+		LOG(INFO)<<"[risk_monitor] return for cancel orders and close positions";
+		return -1; //to break the risk thread
 	//TODO remove this ,double check, only cancel for the delayed order
     // }else if(ltm->tm_sec < 5){ //FIXME hardcode this delay buffer, should changed to be adapted,整分钟时候未必会调用,所以尝试设置多两秒buffer
 		// int ret = this->cancel_all_orders();

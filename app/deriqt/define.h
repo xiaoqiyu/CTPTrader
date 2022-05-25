@@ -165,7 +165,7 @@
 #define CANCEL_ORDER_SIGNAL 145 
 #define CLOSE_ALL_SIGNAL 146
 #define STOP_SIGNAL 147
-#define TERMINATE_SIGNAL 148
+#define TERMINATE_SIGNAL 148 //use in signal end
 
 
 //risk 
@@ -173,3 +173,4 @@
 
 //data type
 #define INVALID_MSG 150
+#define ONRSPTERMINATE 151 //use in ctp task end

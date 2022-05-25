@@ -16,14 +16,14 @@
 
 using namespace std;
 
-//ÈÎÎñ½á¹¹Ìå
+//ï¿½ï¿½ï¿½ï¿½á¹¹ï¿½ï¿½
 struct Task
 {
-    int task_name;    //»Øµ÷º¯ÊýÃû³Æ¶ÔÓ¦µÄ³£Á¿
-    void *task_data;  //Êý¾ÝÖ¸Õë
-    void *task_error; //´íÎóÖ¸Õë
-    int task_id;      //ÇëÇóid
-    bool task_last;   //ÊÇ·ñÎª×îºó·µ»Ø
+    int task_name;    //ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½Ó¦ï¿½Ä³ï¿½ï¿½ï¿½
+    void *task_data;  //ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
+    void *task_error; //ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
+    int task_id;      //ï¿½ï¿½ï¿½ï¿½id
+    bool task_last;   //ï¿½Ç·ï¿½Îªï¿½ï¿½ó·µ»ï¿½
     Task(): task_name(0), task_data(NULL), task_error(NULL), task_id(0), task_last(false){};
     ~Task(){
         if(!task_data){
@@ -34,9 +34,9 @@ struct Task
 
 struct DataField
 {
-    int data_type; //Êý¾ÝÀà±ð
-    void *_data; //Êý¾ÝÖ¸Õë
-    void *error; //´íÎóÖ¸Õë
+    int data_type; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    void *_data; //ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
+    void *error; //ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
 };
 
 class TerminatedError : std::exception
@@ -46,91 +46,91 @@ class TerminatedError : std::exception
 class TaskQueue
 {
 private:
-    queue<Task> queue_;       //±ê×¼¿â¶ÓÁÐ
+    queue<Task> queue_;       //ï¿½ï¿½×¼ï¿½ï¿½ï¿½ï¿½ï¿½
     // boost::sync_queue<Task> queue_; // boost sync queue
-    mutex mutex_;             //»¥³âËø
-    condition_variable cond_; //Ìõ¼þ±äÁ¿
+    mutex mutex_;             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    condition_variable cond_; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     bool _terminate = false;
 
 public:
-    //´æÈëÐÂµÄÈÎÎñ
+    //ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ï¿½ï¿½ï¿½
     void push(const Task &task)
     {
         // std::cout<<"push task:"<<task.task_name<<std::endl;
         unique_lock<mutex> mlock(mutex_);
-        queue_.push(task);  //Ïò¶ÓÁÐÖÐ´æÈëÊý¾Ý
-        mlock.unlock();     //ÊÍ·ÅËø
-        cond_.notify_one(); //Í¨ÖªÕýÔÚ×èÈûµÈ´ýµÄÏß³Ì
+        queue_.push(task);  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        mlock.unlock();     //ï¿½Í·ï¿½ï¿½ï¿½
+        cond_.notify_one(); //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ß³ï¿½
     }
 
-    //È¡³öÀÏµÄÈÎÎñ
+    //È¡ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½
     Task pop()
     {
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
             return !queue_.empty() || _terminate;
-        }); //µÈ´ýÌõ¼þ±äÁ¿Í¨Öª
+        }); //ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨Öª
         if (_terminate)
             throw TerminatedError();
-        Task task = queue_.front(); //»ñÈ¡¶ÓÁÐÖÐµÄ×îºóÒ»¸öÈÎÎñ
-        queue_.pop();               //É¾³ý¸ÃÈÎÎñ
+        Task task = queue_.front(); //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        queue_.pop();               //É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         // std::cout<<"poped task:"<<task.task_name<<std::endl;
-        return task;                //·µ»Ø¸ÃÈÎÎñ
+        return task;                //ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½
     }
 
     void terminate()
     {
         _terminate = true;
-        cond_.notify_all(); //Í¨ÖªÕýÔÚ×èÈûµÈ´ýµÄÏß³Ì
+        cond_.notify_all(); //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ß³ï¿½
     }
 };
 
 class DataQueue
 {
 private:
-    queue<DataField> queue_;       //±ê×¼¿â¶ÓÁÐ
+    queue<DataField> queue_;       //ï¿½ï¿½×¼ï¿½ï¿½ï¿½ï¿½ï¿½
     // boost::sync_queue<DataField> queue_;
-    mutex mutex_;             //»¥³âËø
-    condition_variable cond_; //Ìõ¼þ±äÁ¿
+    mutex mutex_;             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    condition_variable cond_; //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     bool _terminate = false;
 
 public:
     DataQueue(){};
     ~DataQueue(){};
-    //´æÈëÐÂµÄÊý¾Ý
+    //ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ï¿½ï¿½ï¿½
     void push(const DataField &data)
     {
         unique_lock<mutex> mlock(mutex_);
-        queue_.push(data);  //Ïò¶ÓÁÐÖÐ´æÈëÊý¾Ý
-        mlock.unlock();     //ÊÍ·ÅËø
-        cond_.notify_all(); //Í¨ÖªÕýÔÚ×èÈûµÈ´ýµÄÏß³Ì
+        queue_.push(data);  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        mlock.unlock();     //ï¿½Í·ï¿½ï¿½ï¿½
+        cond_.notify_all(); //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ß³ï¿½
     }
 
-    //È¡³öÀÏµÄÈÎÎñ
+    //È¡ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½
     DataField pop()
     {
         
         unique_lock<mutex> mlock(mutex_);
         cond_.wait(mlock, [&]() {
             return !queue_.empty() ;
-        }); //µÈ´ýÌõ¼þ±äÁ¿Í¨Öª
+        }); //ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¨Öª
         if (_terminate)
             throw TerminatedError();
-        DataField data = queue_.front(); //»ñÈ¡¶ÓÁÐÖÐµÄ×îºóÒ»¸öÊý¾Ý
-        queue_.pop();               //É¾³ý¸ÃÊý¾Ý
-        return data;                //·µ»Ø¸ÃÊý¾Ý
+        DataField data = queue_.front(); //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        queue_.pop();               //É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        return data;                //ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½
     }
 
     void terminate()
     {
         _terminate = true;
-        cond_.notify_all(); //Í¨ÖªÕýÔÚ×èÈûµÈ´ýµÄÏß³Ì
+        cond_.notify_all(); //Í¨Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È´ï¿½ï¿½ï¿½ï¿½ß³ï¿½
     }
 };
 
 
 
-//½«GBK±àÂëµÄ×Ö·û´®×ª»»ÎªUTF8
+//ï¿½ï¿½GBKï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½×ªï¿½ï¿½ÎªUTF8
 inline string toUtf(const string &gb2312)
 {
 #ifdef _MSC_VER
@@ -157,16 +157,16 @@ inline string toUtf(const string &gb2312)
 }
 
 typedef struct{
-    double stop_profit = 50;//real money, not pct£¬Ã¿±ÊÎ¯ÍÐµÄÖ¹Ó¯ÉèÖÃ£¬µ¥Î»£ºÔª£»
-    double stop_loss = 50;//real money, not pct£¬Ã¿±ÊÎ¯ÍÐµÄÖ¹ËðÉèÖÃ£¬µ¥Î»£ºÔª
-    int close_type = 0; //¿ª²Ö¼¤½ø³Ì¶È£¬ Èç¿ÕÐÅºÅ£¬ÏÖ³ÖÓÐ¶à²Ö£»0£º Æ½ÏÖÓÐ¶à²Ö£»1£º ºöÂÔ¸ÃÐÅºÅ£»2£º Æ½ÏÖÓÐ¶à²Ö£¬²¢¿ª¿Õ²Ö£¨ÊýÁ¿ÓÉpos_limit¾ö¶¨£©
-    long vol_limit = 0; //³Ö²ÖµÄ×î´óÊýÁ¿£¬µ¥Î»£¬ÊÖ
-    double init_cash = 0; //³õÊ¼×Ê½ð£¬µ¥Î»£ºÔª
-    float risk_ratio = 0.1; //×Ê½ð·çÏÕ¶ÈÏÞ¶î
-    int order_duration = 20; //Á½´ÎÏÂµ¥µÄÊ±¼ä¼ä¸ôÏÞÖÆ£¬µ¥Î»£ºÃë
-    int signal_delay = 5; //ÏÂµ¥ÐÅºÅÑÓ³Ù£¬µ¥Î»£ºÃë£¬³¬Ê±ÔòºöÂÔµ±Ç°ÏÂµ¥ÐÅºÅ
-    int risk_duration = 60; // ³Ö²Ö·çÏÕ¼ì²éµÄÆµÂÊ£¬µ¥Î»£ºÃë£»
-    int cancel_order_delay = 120; // ³·ÏúÎ¯ÍÐµÄ¼ä¸ô£¬µ¥Î»£ºÃë£»Èç¹ûÒ»±ÊÏÞ¼ÛÎ¯ÍÐ³¬Ê±£¬ÔòÔÚ·çÏÕ¼à¿ØÏß³ÌÖÐ»á×Ô¶¯³·Ïú¸Ã±ÊÎ¯ÍÐ
+    double stop_profit = 50;//real money, not pctï¿½ï¿½Ã¿ï¿½ï¿½Î¯ï¿½Ðµï¿½Ö¹Ó¯ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½Î»ï¿½ï¿½Ôªï¿½ï¿½
+    double stop_loss = 50;//real money, not pctï¿½ï¿½Ã¿ï¿½ï¿½Î¯ï¿½Ðµï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½Î»ï¿½ï¿½Ôª
+    int close_type = 0; //ï¿½ï¿½ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½Ì¶È£ï¿½ ï¿½ï¿½ï¿½ï¿½ÅºÅ£ï¿½ï¿½Ö³ï¿½ï¿½Ð¶ï¿½Ö£ï¿½0ï¿½ï¿½ Æ½ï¿½ï¿½ï¿½Ð¶ï¿½Ö£ï¿½1ï¿½ï¿½ ï¿½ï¿½ï¿½Ô¸ï¿½ï¿½ÅºÅ£ï¿½2ï¿½ï¿½ Æ½ï¿½ï¿½ï¿½Ð¶ï¿½Ö£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ²Ö£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pos_limitï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    long vol_limit = 0; //ï¿½Ö²Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½
+    double init_cash = 0; //ï¿½ï¿½Ê¼ï¿½Ê½ð£¬µï¿½Î»ï¿½ï¿½Ôª
+    float risk_ratio = 0.1; //ï¿½Ê½ï¿½ï¿½ï¿½Õ¶ï¿½ï¿½Þ¶ï¿½
+    int order_duration = 20; //ï¿½ï¿½ï¿½ï¿½ï¿½Âµï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½
+    int signal_delay = 5; //ï¿½Âµï¿½ï¿½Åºï¿½ï¿½Ó³Ù£ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ë£¬ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ôµï¿½Ç°ï¿½Âµï¿½ï¿½Åºï¿½
+    int risk_duration = 60; // ï¿½Ö²Ö·ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½Æµï¿½Ê£ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ë£»
+    int cancel_order_delay = 120; // ï¿½ï¿½ï¿½ï¿½Î¯ï¿½ÐµÄ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ë£»ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Þ¼ï¿½Î¯ï¿½Ð³ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ú·ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½ß³ï¿½ï¿½Ð»ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã±ï¿½Î¯ï¿½ï¿½
 }StrategyConfig;
 
 
@@ -227,33 +227,33 @@ struct OrderField{
     ptr_OrderIDRef p_orderid_ref;
     // ptr_Order p_order;
     std::string order_id;
-    //Î¯ÍÐÊýÁ¿
+    //Î¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     TThostFtdcVolumeType	VolumeTotalOriginal;
-    //ÏÞ¼Û
+    //ï¿½Þ¼ï¿½
     TThostFtdcPriceType	LimitPrice;
-    //ÂòÂô·½Ïò
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     // #define THOST_FTDC_DEN_Buy '0'
     // #define THOST_FTDC_DEN_Sell '1'
     TThostFtdcDirectionType	Direction;
-    //×éºÏÍ¶»úÌ×±£±êÖ¾
+    //ï¿½ï¿½ï¿½Í¶ï¿½ï¿½ï¿½×±ï¿½ï¿½ï¿½Ö¾
     TThostFtdcCombHedgeFlagType	CombHedgeFlag;
-    //±¨µ¥ÀàÐÍ THOST_FTDC_TC_IOC '1' Á¢¼´Íê³É£¬·ñÔò³·Ïú
+    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ THOST_FTDC_TC_IOC '1' ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     TThostFtdcOrderTypeType	OrderType;
-    //ÒÑ³É½»ÊýÁ¿
+    //ï¿½Ñ³É½ï¿½ï¿½ï¿½ï¿½ï¿½
     TThostFtdcVolumeType	VolumeTraded;
-    //Ê£ÓàÊýÁ¿
+    //Ê£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     TThostFtdcVolumeType	VolumeTotal;
-    ///×éºÏ¿ªÆ½±êÖ¾ THOST_FTDC_OF_Open
+    ///ï¿½ï¿½Ï¿ï¿½Æ½ï¿½ï¿½Ö¾ THOST_FTDC_OF_Open
     TThostFtdcCombOffsetFlagType	CombOffsetFlag;
-    //ÒÑ³É½»¾ù¼Û
+    //ï¿½Ñ³É½ï¿½ï¿½ï¿½ï¿½ï¿½
     TThostFtdcPriceType	Price;
-    ///±¨µ¥×´Ì¬
+    ///ï¿½ï¿½ï¿½ï¿½×´Ì¬
     TThostFtdcOrderStatusType	OrderStatus;
-    // /×îºóÐÞ¸ÄÊ±¼ä
+    // /ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½Ê±ï¿½ï¿½
 	// TThostFtdcTimeType	UpdateTime;
-    // ¶©µ¥²åÈëÊ±¼ä
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
     // TThostFtdcTimeType	InsertTime;
-    //±¾µØÎ¬»¤µÄ¶©µ¥²åÈëÊ±¼ä
+    //ï¿½ï¿½ï¿½ï¿½Î¬ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
     std::time_t InsertTime;
     OrderField(){
         Price = 0.0;
@@ -271,23 +271,24 @@ typedef CThostFtdcInvestorPositionField PositionField;
 typedef PositionField* ptr_Position;
 
 enum TickType{
-    DualOPen=0, //Ë«¿ª£¬³É½»>=0, ²Ö²î>=0, |³É½»|==|²Ö²î|
-    DualClose=1, //Ë«Æ½£¬³É½»>=0, ²Ö²î<=0, |³É½»| == |²Ö²î|
-    Transfer=2,//»»ÊÖ£¬¶à»»¡¢¿Õ»»£¬È¡¾öÓÚ·½Ïò£¬ ²Ö²î=0£¬³É½»>=0
-    Open=3,//¿ª²Ö, ³É½»>=0, ²Ö²î>0, |³É½»|>|²Ö²î|
-    Close=4,//Æ½²Ö£¬ ³É½»>=0, ²Ö²î<0, |³É½»|>|²Ö²î|
+    DualOPen=0, //Ë«ï¿½ï¿½ï¿½ï¿½ï¿½É½ï¿½>=0, ï¿½Ö²ï¿½>=0, |ï¿½É½ï¿½|==|ï¿½Ö²ï¿½|
+    DualClose=1, //Ë«Æ½ï¿½ï¿½ï¿½É½ï¿½>=0, ï¿½Ö²ï¿½<=0, |ï¿½É½ï¿½| == |ï¿½Ö²ï¿½|
+    Transfer=2,//ï¿½ï¿½ï¿½Ö£ï¿½ï¿½à»»ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½Ú·ï¿½ï¿½ï¿½ ï¿½Ö²ï¿½=0ï¿½ï¿½ï¿½É½ï¿½>=0
+    Open=3,//ï¿½ï¿½ï¿½ï¿½, ï¿½É½ï¿½>=0, ï¿½Ö²ï¿½>0, |ï¿½É½ï¿½|>|ï¿½Ö²ï¿½|
+    Close=4,//Æ½ï¿½Ö£ï¿½ ï¿½É½ï¿½>=0, ï¿½Ö²ï¿½<0, |ï¿½É½ï¿½|>|ï¿½Ö²ï¿½|
     OtherType=5,//Î´Öª
 };
 
 enum TickDirection{
-    Buy=0,//Ö÷¶¯Âò
-    Sell=1,//Ö÷¶¯Âô
+    Buy=0,//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    Sell=1,//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     Unknown=2,//Î´Öª
 };
 
 
 struct daily_cache{
     std::string InstrumentID;
+    std::string product_id;
     double open_price;
     double hh;
     double hc;
