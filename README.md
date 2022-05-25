@@ -15,7 +15,11 @@
     - daily_cache.ini: contract statics updated daily
     - '{}_{}.ini'.format(strategy_name, product_id), e.g. 'future_trend_rb.ini', params for running the strategy, each sub strategy in in one subsection
 2.  Strategy run demo: "GLOG_logtostderr=1 ./bazel-bin/app/deriqt/CTPTrader 2 rb  /xx/xx/../test.ini"
+    
+    
     2.1 entrance point: check demo main.cpp 
+    
+    
     2.2 Market process:
     - Start a QTStrategyBase objStrategy;
     - objStrategy.init(): init of the ctp trade and market handler, and other resource allocation
