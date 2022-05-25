@@ -39,7 +39,16 @@
     - objStrategy.stop(): join thread
     - objStrategy.release(): release resource 
 
+# How a strategy work
+1. depth market to factor, share memory of ring buffer from md to td
+2. factor to signal
+3. signal to place order
+4. risk monitor
 
+# When a strategy terminate
+1. close positions
+2. end market subscribe, factor/signal/risk thread
+3. ctp release
 
 
 # 项目包括
