@@ -263,7 +263,7 @@ void CTPTraderHandler::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputO
     task.task_name = ONRSPORDERACTION;
     if (pInputOrderAction)
     {
-        LOG(INFO)<<"OnRspOrderAction";
+        LOG(INFO)<<"OnRspOrderAction for symbol=>"<<pInputOrderAction->InstrumentID<<",order ref=>"<<pInputOrderAction->OrderRef<<",order sys ref=>"<<pInputOrderAction->OrderSysID;
         CThostFtdcInputOrderActionField *task_data = new CThostFtdcInputOrderActionField();
         *task_data = *pInputOrderAction;
         task.task_data = task_data;
@@ -272,7 +272,7 @@ void CTPTraderHandler::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputO
     {
         CThostFtdcRspInfoField *task_error = new CThostFtdcRspInfoField();
         *task_error = *pRspInfo;
-        LOG(INFO)<<"OnRspOrderAction Error Info=>"<<task_error;
+        LOG(INFO)<<"OnRspOrderAction Error Info=>"<<task_error<<",symbol=>"<<pInputOrderAction->InstrumentID<<",order ref=>"<<pInputOrderAction->OrderRef<<",order sys ref=>"<<pInputOrderAction->OrderSysID;
         task.task_error = task_error;
     }
     task.task_id = nRequestID;
@@ -3709,7 +3709,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         bool is_1st_equ = task_data->InsertTime[0] == _login_time[0];
         // std::cout<<ret_time_cmp<<", check=>"<<task_data->InsertTime[0]<<","<<_login_time[0]<<",ret=>"<<is_1st_equ<<std::endl;
         if(!(strcmp(task_data->InsertTime, _login_time) > 0 && task_data->InsertTime[0] == _login_time[0])){
-            // std::cout<<"ignore report"<<std::endl;
+            std::cout<<"ignore report,insert time=>"<<task_data->InsertTime<<",login time=>"<<_login_time<<std::endl;
             return;
         }
         LOG(INFO)<<"*************Order Report******************";
@@ -3750,6 +3750,8 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         auto it1 = m_all_orders.find(_order_id1);
         auto it2 = m_all_orders.find(_order_id2);
 
+        LOG(INFO)<<"Order id1=>"<<_order_id1<<"Order id2=>"<<_order_id2;
+
         //rREMARK temp solution to whether maintain the order(for multi-strategy case); task tag is the product id of product the 
         //current strategy trades. Thus if the instrumentID startswith the product ID(should double check the logic is correct??);
         // then the order list will maintain the order in the first callback; for strategies that trade  same product should be
@@ -3775,6 +3777,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->OrderStatus = task_data->OrderStatus;
             // std::cout<<"[processRtnOrder] 3rd callback,order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
             if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){
+                LOG(INFO)<<"[update order table] Remove order when cancel,with order id2=>"<<_order_id2;
                 m_all_orders.erase(it2->first);
                 order_complete_ = true;
                 cond_.notify_all();
@@ -3810,12 +3813,13 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
             p_orderfield->InsertTime = now_time;
+            LOG(INFO)<<"[update order table] insert order with order id2=>"<<_order_id2<<", and remove order with order id1=>"<<_order_id1;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id2, p_orderfield));
             m_all_orders.erase(_order_id1);
             p_orderfield->order_id = _order_id2;
             // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
             if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){
-                LOG(INFO)<<"[processRtnOrder] order canceled with order_id1=>"<<_order_id1;
+                LOG(INFO)<<"[processRtnOrder] [update order table] remove order when canceled with order_id1=>"<<_order_id1;
                 m_all_orders.erase(_order_id1);
                 order_complete_ = true;
                 cond_.notify_all();
@@ -3843,6 +3847,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->OrderStatus = task_data->OrderStatus;
             p_orderfield->order_id = _order_id2;
             p_orderfield->InsertTime = now_time;
+            LOG(INFO)<<"[update order table] insert order into table with order id1=>"<<_order_id1;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id1, p_orderfield));
             // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
         }
@@ -3902,6 +3907,7 @@ void CTPTraderHandler::processRtnTrade(Task* task)
             LOG(INFO)<<"*********************End Execution Report*************************";
             if((p_orderfield->VolumeTraded == p_orderfield->VolumeTotalOriginal && p_orderfield->OrderStatus==THOST_FTDC_OST_AllTraded)){ 
                 // TODO reset order_complete, move to rtn_trade when trade volume confirm
+                LOG(INFO)<<"[update order table] remove order when complete with order id2=>"<<it->first;
                 m_all_orders.erase(it->first);
                 order_complete_ = true;
                 cond_.notify_all();
@@ -5410,13 +5416,13 @@ void CTPTraderHandler::release()
 	connected_ = false;
 };
 
-int CTPTraderHandler::join()
-{
-    LOG(INFO)<<"[join] before join in trade handler";
-    int i = this->_api->Join();
-    LOG(INFO)<<"[join] after join in trade handler";
-    return i;
-};
+// int CTPTraderHandler::join()
+// {
+    // LOG(INFO)<<"[join] before join in trade handler";
+    // int i = this->_api->Join();
+    // LOG(INFO)<<"[join] after join in trade handler";
+    // return i;
+// };
 
 int CTPTraderHandler::exit()
 {
@@ -5446,8 +5452,9 @@ int CTPTraderHandler::exit()
     LOG(INFO)<<"[exit] after join task thread and terminate task queue";
     this->_api->RegisterSpi(NULL);
     LOG(INFO)<<"[exit] after spi register null";
-	this->join();
-    LOG(INFO)<<"[exit] after join in ctp trade handler";
+	LOG(INFO)<<"[exit] before join in trade handler";
+    int i = this->_api->Join();
+    LOG(INFO)<<"[exit] after join in trade handler";
 	this->release();
     this->_api = NULL;
     LOG(INFO)<<"[exit] after trade handler release, start to delete variables";

@@ -176,9 +176,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	for (auto it = this->m_daily_cache.begin(); it != this->m_daily_cache.end(); ++it){
 		std::cout<<it->first<<","<<it->second->open_price<<",hh:"<<it->second->hh<<',hc'<<it->second->hc<<std::endl;
 	}
-
 	LOG(INFO)<<"************** End cache daily market*************";
-
 	ptr_daily_cache p_curr_daily_cache = NULL;
 	for (const auto &it : m_daily_cache){
 		if(it.second->product_id == this->task_tag){
@@ -1233,11 +1231,10 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
     			std::time_t order_delay = now_time - p_cur_order->InsertTime;
     			// LOG(INFO)<<"[risk monitor] order delay=>"<<order_delay<<",order update time=>"<<p_cur_order->InsertTime<<",now time=>"<<now_time<<"order delay conf=>"<<p_strategy_conf->cancel_order_delay;
     			int ret;
-				// std::cout<<"???????????order status=>"<<p_cur_order->OrderStatus<<std::endl;
     			if(order_delay > p_strategy_conf->cancel_order_delay && p_cur_order->OrderStatus != THOST_FTDC_OST_AllTraded && p_cur_order->OrderStatus != THOST_FTDC_OST_Canceled){
 					ret = p_trader_handler->cancel_order(p_cur_order->p_orderid_ref);
     		    	sleep(1);
-    		    	LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<p_cur_order->order_id<<"order vol=>"<<p_cur_order->VolumeTotalOriginal;
+    		    	LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<p_cur_order->order_id<<"order vol=>"<<p_cur_order->VolumeTotalOriginal<<"order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<"order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
     			}
 			}//end of for order loop
 			std::vector<ptr_Position> v_ret_pos = p_trader_handler->get_positions();
