@@ -714,7 +714,6 @@ public:
 
 
     //position maintain API
-    //TODO  TBD
     int init_positions(const std::string& investor_id, const std::string& broker_id){
         this->v_investor_position_fields = get_investor_position(investor_id, broker_id);
         for(auto it=v_investor_position_fields.begin();it!=v_investor_position_fields.end();++it){
@@ -732,7 +731,6 @@ public:
                 ++it;
             }
         }
-        std::cout<<"after erase, position size=>"<<v_investor_position_fields.size()<<std::endl;
         for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
             ptr_Position p_cur_pos = *it1;
             LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;

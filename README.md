@@ -29,6 +29,8 @@
 
 
     2.3 Trade process: 
+
+    
     - Start a QTStrategyBase objStrategy
     - objStrategy.init(): init of the ctp trade handler, and other resource allocation
     - objStrategy.start(): start listen to factor in share mem Q, calculate signal, and place order 
@@ -44,6 +46,11 @@
 2. factor to signal
 3. signal to place order
 4. risk monitor
+5. Update local order tabel:
+    - In order callback,for first order callback, insert table with order_id1
+    - In order callback,when order_id1 exist, create order_id2(accept by exchange), remove order_id1 from table, and insert order_id2 into table
+    - In order callback,when order is canceled, remove the order from order table
+    - In trade callback,when order is completed traded, remove the order from order table
 
 # When a strategy terminate
 1. close positions

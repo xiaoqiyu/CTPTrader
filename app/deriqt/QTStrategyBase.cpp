@@ -22,7 +22,6 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	}
 	
 	FileName _strategy_file = {'\0'};
-	// std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/strategy.ini"; //FIXME remove hardcode for the conf path
 	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/"+this->name+".ini"; //FIXME remove hardcode for the conf path
 	std::cout<<"read strategy conf name:"<<_str_file_name<<std::endl;
 	strcpy(_strategy_file, _str_file_name.c_str());
@@ -36,9 +35,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	conf_signal_delay = std::stoi(reader_str.Get("strategy","signal_delay","0"));
 	p_factor = new Factor(std::stoi(reader_str.Get("strategy","long_windows","0")), std::stoi(reader_str.Get("strategy","short_windows","0")));
 
-	// FileName _daily_cache_file = {'\0'};
+
 	std::string _cache_file_name = "/home/kiki/projects/DERIQT_F/conf/daily_cache.ini"; //FIXME remove hardcode for the conf path
-	// strcpy(_strategy_file, _str_file_name.c_str());
 	INIReader reader_daily_cache(_cache_file_name);
 	if (reader_daily_cache.ParseError() != 0)
 	{
@@ -52,14 +50,12 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	std::string trading_date;
 
 	//init private var
-	this->task_tag = _v_product_ids[0];
+	this->task_tag = _v_product_ids[0]; 
 	this->broker_id = reader.Get("user", "BrokerID", "9999");
 	this->user_id = reader.Get("user", "UserID", "123456");
 
-	// this->up_limit_price = std::stod(reader_str.Get("strategy","up_limit_price","0.0"));
-    // this->down_limit_price = std::stod(reader_str.Get("strategy","down_limit_price","0.0"));
-	// LOG(INFO)<<"up limit:"<<this->up_limit_price<<"down limit:"<<this->down_limit_price;
-	//when the stratey starts, pop and clear the stale depth market
+	//when the stratey starts, pop and clear the stale depth market since there are cases when the trade process stop but 
+	//market process still subscribe the depth market and push factor the shm queue
 	shm::shared_string v_tmp(*char_alloc_ptr);
 	while(!p_queue->empty()){
 		p_queue->pop(v_tmp);
@@ -94,8 +90,9 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	sleep(5);
 
 	trading_date = this->p_trader_handler->getTradingDay();
-	LOG(INFO)<< "[Init] Trading date is: " << trading_date;
+	LOG(INFO)<< "[Init] CTP log in sucess, Trading date is: " << trading_date;
 
+	LOG(INFO)<<"[Init] Init position to local table...";
 	this->p_trader_handler->init_positions(this->user_id, this->broker_id);
 	
 
@@ -113,12 +110,12 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	}
 	LOG(INFO)<<"***************End CTP Handler Init****************";
 
+
 	LOG(INFO)<<"************** Start cache daily market*************";
 	// std::ofstream * cache_ptr = new std::ofstream();
 	FileName _cache_filename = {'\0'};
 	//FIXME remove hardcode the cache path
 	sprintf(_cache_filename, "/home/kiki/projects/DERIQT_F/cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
-    std::cout<<"read mkt file name:"<<_cache_filename<<std::endl;
 	std::ifstream ifs(_cache_filename, std::ios::binary);
     recordio::RecordReader reader1(&ifs);
 	CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
@@ -140,7 +137,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 						_tmp_ptr->InstrumentID = cache_instrument_id;
 						_tmp_ptr->open_price = p_mkt->LastPrice;
 						m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(cache_instrument_id, _tmp_ptr));
-						std::cout<<"Got cache open price for instrument id:"<<*it<<":update time:"<<p_mkt->UpdateTime<<", open:"<<p_mkt->LastPrice<<std::endl;
+						LOG(INFO)<<"[Init] Got cache open price for instrument id:"<<*it<<":update time:"<<p_mkt->UpdateTime<<", open:"<<p_mkt->LastPrice;
 					}
 				}
 			}
@@ -173,10 +170,11 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 			m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(sec, _tmp_ptr));
 		}
 	}//end of session loop
-	for (auto it = this->m_daily_cache.begin(); it != this->m_daily_cache.end(); ++it){
-		std::cout<<it->first<<","<<it->second->open_price<<",hh:"<<it->second->hh<<',hc'<<it->second->hc<<std::endl;
-	}
+	// for (auto it = this->m_daily_cache.begin(); it != this->m_daily_cache.end(); ++it){
+		// std::cout<<it->first<<","<<it->second->open_price<<",hh:"<<it->second->hh<<',hc'<<it->second->hc<<std::endl;
+	// }
 	LOG(INFO)<<"************** End cache daily market*************";
+
 	ptr_daily_cache p_curr_daily_cache = NULL;
 	for (const auto &it : m_daily_cache){
 		if(it.second->product_id == this->task_tag){
@@ -326,13 +324,13 @@ void QTStrategyBase::on_event()
 							LOG(INFO)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
 							place_order(p_orderdata);
 						}//end of handle signal
-					}
+					}//end of handle trade mode
 				}//end of input risk and handle signal
 			}//end of handle pop
 			//if get the terminate signal, stop the whle and join the thread
 			if(_terminate)
 			{
-				LOG(INFO)<<"break on_event";
+				LOG(INFO)<<"[on_event] break on_event";
 				break;
 			}
 		}//end of while
@@ -364,7 +362,6 @@ void QTStrategyBase::on_risk()
 					_terminate = true;
 				}
 				int _risk_monitor = (ltm->tm_min*60 + ltm->tm_sec)%p_strategy_config->risk_duration;
-				// std::cout<<"on risk update time=>"<<_update_time<<std::endl;
 				if(_risk_monitor == 0){//will call risk monitor to check
 					// LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
 					int ret = this->risk_monitor(p_risk_input, p_strategy_config);
@@ -514,6 +511,7 @@ void QTStrategyBase::insert_market_order(TThostFtdcPriceType limit_price, TThost
 	// this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 
+//TODO to be added
 void QTStrategyBase::insert_limit_order_gfd(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType order_ref,  TThostFtdcDirectionType direction,TThostFtdcInstrumentIDType instrumentID)
 {
 	CThostFtdcInputOrderField * p_input_order_field = new CThostFtdcInputOrderField();
@@ -547,6 +545,7 @@ void QTStrategyBase::insert_limit_order_gfd(TThostFtdcPriceType limit_price, TTh
 	// this->p_trader_handler->ReqOrderInsert(&input_order_field, nRequestID);
 }
 
+//TODO to be added
 void QTStrategyBase::insert_limit_order_fok(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType order_ref,  TThostFtdcDirectionType direction,TThostFtdcInstrumentIDType instrumentID)
 {
 	CThostFtdcInputOrderField * p_input_order_field = new CThostFtdcInputOrderField();
@@ -655,14 +654,18 @@ int QTStrategyBase::get_position_details(std::string investor_id, std::string br
 void QTStrategyBase::stop()
 {
 	//TODO stop data_thread, but the ctp instance is still active
+	LOG(INFO)<<"[stop] Calling stop for strategy...";
 	if(this->mode == 0){
 		LOG(INFO)<<"[stop] Mode 0: join data thread";
 		this->data_thread.join();
 	}else if (this->mode == 1 || this->mode == 2){
 		LOG(INFO)<<"[stop] Mode 1&2: join order thread";
 		this->signal_thread.join();
+		std::cout<<"complete signal thread join"<<std::endl;
 		this->order_thread.join();
+		std::cout<<"complete order thread join"<<std::endl;
 		this->risk_monitor_thread.join();
+		std::cout<<"complete risk thread join"<<std::endl;
 	}else{
 		LOG(ERROR)<<"[stop] Invalid mode in stop:"<<this->mode;
 	}
@@ -673,6 +676,7 @@ void QTStrategyBase::stop()
 //释放资源,退出应用程序时调用
 void QTStrategyBase::release()
 {
+	LOG(INFO)<<"[release] Calling release in strategy";
 	if (this->mode == 0){
 		LOG(INFO)<<"[release] Mode 0: delete t2k helper";
 		LOG(INFO)<<"[release] Mode 0 in relase:stop CTP MD";
@@ -711,6 +715,7 @@ void QTStrategyBase::setInstrumentID(std::vector<std::string> v_instrumentid)
 		}
 	}
 }
+
 
 
 /*
@@ -1147,8 +1152,6 @@ else:
     风险度，保证金等其他监控指标
 */
 int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_strategy_conf){
-    
-
     std::time_t now_time = std::time(nullptr);
     tm *ltm = localtime(&now_time);
 	// LOG(INFO)<<"[risk_monitor] Start risk monitor, min=>"<<ltm->tm_min<<",sec=>"<<ltm->tm_sec;
@@ -1224,6 +1227,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			    }
 			}//end of position loop
         }else if(mode == 2){ //ctp cancel stale orders 
+			//cancel stale orders
 			std::vector<ptr_OrderField> v_ret_orders = p_trader_handler->get_all_orders();
 			// TODO 等check orderupdatetime格式后加入，根据order status(未成交的和未撤单的)和update time 判断超时撤单的
 			for(auto it = v_ret_orders.begin(); it != v_ret_orders.end(); ++it){
@@ -1237,6 +1241,8 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
     		    	LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<p_cur_order->order_id<<"order vol=>"<<p_cur_order->VolumeTotalOriginal<<"order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<"order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
     			}
 			}//end of for order loop
+
+			//stop profit and loss
 			std::vector<ptr_Position> v_ret_pos = p_trader_handler->get_positions();
 			for(auto it = v_ret_pos.begin(); it != v_ret_pos.end(); ++it){ 
 			    ptr_Position  _cur_pos = *it;

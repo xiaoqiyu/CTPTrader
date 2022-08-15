@@ -118,18 +118,7 @@ public:
                     tick_type = OtherType;
                 }
             }
-            // std::cout<<"before check last vector"<<std::endl;
-            // int _tmp_idx = 0;
-            // for (auto it = v_last_factor.begin(); it!= v_last_factor.end();++it){
-                // std::cout<<_tmp_idx<<", "<<*it<<std::endl;
-                // _tmp_idx+=1;
-            // }
-            // std::cout<<"before windows calculate, cir_size=>"<<cir_size<<std::endl;
-            // if (v_last_factor.size() > 0 && cir_size > long_windows){//TODO double check the condition
-                // _ma_ls_diff_last = v_last_factor[11] - v_last_factor[12];
-            // }else{
-                // _ma_ls_diff_last = 0.0;
-            // }
+
             //lag time series factor calculation
             if(cir_size>=long_windows){ //window length >= long
                 // _curr_slope_long = (_curr_last - last_price_circular_ptr->front())/long_windows;
@@ -164,10 +153,6 @@ public:
                 _log_return_short = this->v_last_factor[7] + _log_return - (std::log(last_price_circular_ptr->at(1))-std::log(last_price_circular_ptr->at(0)));
                 _mid_log_return_short = this->v_last_factor[9] + _mid_log_return - (std::log(mid_price_circular_ptr->at(1))-std::log(mid_price_circular_ptr->at(0)));
                 _ma_short = _curr_vwap;             
-                // std::cout<<"curr mid:"<<_curr_mid<<",mid log return:"<<_mid_log_return<<",curr last:"<<_curr_last<<",curr log return:"<<_log_return<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<< std::endl;
-                // std::cout<<"last 0"<<last_price_circular_ptr->at(1)<<","<<last_price_circular_ptr->at(0)<<std::endl;
-                // std::cout<<"mid 0"<<mid_price_circular_ptr->at(1)<<","<<mid_price_circular_ptr->at(0)<<std::endl;
-                // std::cout<<"log return long:"<<_log_return_long<<",log return short:"<<_log_return_short<<",mid log return long:"<<_mid_log_return_long<<",mid log return short:"<<_mid_log_return_short<<",ma long:"<<_ma_long<<",ma short:"<<_ma_short<<",ma diff last:"<<_ma_ls_diff_last<<std::endl;
             }else{
                 //no lag facotr update
                 // std::cout<<"less than short windows"<<std::endl;

@@ -40,7 +40,7 @@
 typedef CTPTraderHandler *trader_util_ptr;
 typedef CTPMdHandler *md_ptr;
 typedef bool order_signal;
-extern int nRequestID;
+extern int nRequestID; //global request id passed in CTP TD query
 
 
 namespace bip = boost::interprocess;
@@ -59,9 +59,9 @@ namespace shm
 class QTStrategyBase
 {
 public: //strategy function
-	void on_tick(); 
-	void on_event();
-	void on_risk();
+	void on_tick(); //run in data thread in market process, receive depth market, cache market data, calculate factor, and push to trade process
+	void on_event(); //in signal thread in trade process,receive factor from shm, calculate signal, and push order_data_field to order queue if any signal
+	void on_risk(); // in risk thread in trade process, cancel stale order, stop profit/loss, cancel and close order when market close
 
 
 public: //stategy management
@@ -88,8 +88,6 @@ public: //order function
 	void place_order(OrderData* p_order_data);//order main entrance, will insert order to the order data queue,with p_OrderData as parameter
 	int cancel_all_orders();//cancel all unfinished orders
 	int close_all_orders();//close all current positions
-	// std::vector<ptr_position> get_local_positions(const std::string& instrument_id);// return positions by instrument id that are locally updated  
-	// std::vector<ptr_position> get_local_positions();// return all positions that are locally updated   
 	
 	//following order funcs not used now
 	void insert_limit_order(TThostFtdcPriceType limit_price, TThostFtdcVolumeType volume, TThostFtdcOrderRefType OrderRef, TThostFtdcDirectionType Direction, TThostFtdcInstrumentIDType InstrumentID);
@@ -99,6 +97,7 @@ public: //order function
 	
 	// void insert_order_sim(OrderData* p_order_data);
 	void process_order();
+	//verify whether the order param is valid 
 	int verify_order_condition_ctp(OrderData* p_orderdata);//check whether to place order(ctp mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
 	int verify_order_condition(OrderData* p_orderdata);//check whether to place  order(gm mode), including check cur pos/live risk;if it should be closed, then order_field will be updated accordingly
 
@@ -107,7 +106,6 @@ public: //order function
 public: //qry for product/instrument/account
     std::tuple<std::vector<std::string>, std::vector<std::string>> get_instrument_by_product(std::string product_id);
 	std::vector<CThostFtdcInvestorPositionField *> get_investor_position(std::string investor_id, std::string broker_id);
-	// void get_porfortlio();
 	std::vector<CThostFtdcTradingAccountField*> get_account(std::string investor_id, std::string broker_id);
 	int req_trade(std::string investor_id, std::string broker_id);
 	std::vector<std::string> getInstrumentID();
@@ -158,12 +156,12 @@ public: //qry for product/instrument/account
 protected:
 	trader_util_ptr p_trader_handler = nullptr;
 	md_ptr p_md_handler = nullptr;
-	thread data_thread;
-	thread order_thread;
-	thread signal_thread;
-	thread risk_monitor_thread;
+	thread data_thread; //data threa,run on_tick
+	thread order_thread;//order thread, run process_order
+	thread signal_thread;//signal thread, run on_event
+	thread risk_monitor_thread;//risk thread, run on_risk
 	std::vector<std::vector<double>> v_factor; //cached factor list
-	void calculate_kline();
+	void calculate_kline(); //TBA, not implement yet
 
 private:
 	std::vector<std::string> v_instrummentID;
@@ -186,11 +184,11 @@ private:
 	std::string name; //strategy name
 	int mode; //0 for market subscribe only; 1 for gm simulation; 2 for ctp simulatation(conf is test.ini) and live trade(conf is ctp.ini)
 	std::string task_tag; //will be the first product id, e.g. when passed in rb,hc to the strategy, market will suscribe both rb and hc,but trade rb, and task_tag is set as rb
-	std::unordered_map<std::string, std::string> m_main_futures;
-	std::unordered_map<std::string, std::string> m_product_exchangeid;
-	int option_size = 10;
-	std::vector<std::string> v_main_contract_ids;
-	std::vector<std::string> v_option_ids;
+	std::unordered_map<std::string, std::string> m_main_futures; //cache  product id to main instrument future ticker
+	std::unordered_map<std::string, std::string> m_product_exchangeid; //cache pdoduct to exchange id
+	int option_size = 10; //
+	std::vector<std::string> v_main_contract_ids; //main instrument tickers
+	std::vector<std::string> v_option_ids;//options tickers
 	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
 	recordio::RecordWriter * p_depth_mkt_writer;
 	std::ofstream * cache_ptr;
@@ -200,7 +198,9 @@ private:
     shm::ring_buffer* p_queue;
 	std::string simtrade_account_id;
 	OrderSignal * p_sig;
+	//factor pointer
 	Factor *p_factor;
+	//order table
 	std::vector<Order> v_order;
 	long factor_len = 1024;
 	long signal_delay;
@@ -208,7 +208,5 @@ private:
 	std::string simtrade_token;
 	StrategyConfig * p_strategy_config;
 	int strategy_class; //0 for future, 1 for option
-	double up_limit_price = 0.0;//TODO replace this with info from CTP query
-	double down_limit_price = 0.0;//TODO replace this with info from CTP query
 	long conf_signal_delay;
 };
