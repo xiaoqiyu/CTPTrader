@@ -1,3 +1,4 @@
+import tools/bazel.rc
 # Use jemalloc as the C++ allocator
 # To use it: bazel build --config jemalloc
 build:jemalloc --custom_malloc=//third_party/jemalloc
