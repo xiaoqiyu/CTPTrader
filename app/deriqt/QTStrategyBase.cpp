@@ -449,7 +449,6 @@ void QTStrategyBase::on_tick()
 			}
 		}
 
-
 	}
 	catch (const TerminatedError &)
 	{

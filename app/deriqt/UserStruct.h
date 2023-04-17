@@ -16,14 +16,14 @@
 
 using namespace std;
 
-//����ṹ��
+//����ṹ��?
 struct Task
 {
     int task_name;    //�ص��������ƶ�Ӧ�ĳ���
     void *task_data;  //����ָ��
     void *task_error; //����ָ��
     int task_id;      //����id
-    bool task_last;   //�Ƿ�Ϊ��󷵻�
+    bool task_last;   //�Ƿ�Ϊ��󷵻�?
     Task(): task_name(0), task_data(NULL), task_error(NULL), task_id(0), task_last(false){};
     ~Task(){
         if(!task_data){
@@ -34,7 +34,7 @@ struct Task
 
 struct DataField
 {
-    int data_type; //�������
+    int data_type; //�������?
     void *_data; //����ָ��
     void *error; //����ָ��
 };
@@ -46,7 +46,7 @@ class TerminatedError : std::exception
 class TaskQueue
 {
 private:
-    queue<Task> queue_;       //��׼�����
+    queue<Task> queue_;       //��׼�����?
     // boost::sync_queue<Task> queue_; // boost sync queue
     mutex mutex_;             //������
     condition_variable cond_; //��������
@@ -58,7 +58,7 @@ public:
     {
         // std::cout<<"push task:"<<task.task_name<<std::endl;
         unique_lock<mutex> mlock(mutex_);
-        queue_.push(task);  //������д�������
+        queue_.push(task);  //������д�������?
         mlock.unlock();     //�ͷ���
         cond_.notify_one(); //֪ͨ���������ȴ����߳�
     }
@@ -72,7 +72,7 @@ public:
         }); //�ȴ���������֪ͨ
         if (_terminate)
             throw TerminatedError();
-        Task task = queue_.front(); //��ȡ�����е����һ������
+        Task task = queue_.front(); //��ȡ�����е����һ������?
         queue_.pop();               //ɾ��������
         // std::cout<<"poped task:"<<task.task_name<<std::endl;
         return task;                //���ظ�����
@@ -88,7 +88,7 @@ public:
 class DataQueue
 {
 private:
-    queue<DataField> queue_;       //��׼�����
+    queue<DataField> queue_;       //��׼�����?
     // boost::sync_queue<DataField> queue_;
     mutex mutex_;             //������
     condition_variable cond_; //��������
@@ -101,7 +101,7 @@ public:
     void push(const DataField &data)
     {
         unique_lock<mutex> mlock(mutex_);
-        queue_.push(data);  //������д�������
+        queue_.push(data);  //������д�������?
         mlock.unlock();     //�ͷ���
         cond_.notify_all(); //֪ͨ���������ȴ����߳�
     }
@@ -116,7 +116,7 @@ public:
         }); //�ȴ���������֪ͨ
         if (_terminate)
             throw TerminatedError();
-        DataField data = queue_.front(); //��ȡ�����е����һ������
+        DataField data = queue_.front(); //��ȡ�����е����һ������?
         queue_.pop();               //ɾ��������
         return data;                //���ظ�����
     }
@@ -130,7 +130,7 @@ public:
 
 
 
-//��GBK������ַ���ת��ΪUTF8
+//��GBK������ַ����?��ΪUTF8
 inline string toUtf(const string &gb2312)
 {
 #ifdef _MSC_VER
@@ -159,14 +159,14 @@ inline string toUtf(const string &gb2312)
 typedef struct{
     double stop_profit = 50;//real money, not pct��ÿ��ί�е�ֹӯ���ã���λ��Ԫ��
     double stop_loss = 50;//real money, not pct��ÿ��ί�е�ֹ�����ã���λ��Ԫ
-    int close_type = 0; //���ּ����̶ȣ� ����źţ��ֳ��ж�֣�0�� ƽ���ж�֣�1�� ���Ը��źţ�2�� ƽ���ж�֣������ղ֣�������pos_limit������
-    long vol_limit = 0; //�ֲֵ������������λ����
+    int close_type = 0; //���ּ����̶ȣ� ����źţ��ֳ��ж�֣�0�� ƽ���ж�֣�?1�� ���Ը��źţ�2�� ƽ���ж�֣������ղ֣�������pos_limit������
+    long vol_limit = 0; //�ֲֵ������������λ����?
     double init_cash = 0; //��ʼ�ʽ𣬵�λ��Ԫ
-    float risk_ratio = 0.1; //�ʽ���ն��޶�
+    float risk_ratio = 0.1; //�ʽ���ն��޶�?
     int order_duration = 20; //�����µ���ʱ�������ƣ���λ����
-    int signal_delay = 5; //�µ��ź��ӳ٣���λ���룬��ʱ����Ե�ǰ�µ��ź�
+    int signal_delay = 5; //�µ��ź��ӳ٣���λ���룬��ʱ����Ե�ǰ�µ��ź�?
     int risk_duration = 60; // �ֲַ��ռ���Ƶ�ʣ���λ���룻
-    int cancel_order_delay = 120; // ����ί�еļ������λ���룻���һ���޼�ί�г�ʱ�����ڷ��ռ���߳��л��Զ������ñ�ί��
+    int cancel_order_delay = 120; // ����ί�еļ������λ���룻���һ���޼�ί�г�ʱ�����ڷ��ռ���߳��л��Զ������ñ��?��
 }StrategyConfig;
 
 
@@ -235,21 +235,21 @@ struct OrderField{
     // #define THOST_FTDC_DEN_Buy '0'
     // #define THOST_FTDC_DEN_Sell '1'
     TThostFtdcDirectionType	Direction;
-    //���Ͷ���ױ���־
+    //���Ͷ���ױ����?
     TThostFtdcCombHedgeFlagType	CombHedgeFlag;
-    //�������� THOST_FTDC_TC_IOC '1' ������ɣ�������
+    //�������� THOST_FTDC_TC_IOC '1' ������ɣ�������?
     TThostFtdcOrderTypeType	OrderType;
     //�ѳɽ�����
     TThostFtdcVolumeType	VolumeTraded;
     //ʣ������
     TThostFtdcVolumeType	VolumeTotal;
-    ///��Ͽ�ƽ��־ THOST_FTDC_OF_Open
+    ///��Ͽ�ƽ���? THOST_FTDC_OF_Open
     TThostFtdcCombOffsetFlagType	CombOffsetFlag;
     //�ѳɽ�����
     TThostFtdcPriceType	Price;
     ///����״̬
     TThostFtdcOrderStatusType	OrderStatus;
-    // /����޸�ʱ��
+    // /����޸�ʱ��?
 	// TThostFtdcTimeType	UpdateTime;
     // ��������ʱ��
     // TThostFtdcTimeType	InsertTime;
@@ -271,7 +271,7 @@ typedef CThostFtdcInvestorPositionField PositionField;
 typedef PositionField* ptr_Position;
 
 enum TickType{
-    DualOPen=0, //˫�����ɽ�>=0, �ֲ�>=0, |�ɽ�|==|�ֲ�|
+    DualOPen=0,  //˫�����ɽ�>=0, �ֲ�>=0, |�ɽ�|==|�ֲ�| 
     DualClose=1, //˫ƽ���ɽ�>=0, �ֲ�<=0, |�ɽ�| == |�ֲ�|
     Transfer=2,//���֣��໻���ջ���ȡ���ڷ��� �ֲ�=0���ɽ�>=0
     Open=3,//����, �ɽ�>=0, �ֲ�>0, |�ɽ�|>|�ֲ�|
