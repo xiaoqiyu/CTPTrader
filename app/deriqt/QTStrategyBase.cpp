@@ -22,7 +22,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	}
 	
 	FileName _strategy_file = {'\0'};
-	std::string _str_file_name = "/home/kiki/projects/DERIQT_F/conf/"+this->name+".ini"; //FIXME remove hardcode for the conf path
+	std::string _str_file_name = "/home/kiki/workspace/CTPTrader/conf/"+this->name+".ini"; //FIXME remove hardcode for the conf path
 	std::cout<<"read strategy conf name:"<<_str_file_name<<std::endl;
 	strcpy(_strategy_file, _str_file_name.c_str());
 	INIReader reader_str(_strategy_file);
@@ -36,7 +36,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	p_factor = new Factor(std::stoi(reader_str.Get("strategy","long_windows","0")), std::stoi(reader_str.Get("strategy","short_windows","0")));
 
 
-	std::string _cache_file_name = "/home/kiki/projects/DERIQT_F/conf/daily_cache.ini"; //FIXME remove hardcode for the conf path
+	std::string _cache_file_name = "/home/kiki/workspace/CTPTrader/conf/daily_cache.ini"; //FIXME remove hardcode for the conf path
 	INIReader reader_daily_cache(_cache_file_name);
 	if (reader_daily_cache.ParseError() != 0)
 	{
@@ -115,7 +115,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	// std::ofstream * cache_ptr = new std::ofstream();
 	FileName _cache_filename = {'\0'};
 	//FIXME remove hardcode the cache path
-	sprintf(_cache_filename, "/home/kiki/projects/DERIQT_F/cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
+	sprintf(_cache_filename, "/home/kiki/workspace/CTPTrader/cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
 	std::ifstream ifs(_cache_filename, std::ios::binary);
     recordio::RecordReader reader1(&ifs);
 	CThostFtdcDepthMarketDataField *p_mkt = new CThostFtdcDepthMarketDataField();
