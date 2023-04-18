@@ -1171,7 +1171,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
         std::string _exchangeid = p_risk_input->exchangeid;
 		double stop_profit_bc = p_strategy_conf->stop_profit;
 		double stop_loss_bc = p_strategy_conf->stop_loss;
-		if(this->mode == 1){ // handle gm simtrade case,cancel stale unfinished order, stop profit and loss
+		if(this->mode == 1){ // handle gm simtrade case,cancel stale unfinished order, stop profit and loss, 基本不采用，TODO,remove掉
         	//超时撤销委托
         	gmtrade::DataArray<Order>* ret_order = simtrade_ptr->get_unfinished_orders(simtrade_account_id.c_str());
         	if(ret_order->status()==0){

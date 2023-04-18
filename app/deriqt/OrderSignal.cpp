@@ -128,6 +128,11 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, ptr_dai
 	double _range = std::max(p_daily->hh-p_daily->lc, p_daily->hc-p_daily->ll);
 	this->open_price = p_daily->open_price;
 	int ret_signal = get_com_signal(v_rev, _range); //get the final signal
+	//FIXME hack to test place order
+	if(this->test_order_num == 0){
+		ret_signal = LONG_SIGNAL;
+		this->test_order_num ++;
+	}
 	if(ret_signal == LONG_SIGNAL){ //get long signal
 		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->symbol = _symbol;
