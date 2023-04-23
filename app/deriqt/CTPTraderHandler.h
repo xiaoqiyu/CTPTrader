@@ -718,14 +718,14 @@ public:
         this->v_investor_position_fields = get_investor_position(investor_id, broker_id);
         for(auto it=v_investor_position_fields.begin();it!=v_investor_position_fields.end();++it){
             ptr_Position p_cur_pos = *it;
-            std::cout<<"erase empty position,position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
+            std::cout<<"init position from query,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
         }
         LOG(INFO)<<"*************init position***********************"<<",size=>"<<v_investor_position_fields.size();
         auto it = v_investor_position_fields.begin();
         for(; it!=v_investor_position_fields.end(); ){
             ptr_Position p_cur_pos = *it;
             if(p_cur_pos->TodayPosition == 0 && p_cur_pos->OpenVolume == p_cur_pos->CloseVolume){ //FIXME double check the cond, 
-                std::cout<<"erase empty position,position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
+                std::cout<<"erase empty position,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
                 it = v_investor_position_fields.erase(it);
             }else{
                 ++it;
@@ -733,7 +733,7 @@ public:
         }
         for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
             ptr_Position p_cur_pos = *it1;
-            LOG(INFO)<<"Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
+            LOG(INFO)<<"Final Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
         }
         LOG(INFO)<<"*************end init position***********************";
     };

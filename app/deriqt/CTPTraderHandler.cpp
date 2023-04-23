@@ -2873,9 +2873,12 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
         recordio::RecordWriter writer(&ofs);
         writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInvestorPositionField));
         writer.Close();
-        std::cout<<"????pos,direction=>"<<task_data->PosiDirection<<"open vol=>"<<task_data->OpenVolume<<"close vol=>"<<task_data->CloseVolume<<"today position=>"<<task_data->TodayPosition<<"addr=>"<<task_data<<std::endl;
+        std::cout<<"????pos,direction=>"<<task_data->InstrumentID<<",direction=>"<<task_data->PosiDirection<<"open vol=>"<<task_data->OpenVolume<<"close vol=>"<<task_data->CloseVolume<<"today position=>"<<task_data->TodayPosition<<"addr=>"<<task_data<<std::endl;
 		v_investor_position_fields.push_back(task_data);
 		// delete task->task_data; //FIXME new a obj or not delete this
+        for (auto it = v_investor_position_fields.begin(); it != v_investor_position_fields.end(); it++){
+            std::cout<<(*it)->InstrumentID<<","<<(*it)->OpenVolume<<","<<(*it)->CloseVolume<<std::endl;
+        }
 	}
 	if (task->task_error)
 	{
@@ -3068,7 +3071,7 @@ void CTPTraderHandler::processRspQryProduct(Task* task)
 
 void CTPTraderHandler::processRspQryInstrument(Task* task)
 {
-	//ProductClass:,"1":期货单一合约；"2":期权单一合约
+	//ProductClass:,"1":期货单一合约�?"2":期权单一合约
 	//ProductID: "cu_o":option,"cu":future
 	if (task->task_data)
 	{
@@ -3836,7 +3839,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         LOG(INFO)<<"Volume Ramained=>"<<task_data->VolumeTotal;
         LOG(INFO)<<"OffsetFlag [0:buy,1:sell,3:closetoday,4:close prev] =>"<<task_data->CombOffsetFlag;
         LOG(INFO)<<"OrderStatus [0:all traded,3:in queue,5:canceled,a:unknown] =>"<<task_data->OrderStatus;
-        LOG(INFO)<<"OrderSubmissionStatus [0:submitted,3:accepted] =>"<<task_data->OrderSubmitStatus;
+        LOG(INFO)<<"OrderSubmissionStatus [0:submitted,3:accepted,4:rejected] =>"<<task_data->OrderSubmitStatus;
         LOG(INFO)<<"StatusMsg=>"<<task_data->StatusMsg;
         LOG(INFO)<<"OrderUpdateTime=>"<<task_data->UpdateTime;
         LOG(INFO)<<"InsertTime=>"<<task_data->InsertTime;
@@ -4680,7 +4683,7 @@ void CTPTraderHandler::processTask()
                 this->processRspOrderInsert(&task);
                 break;
             }
-			//预埋单录入请求
+			//预埋单录入请�?
             case ONRSPPARKEDORDERINSERT:
             {
                 this->processRspParkedOrderInsert(&task);
@@ -4710,7 +4713,7 @@ void CTPTraderHandler::processTask()
                 this->processRspSettlementInfoConfirm(&task);
                 break;
             }
-			//删除预埋单
+			//删除预埋�?
             case ONRSPREMOVEPARKEDORDER:
             {
                 this->processRspRemoveParkedOrder(&task);
@@ -4860,7 +4863,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryTransferBank(&task);
                 break;
             }
-			//投资者持仓明细
+			//投资者持仓明�?
             case ONRSPQRYINVESTORPOSITIONDETAIL:
             {
                 this->processRspQryInvestorPositionDetail(&task);
@@ -5190,7 +5193,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryContractBank(&task);
                 break;
             }
-			//查询预埋单
+			//查询预埋�?
             case ONRSPQRYPARKEDORDER:
             {
                 this->processRspQryParkedOrder(&task);
@@ -5598,7 +5601,7 @@ int CTPTraderHandler::ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nReque
 	return ret;
 }
 
-///请求查询投资者持仓
+///请求查询投资者持�?
 int CTPTraderHandler::ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID)
 {
 	this->available_ = false;
@@ -5624,7 +5627,7 @@ int CTPTraderHandler::ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQr
 	return ret;
 }
 
-//请求查询投资者持仓明细
+//请求查询投资者持仓明�?
 int CTPTraderHandler::ReqQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID)
 {
 	this->available_ = false;
@@ -5706,8 +5709,8 @@ int CTPTraderHandler::insert_order(OrderData * p_orderdata){
         orderfield.CombOffsetFlag[0] = THOST_FTDC_OF_Open;
     }
     orderfield.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
-    //TODO double check 下单类型；test SHFE,只有即成撤单，或者当日有效可用    
-    // orderfield.TimeCondition = THOST_FTDC_TC_IOC;//立即完成，否则撤单
+    //TODO double check 下单类型；test SHFE,只有即成撤单，或者当日有效可�?    
+    // orderfield.TimeCondition = THOST_FTDC_TC_IOC;//立即完成，否则撤�?
     orderfield.TimeCondition = THOST_FTDC_TC_GFD;//当日有效
     orderfield.VolumeCondition = THOST_FTDC_VC_AV;    
     orderfield.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;  
@@ -5795,8 +5798,8 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
     }
     this->pos_available_ = true;
     LOG(INFO)<<"*****************************[update_positions] complete update position, pos_avaible_=>"<<pos_available_<<",order_complete_=>"<<order_complete_;
-    mlock.unlock();     //释放锁
-    cond_.notify_all(); //通知正在阻塞等待的线程
+    mlock.unlock();     //释放�?
+    cond_.notify_all(); //通知正在阻塞等待的线�?
 }
 
 int CTPTraderHandler::cancel_order(ptr_OrderIDRef p_orderidref){
@@ -5864,7 +5867,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& ins
     std::vector<ptr_Position> v_ret_pos;
     for(auto it = this->v_investor_position_fields.begin(); it != v_investor_position_fields.end(); ++it){
         ptr_Position p_cur_pos = *it;
-        if(strcpy(p_cur_pos->InstrumentID, instrument_id.c_str()) && p_cur_pos->TodayPosition>0){
+        if(strcmp(p_cur_pos->InstrumentID, instrument_id.c_str()) == 0 && p_cur_pos->TodayPosition>0){
             v_ret_pos.push_back(p_cur_pos);
         }
     }

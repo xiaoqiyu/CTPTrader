@@ -56,6 +56,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 
 	//when the stratey starts, pop and clear the stale depth market since there are cases when the trade process stop but 
 	//market process still subscribe the depth market and push factor the shm queue
+	//策略启动时，先清空行情队列由行情进程推送的过期数据
 	shm::shared_string v_tmp(*char_alloc_ptr);
 	while(!p_queue->empty()){
 		p_queue->pop(v_tmp);
@@ -1242,7 +1243,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			}//end of for order loop
 
 			//stop profit and loss
-			std::vector<ptr_Position> v_ret_pos = p_trader_handler->get_positions();
+			std::vector<ptr_Position> v_ret_pos = p_trader_handler->get_positions(p_risk_input->symbol);
 			for(auto it = v_ret_pos.begin(); it != v_ret_pos.end(); ++it){ 
 			    ptr_Position  _cur_pos = *it;
 			    bool stop_profit = (_cur_pos->PosiDirection ==THOST_FTDC_PD_Long && _last_price-_cur_pos->OpenCost >stop_profit_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-_cur_pos->OpenCost<-stop_profit_bc);
