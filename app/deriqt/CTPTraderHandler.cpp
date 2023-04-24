@@ -2873,7 +2873,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
         recordio::RecordWriter writer(&ofs);
         writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInvestorPositionField));
         writer.Close();
-        std::cout<<"????pos,direction=>"<<task_data->InstrumentID<<",direction=>"<<task_data->PosiDirection<<"open vol=>"<<task_data->OpenVolume<<"close vol=>"<<task_data->CloseVolume<<"today position=>"<<task_data->TodayPosition<<"addr=>"<<task_data<<std::endl;
+        std::cout<<"????pos,direction=>"<<task_data->InstrumentID<<",direction(net:1,long:2,short:3)=>"<<task_data->PosiDirection<<"open vol=>"<<task_data->OpenVolume<<"close vol=>"<<task_data->CloseVolume<<"today position=>"<<task_data->TodayPosition<<"addr=>"<<task_data<<std::endl;
 		v_investor_position_fields.push_back(task_data);
 		// delete task->task_data; //FIXME new a obj or not delete this
         for (auto it = v_investor_position_fields.begin(); it != v_investor_position_fields.end(); it++){
@@ -3712,6 +3712,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         bool is_1st_equ = task_data->InsertTime[0] == _login_time[0];
         std::string insert_date_str = std::string(task_data->InsertDate);
         bool _is_same_date =  (std::stoi(insert_date_str.substr(6,2))) == now->tm_mday;
+        //只有报单日期等于登录当日日期且报单时间比登录时间慢，才会处理；这样逻辑的话，就相当于夜盘报单如果夜盘时候没有处理callback，第二天日盘开盘不会处理，因为即使交易日一样，报单日期不同了
         if(!(strcmp(task_data->InsertTime, _login_time) > 0 && _is_same_date )){
             LOG(INFO)<<"[processRtnOrder] Ignore order callback for inserttime=>"<<task_data->InsertTime<<", insert date=>"<<std::stoi(insert_date_str.substr(6,2))<<",login time=>"<<_login_time<<",login date=>"<<now->tm_mday;
             return;

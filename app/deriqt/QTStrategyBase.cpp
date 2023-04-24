@@ -10,7 +10,7 @@ void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::string _conf_file_name)
 {
 	//初始
-	LOG(INFO)<<"Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name<<"strategy name:";
+	LOG(INFO)<<"Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name;
 
 	FileName _conf_file = {'\0'};
 	strcpy(_conf_file, _conf_file_name.c_str());
@@ -113,7 +113,8 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 
 
 	LOG(INFO)<<"************** Start cache daily market*************";
-	// std::ofstream * cache_ptr = new std::ofstream();
+	//从当天存下的行情记录中找到第一个tick作为open price,因为daily cache的接口没有当天的行情
+	std::ofstream * cache_ptr = new std::ofstream();
 	FileName _cache_filename = {'\0'};
 	//FIXME remove hardcode the cache path
 	sprintf(_cache_filename, "/home/kiki/workspace/CTPTrader/cache/mkt/%s_depth_market_data_%s.recordio", this->task_tag.c_str(), trading_date.c_str());
@@ -132,7 +133,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 			std::string cache_instrument_id = *it;
 			if(cache_instrument_id ==  p_mkt->InstrumentID){
 				auto it1 = this->m_daily_cache.find(*it);
-				if(it1 == this->m_daily_cache.end()){ 
+				if(it1 == this->m_daily_cache.end()){ //只有找不到相关的合约才做一次初始化，就保证了每个合约的open price只用了第一个深度行情数据
 					if(curr_date==trading_date){
 						ptr_daily_cache _tmp_ptr = new daily_cache(); //FIXME add delete
 						_tmp_ptr->InstrumentID = cache_instrument_id;

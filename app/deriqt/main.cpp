@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     google::InitGoogleLogging(argv[0]);
     FLAGS_log_dir = std::string("./log/");
     //TODO remove hardcode of the path, with relative path
-    // system("cp /mnt/c/projects/pycharm/option_future_research/research/daily_models/daily_cache.ini ~/projects/DERIQT_F/conf/");
+    system("cp /mnt/c/projects/pycharm/option_future_research_private/codes/research/daily_models/daily_cache.ini ~/workspace/CTPTrader/conf/");
     // system("cp /mnt/c/projects/pycharm/option_future_research/conf/strategy.ini ~/projects/DERIQT_F/conf/");
 
 #ifdef true
