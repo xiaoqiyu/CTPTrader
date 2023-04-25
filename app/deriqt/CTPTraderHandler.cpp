@@ -2873,7 +2873,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
         recordio::RecordWriter writer(&ofs);
         writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInvestorPositionField));
         writer.Close();
-        std::cout<<"????pos,direction=>"<<task_data->InstrumentID<<",direction(net:1,long:2,short:3)=>"<<task_data->PosiDirection<<"open vol=>"<<task_data->OpenVolume<<"close vol=>"<<task_data->CloseVolume<<"today position=>"<<task_data->TodayPosition<<"addr=>"<<task_data<<std::endl;
+        std::cout<<"????pos"<<task_data->InstrumentID<<",direction(net:1,long:2,short:3)=>"<<task_data->PosiDirection<<",open vol=>"<<task_data->OpenVolume<<",close vol=>"<<task_data->CloseVolume<<",today position=>"<<task_data->TodayPosition<<",Position=>"<<task_data->Position<<std::endl;
 		v_investor_position_fields.push_back(task_data);
 		// delete task->task_data; //FIXME new a obj or not delete this
         for (auto it = v_investor_position_fields.begin(); it != v_investor_position_fields.end(); it++){
