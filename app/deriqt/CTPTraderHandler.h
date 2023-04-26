@@ -716,25 +716,28 @@ public:
     //position maintain API
     int init_positions(const std::string& investor_id, const std::string& broker_id){
         this->v_investor_position_fields = get_investor_position(investor_id, broker_id);
+        LOG(INFO)<<"*************init position from query***********************"<<",size=>"<<v_investor_position_fields.size();
         for(auto it=v_investor_position_fields.begin();it!=v_investor_position_fields.end();++it){
             ptr_Position p_cur_pos = *it;
-            std::cout<<"init position from query,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
+            LOG(INFO)<<p_cur_pos->InstrumentID<<",TodayPosition=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",position=>"<<p_cur_pos->TodayPosition;
+            // std::cout<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
         }
-        LOG(INFO)<<"*************init position***********************"<<",size=>"<<v_investor_position_fields.size();
-        auto it = v_investor_position_fields.begin();
-        for(; it!=v_investor_position_fields.end(); ){
-            ptr_Position p_cur_pos = *it;
-            if(p_cur_pos->TodayPosition == 0 && p_cur_pos->OpenVolume == p_cur_pos->CloseVolume){ //FIXME double check the cond, 
-                std::cout<<"erase empty position,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
-                it = v_investor_position_fields.erase(it);
-            }else{
-                ++it;
-            }
-        }
-        for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
-            ptr_Position p_cur_pos = *it1;
-            LOG(INFO)<<"Final Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
-        }
+        // TODO 不对持仓做提前的erease了，意义不大，逻辑还会更复杂
+        // auto it = v_investor_position_fields.begin();
+        // for(; it!=v_investor_position_fields.end(); ){
+        //     ptr_Position p_cur_pos = *it;
+            
+        //     if(p_cur_pos->TodayPosition == 0 && p_cur_pos->OpenVolume == p_cur_pos->CloseVolume){ //FIXME double check the cond, 
+        //         std::cout<<"erase empty position,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
+        //         it = v_investor_position_fields.erase(it);
+        //     }else{
+        //         ++it;
+        //     }
+        // }
+        // for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
+        //     ptr_Position p_cur_pos = *it1;
+        //     LOG(INFO)<<"Final Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
+        // }
         LOG(INFO)<<"*************end init position***********************";
     };
 
@@ -767,7 +770,7 @@ public:
                                                //format: "ExchangeID_OrderSysID TODO remove leading emptry string
 
 
-    //pre is the poduct_id, str is the instrument id
+    //pre is the poduct_id, str is the instrument id 确认大小写（都为小写字母）
     bool is_trade_product(const char *product_id, const char *symbol)
     {
         size_t lenpre = strlen(product_id),

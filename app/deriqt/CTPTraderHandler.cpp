@@ -2875,10 +2875,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
         writer.Close();
         std::cout<<"????pos"<<task_data->InstrumentID<<",direction(net:1,long:2,short:3)=>"<<task_data->PosiDirection<<",open vol=>"<<task_data->OpenVolume<<",close vol=>"<<task_data->CloseVolume<<",today position=>"<<task_data->TodayPosition<<",Position=>"<<task_data->Position<<std::endl;
 		v_investor_position_fields.push_back(task_data);
-		// delete task->task_data; //FIXME new a obj or not delete this
-        for (auto it = v_investor_position_fields.begin(); it != v_investor_position_fields.end(); it++){
-            std::cout<<(*it)->InstrumentID<<","<<(*it)->OpenVolume<<","<<(*it)->CloseVolume<<std::endl;
-        }
+
 	}
 	if (task->task_error)
 	{
@@ -5761,11 +5758,10 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
             bool _is_short = p_curr_pos->PosiDirection == THOST_FTDC_PD_Short && p_trade->Direction == THOST_FTDC_D_Sell;
             bool _is_same_direction = _is_long || _is_short;
             std::cout<<"pos idrection(2:long,3:short)=>"<<p_curr_pos->PosiDirection<<",trade direction(0:buy, 1:sell)=>"<<p_trade->Direction<<",is_logn=>"<<_is_long<<",_is_short=>"<<_is_short<<std::endl;
-            //鍚堢害鐩稿悓锛屽紑浠撴柟鍚戠浉鍚屾垨鑰呭钩浠撴柟鍚戠浉鍙嶏紝鍒欏悎鍏卞拰鏇存柊浠撲綅
             bool _is_pos_exist = (strcmp(p_curr_pos->InstrumentID, p_trade->InstrumentID)==0) && ((_trade_open&&_is_same_direction)||(!_trade_open && !_is_same_direction));
             LOG(INFO)<<"[update_positions] check whether to merge position========>:"<<_is_pos_exist;
             if(_is_pos_exist){ //position exists 
-                LOG(INFO)<<"pos exist, and update position"<<",pos vol:"<<p_curr_pos->TodayPosition<<",exe vol:"<<exe_vol;
+                LOG(INFO)<<"pos exist, and update position"<<",today position:"<<p_curr_pos->TodayPosition<<",exe vol:"<<exe_vol;
                 flag = true;
                 if (p_curr_pos->TodayPosition + exe_vol == 0){
                     p_curr_pos->OpenCost = 0.0; 
@@ -5773,7 +5769,13 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
                     p_curr_pos->OpenCost = (p_curr_pos->OpenCost*p_curr_pos->TodayPosition + p_trade->Price*exe_vol)/(p_curr_pos->TodayPosition+exe_vol);
                 }
                 p_curr_pos->TodayPosition += exe_vol;
-                //TODO add other value updates
+                p_curr_pos->Position += exe_vol;
+                if (_trade_open){
+                    p_curr_pos->OpenVolume += exe_vol;
+                }else{
+                    p_curr_pos->CloseVolume -= exe_vol;
+                }
+                //TODO add other value updates,PositionCost,持仓成本
                 LOG(INFO)<<"[update_positions] After update position,curr vol=>"<<p_curr_pos->TodayPosition;
                 break;
             }
@@ -5786,14 +5788,16 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
         strcpy(p_pos->InstrumentID, p_trade->InstrumentID);
         p_pos->OpenCost = p_trade->Price;
         p_pos->TodayPosition = p_trade->Volume;
+        p_pos->Position = p_trade->Volume;
+        p_pos->OpenVolume = p_trade->Volume;
         // p_pos->volume_today = p_exe->volume;
         if(p_trade->Direction == THOST_FTDC_D_Buy){
             p_pos->PosiDirection = THOST_FTDC_PD_Long;
         } else if(p_trade->Direction == THOST_FTDC_D_Sell){
             p_pos->PosiDirection = THOST_FTDC_PD_Short;
         }
-        //TODO add other value updates 
-        LOG(INFO)<<"[update_positions] new add pos,vwap=>"<<p_pos->OpenCost<<",vol=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<p_pos->PosiDirection;
+        //TODO add other value updates,比如PositionCost,持仓成本
+        LOG(INFO)<<"[update_positions] new add pos,vwap=>"<<p_pos->OpenCost<<",today position=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<",open volume=>"<<p_pos->PosiDirection<<p_pos->OpenVolume<<", close volume=>"<<p_pos->CloseVolume;
         v_investor_position_fields.push_back(p_pos);
         LOG(INFO)<<"[update_positions] after add new transaction,all position size=>"<<v_investor_position_fields.size()<<",curr pos vol=>"<<p_pos->TodayPosition;
     }
@@ -5860,6 +5864,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(){
     return this->v_investor_position_fields;
 }
 
+// TODO: 返回该合约 instrument_id有当日持仓的（TodayPosition >0) 的记录，这个是T0设定，看看要不要rename, 在verify order和risk monitor中调用
 std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& instrument_id){
     unique_lock<mutex> mlock(mutex_);
     cond_.wait(mlock, [&]() {
@@ -5868,6 +5873,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& ins
     std::vector<ptr_Position> v_ret_pos;
     for(auto it = this->v_investor_position_fields.begin(); it != v_investor_position_fields.end(); ++it){
         ptr_Position p_cur_pos = *it;
+        // 按照T0每日平仓的设定，就是查看当日的持仓
         if(strcmp(p_cur_pos->InstrumentID, instrument_id.c_str()) == 0 && p_cur_pos->TodayPosition>0){
             v_ret_pos.push_back(p_cur_pos);
         }
@@ -5891,17 +5897,18 @@ int CTPTraderHandler::close_position(ptr_Position p_pos){
     p_orderdata->position_effect = PositionEffect_Close;
     p_orderdata->symbol = p_pos->InstrumentID;
     int ret = insert_order(p_orderdata);
-    LOG(INFO)<<"[close_position] return for close position";
+    LOG(INFO)<<"[close_position] return for close position for sysmbol=>"<<p_pos->InstrumentID;
     return ret;
 }
     
+// 平掉所有满足以下的持仓：1. 持仓的合约是该策略cover的品种（product_id/task_tag), 2. 该合约有当日持仓
 int CTPTraderHandler::close_all_positions(){
     std::vector<ptr_Position> v_pos = get_positions();//FIXME check whether to filter by product_id or symbol
     int ret = 0;
     LOG(INFO)<<"[close_all_positions] close all positions with size=>"<<v_pos.size();
     for(auto it = v_pos.begin(); it!=v_pos.end(); ++it){
         ptr_Position p_cur_pos = *it;
-        if(p_cur_pos->TodayPosition >0){
+        if(p_cur_pos->TodayPosition >0 && is_trade_product(this->task_tag.c_str(), p_cur_pos->InstrumentID)){
             ret = close_position(p_cur_pos);
         }
     }

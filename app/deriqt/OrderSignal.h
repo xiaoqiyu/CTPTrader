@@ -53,5 +53,7 @@ private:
 	float short_score_benchmark; //final score ratio of sum of sub strategy score 
 	int strategy_num;
 	std::string strategy_name;
+	//FIXME hardcode for test
+	int test_signal_num = 0;
 };
 
