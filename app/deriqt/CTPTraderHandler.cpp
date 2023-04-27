@@ -1502,7 +1502,6 @@ void CTPTraderHandler::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequest
 
 void CTPTraderHandler::OnRtnOrder(CThostFtdcOrderField *pOrder)
 {
-    std::cout<<"on rtn order:"<<std::endl;
     Task task = Task();
     task.task_name = ONRTNORDER;
     if (pOrder)
@@ -1516,7 +1515,7 @@ void CTPTraderHandler::OnRtnOrder(CThostFtdcOrderField *pOrder)
 
 void CTPTraderHandler::OnRtnTrade(CThostFtdcTradeField *pTrade)
 {
-    std::cout<<"on rtn trade"<<std::endl;
+
     Task task = Task();
     task.task_name = ONRTNTRADE;
     if (pTrade)
@@ -2873,7 +2872,7 @@ void CTPTraderHandler::processRspQryInvestorPosition(Task* task)
         recordio::RecordWriter writer(&ofs);
         writer.WriteBuffer(reinterpret_cast<const char*>(task_data), sizeof(CThostFtdcInvestorPositionField));
         writer.Close();
-        std::cout<<"????pos"<<task_data->InstrumentID<<",direction(net:1,long:2,short:3)=>"<<task_data->PosiDirection<<",open vol=>"<<task_data->OpenVolume<<",close vol=>"<<task_data->CloseVolume<<",today position=>"<<task_data->TodayPosition<<",Position=>"<<task_data->Position<<std::endl;
+        std::cout<<"????pos"<<task_data->InstrumentID<<",direction(net:1,long:2,short:3)=>"<<task_data->PosiDirection<<",open vol=>"<<task_data->OpenVolume<<",close vol=>"<<task_data->CloseVolume<<",today position=>"<<task_data->TodayPosition<<",Position=>"<<task_data->Position<<",open cost=>"<<task_data->OpenCost<<std::endl;
 		v_investor_position_fields.push_back(task_data);
 
 	}
@@ -5419,13 +5418,12 @@ void CTPTraderHandler::release()
 int CTPTraderHandler::exit()
 {
     this->_active = false;
-
+    LOG(INFO)<<"[exit] set active=>"<<this->_active;
 	CThostFtdcUserLogoutField reqUserLogout = {0};
     strcpy(reqUserLogout.BrokerID, this->broker_id.c_str());
     strcpy(reqUserLogout.UserID, this->user_id.c_str());
 
     this->ReqUserLogout(&reqUserLogout, nRequestID++);
-
     //TODO improve this, leave time buffer to handle logout callback
     sleep(1);
     unique_lock<mutex> mlock(mutex_);
@@ -5740,6 +5738,14 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
     int exe_vol = p_trade->Volume; 
 
     bool _trade_open = true;
+    int multiplier = 0;
+    for (auto it = v_instruments.begin(); it != v_instruments.end(); ++it){
+        CThostFtdcInstrumentField* p_instrument = *it;
+        if (strcmp(p_instrument->InstrumentID, p_trade->InstrumentID)==0){
+            multiplier = p_instrument->VolumeMultiple;
+             LOG(INFO)<<"Update Multiplier for instrument=>"<<p_trade->InstrumentID<<" to =>"<<multiplier;
+        }
+    }
     //如果是平仓、平今或者平昨，则交易数量变动是负的
     if(p_trade->OffsetFlag == THOST_FTDC_OF_Close || p_trade->OffsetFlag==THOST_FTDC_OF_CloseToday || p_trade->OffsetFlag== THOST_FTDC_OF_CloseYesterday){
         exe_vol = - exe_vol;
@@ -5751,7 +5757,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
     if (v_investor_position_fields.size()>0){//have positions now
         for(auto it=v_investor_position_fields.begin(); it!=v_investor_position_fields.end(); ++it){
             ptr_Position  p_curr_pos = *it;
-            LOG(INFO)<<"[update_positions] current positions:"<<p_curr_pos->InstrumentID<<",pos vwap:"<<p_curr_pos->OpenCost<<",pos vol:"<<p_curr_pos->OpenVolume<<",pos side:"<<p_curr_pos->PosiDirection;
+            LOG(INFO)<<"[update_positions] current positions:"<<p_curr_pos->InstrumentID<<",open cost:"<<p_curr_pos->OpenCost<<",pos vol:"<<p_curr_pos->OpenVolume<<",pos side:"<<p_curr_pos->PosiDirection;
             LOG(INFO)<<"[update_positions]to be added exe,check cond:"<<p_trade->InstrumentID<<",exe side:"<<p_trade->Direction<<",pos side:"<<p_curr_pos->PosiDirection;
 
             bool _is_long = p_curr_pos->PosiDirection == THOST_FTDC_PD_Long && p_trade->Direction == THOST_FTDC_D_Buy;
@@ -5766,7 +5772,9 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
                 if (p_curr_pos->TodayPosition + exe_vol == 0){
                     p_curr_pos->OpenCost = 0.0; 
                 }else{
-                    p_curr_pos->OpenCost = (p_curr_pos->OpenCost*p_curr_pos->TodayPosition + p_trade->Price*exe_vol)/(p_curr_pos->TodayPosition+exe_vol);
+                    // p_curr_pos->OpenCost = (p_curr_pos->OpenCost*p_curr_pos->TodayPosition + p_trade->Price*exe_vol)/(p_curr_pos->TodayPosition+exe_vol);
+                    p_curr_pos->OpenCost = p_curr_pos->OpenCost + (p_trade->Price*exe_vol*multiplier);
+                    
                 }
                 p_curr_pos->TodayPosition += exe_vol;
                 p_curr_pos->Position += exe_vol;
@@ -5776,7 +5784,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
                     p_curr_pos->CloseVolume -= exe_vol;
                 }
                 //TODO add other value updates,PositionCost,�ֲֳɱ�
-                LOG(INFO)<<"[update_positions] After update position,curr vol=>"<<p_curr_pos->TodayPosition;
+                LOG(INFO)<<"[update_positions] After update position,today pos=>"<<p_curr_pos->TodayPosition<<",pos=>"<<p_curr_pos->Position<<", open cost=>"<<p_curr_pos->OpenCost;
                 break;
             }
         }
@@ -5786,7 +5794,8 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
         LOG(INFO)<<"[update_positions] symbol not exist, start create new position for open order,flag=>"<<flag<<"all pos size=>"<<v_investor_position_fields.size();
         ptr_Position p_pos = new PositionField();
         strcpy(p_pos->InstrumentID, p_trade->InstrumentID);
-        p_pos->OpenCost = p_trade->Price;
+        // p_pos->OpenCost = p_trade->Price;
+        p_pos->OpenCost = p_trade->Price * p_trade->Volume * multiplier;
         p_pos->TodayPosition = p_trade->Volume;
         p_pos->Position = p_trade->Volume;
         p_pos->OpenVolume = p_trade->Volume;
@@ -5797,14 +5806,14 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
             p_pos->PosiDirection = THOST_FTDC_PD_Short;
         }
         //TODO add other value updates,����PositionCost,�ֲֳɱ�
-        LOG(INFO)<<"[update_positions] new add pos,vwap=>"<<p_pos->OpenCost<<",today position=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<",open volume=>"<<p_pos->PosiDirection<<p_pos->OpenVolume<<", close volume=>"<<p_pos->CloseVolume;
+        LOG(INFO)<<"[update_positions] new add pos,open cost=>"<<p_pos->OpenCost<<",today position=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<",open volume=>"<<p_pos->PosiDirection<<p_pos->OpenVolume<<", close volume=>"<<p_pos->CloseVolume;
         v_investor_position_fields.push_back(p_pos);
         LOG(INFO)<<"[update_positions] after add new transaction,all position size=>"<<v_investor_position_fields.size()<<",curr pos vol=>"<<p_pos->TodayPosition;
     }
     this->pos_available_ = true;
-    LOG(INFO)<<"*****************************[update_positions] complete update position, pos_avaible_=>"<<pos_available_<<",order_complete_=>"<<order_complete_;
-    mlock.unlock();     //释放�?
-    cond_.notify_all(); //通知正在阻塞等待的线�?
+    LOG(INFO)<<"*************[update_positions] complete update position, pos_avaible_=>"<<pos_available_<<",order_complete_=>"<<order_complete_;
+    mlock.unlock();     
+    cond_.notify_all(); 
 }
 
 int CTPTraderHandler::cancel_order(ptr_OrderIDRef p_orderidref){
@@ -5851,6 +5860,7 @@ int CTPTraderHandler::cancel_all_orders(){
         if(!(it->second->OrderStatus == THOST_FTDC_OST_AllTraded || it->second->OrderStatus == THOST_FTDC_OST_Canceled)){
             std::cout<<"?????????cancel order=>"<<it->second->p_orderid_ref->OrderRef<<std::endl;
             ret = cancel_order(it->second->p_orderid_ref);
+            LOG(INFO)<<"Ret for cancal order=>"<<it->second->p_orderid_ref<<",ret=>"<<ret;
         }
     }
     return ret;
@@ -5869,7 +5879,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& ins
     unique_lock<mutex> mlock(mutex_);
     cond_.wait(mlock, [&]() {
         return pos_available_ ; 
-    }); //等待条件变量通知
+    });
     std::vector<ptr_Position> v_ret_pos;
     for(auto it = this->v_investor_position_fields.begin(); it != v_investor_position_fields.end(); ++it){
         ptr_Position p_cur_pos = *it;

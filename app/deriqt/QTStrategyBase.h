@@ -151,6 +151,16 @@ public: //qry for product/instrument/account
 	}
 	void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 
+	//得到某个合约的合约乘数，如果合约没有cache,返回0
+	int get_instrument_multiplier(const std::string& instrument_id){
+		for (auto it = m_target_instruments.begin(); it!=m_target_instruments.end(); ++it){
+			if(it->first == instrument_id){
+				return it->second->VolumeMultiple;
+			}
+		}
+		return 0;
+	}
+
 
 
 protected:

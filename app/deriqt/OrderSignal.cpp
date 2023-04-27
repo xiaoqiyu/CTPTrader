@@ -130,7 +130,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, ptr_dai
 	int ret_signal = get_com_signal(v_rev, _range); //get the final signal
 	//FIXME hardcode for test
 	if (test_signal_num == 0){
-		ret_signal = LONG_SIGNAL;
+		ret_signal = SHORT_SIGNAL;
 		test_signal_num += 1;
 	}
 	if(ret_signal == LONG_SIGNAL){ //get long signal

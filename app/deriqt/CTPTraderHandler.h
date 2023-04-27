@@ -719,7 +719,7 @@ public:
         LOG(INFO)<<"*************init position from query***********************"<<",size=>"<<v_investor_position_fields.size();
         for(auto it=v_investor_position_fields.begin();it!=v_investor_position_fields.end();++it){
             ptr_Position p_cur_pos = *it;
-            LOG(INFO)<<p_cur_pos->InstrumentID<<",TodayPosition=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",position=>"<<p_cur_pos->TodayPosition;
+            LOG(INFO)<<p_cur_pos->InstrumentID<<",TodayPosition=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",position=>"<<p_cur_pos->Position<<", open cost=>"<<p_cur_pos->OpenCost;
             // std::cout<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
         }
         // TODO 不对持仓做提前的erease了，意义不大，逻辑还会更复杂

@@ -259,9 +259,9 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_strategy_config->signal_delay = std::stoi(reader_str.Get("strategy", "signal_delay","5"));
 		p_strategy_config->risk_duration = std::stoi(reader_str.Get("strategy", "risk_duration","60"));
 		p_strategy_config->cancel_order_delay = std::stoi(reader_str.Get("strategy", "cancel_order_delay","120"));
-		LOG(INFO)<<"stop_profit=>"<<p_strategy_config->stop_profit<<"stop loss=>"<<p_strategy_config->stop_loss<<"vol limit=>"<<p_strategy_config->vol_limit
-		<<"init cash=>"<<p_strategy_config->init_cash<<"risk ratio=>"<<p_strategy_config->risk_ratio
-		<<"signal delay=>"<<p_strategy_config->signal_delay<<"risk duration=>"<<p_strategy_config->risk_duration<<"cancel order delay=>"<<p_strategy_config->cancel_order_delay;
+		LOG(INFO)<<"stop_profit=>"<<p_strategy_config->stop_profit<<", stop loss=>"<<p_strategy_config->stop_loss<<", vol limit=>"<<p_strategy_config->vol_limit
+		<<", init cash=>"<<p_strategy_config->init_cash<<", risk ratio=>"<<p_strategy_config->risk_ratio
+		<<", signal delay=>"<<p_strategy_config->signal_delay<<", risk duration=>"<<p_strategy_config->risk_duration<<", cancel order delay=>"<<p_strategy_config->cancel_order_delay;
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
@@ -754,6 +754,11 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	double _up_limit_price = 0.0;
 	double _down_limit_price = 0.0;
 	auto it = this->m_daily_cache.find(p_orderdata->symbol);
+	
+	int multiplier = get_instrument_multiplier(p_orderdata->symbol);
+	if (multiplier==0){
+		LOG(ERROR)<<"multiplier is 0 for instrument=>"<<p_orderdata->symbol;
+	}
 	if(it != this->m_daily_cache.end()){
 		_up_limit_price = it->second->up_limit;
 		_down_limit_price = it->second->down_limit;
@@ -770,10 +775,11 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			ptr_Position p_curr_pos = *it;
+			double vwap = p_curr_pos->OpenCost/(p_curr_pos->TodayPosition*multiplier);
 			if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Short){//long signal and short position, close the position for all vol by stop_profit
 				LOG(INFO)<<"[verify_order_condition] long signal, close short position";
 				p_orderdata->order_type = OrderType_Limit;
-				p_orderdata->price = floor(p_curr_pos->OpenCost - p_strategy_config->stop_profit);//买入平仓，下取整
+				p_orderdata->price = floor(vwap - p_strategy_config->stop_profit);//买入平仓，下取整
 				p_orderdata->volume = p_curr_pos->TodayPosition;
 				p_orderdata->side = OrderSide_Buy;
 				p_orderdata->position_effect = PositionEffect_Close;
@@ -806,11 +812,12 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 		LOG(INFO)<<"[verify_order_condition] check short signal";
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			ptr_Position p_curr_pos = *it;
+			double vwap = p_curr_pos->OpenCost/(p_curr_pos->TodayPosition*multiplier);
 			std::cout<<"pos direction=>"<<p_curr_pos->PosiDirection<<std::endl;
 			if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Long){//short signal and long position, close the position for all vol by stop_profit
 				LOG(INFO)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->TodayPosition;
 				p_orderdata->order_type = OrderType_Limit;
-				p_orderdata->price = ceil(p_curr_pos->OpenCost + p_strategy_config->stop_profit);//卖出平仓，上取整
+				p_orderdata->price = ceil(vwap + p_strategy_config->stop_profit);//卖出平仓，上取整
 				p_orderdata->volume = p_curr_pos->TodayPosition;
 				p_orderdata->side = OrderSide_Sell;
 				p_orderdata->position_effect = PositionEffect_Close;
@@ -1159,6 +1166,8 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
     if(ltm->tm_hour == 14 && ltm->tm_min == 55){//收盘撤销订单
         LOG(INFO)<<"[risk_monitor] market closed, close all positions";
 		this->cancel_all_orders();
+		//FIXME cancel没有做订单锁定处理
+		sleep(2);
 		this->close_all_orders();
 		start_ = false; //TODO double check whether this is safe
 		LOG(INFO)<<"[risk_monitor] return for cancel orders and close positions";
@@ -1238,6 +1247,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
     			int ret;
     			if(order_delay > p_strategy_conf->cancel_order_delay && p_cur_order->OrderStatus != THOST_FTDC_OST_AllTraded && p_cur_order->OrderStatus != THOST_FTDC_OST_Canceled){
 					ret = p_trader_handler->cancel_order(p_cur_order->p_orderid_ref);
+					//FIXME ddouble check, 撤单没有做订单锁定
     		    	sleep(1);
     		    	LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<p_cur_order->order_id<<"order vol=>"<<p_cur_order->VolumeTotalOriginal<<"order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<"order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
     			}
