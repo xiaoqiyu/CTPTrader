@@ -686,12 +686,12 @@ void QTStrategyBase::release()
 		LOG(INFO)<<"[release] Mode 1&2: delete order queue in release";
 		p_order_queue->terminate();
 		delete p_order_queue;
-		std::cout<<"delete p order queue"<<std::endl;
+		std::cout<<"complete delete order queue"<<std::endl;
 		p_risk_queue->terminate();
 		delete p_risk_queue;
-		std::cout<<"delete p risk queue"<<std::endl;
+		std::cout<<"complete delete p risk queue"<<std::endl;
 		delete p_queue;
-		std::cout<<"delete p queue"<<std::endl;
+		std::cout<<"complete delete p queue"<<std::endl;
 		this->p_trader_handler->exit();
 
 	}else{
@@ -986,6 +986,8 @@ void QTStrategyBase::process_order()
 				LOG(INFO)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
 				if(verify_order_condition_ctp(p_orderdata)==OrderVerify_valid){
 					this->p_trader_handler->insert_order(p_orderdata);
+				}else{
+					LOG(INFO)<<"[process_order] order invalid, ignore signal";
 				}
 				break;
 			}
@@ -1008,7 +1010,7 @@ void QTStrategyBase::process_order()
 		}//end of if 
 		if(_terminate) 
 		{
-			LOG(INFO)<<"break process order";
+			LOG(INFO)<<"[process_order] break process order";
 			break;
 		}
 	}//end of while
@@ -1249,7 +1251,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 					ret = p_trader_handler->cancel_order(p_cur_order->p_orderid_ref);
 					//FIXME ddouble check, 撤单没有做订单锁定
     		    	sleep(1);
-    		    	LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<p_cur_order->order_id<<"order vol=>"<<p_cur_order->VolumeTotalOriginal<<"order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<"order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
+    		    	LOG(INFO)<<"[risk_monitor] ret from cancel order for order delay=>"<<order_delay<<", cancel order return=>"<<ret<<", cancel order id=>"<<p_cur_order->order_id<<", order vol=>"<<p_cur_order->VolumeTotalOriginal<<", order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<", order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
     			}
 			}//end of for order loop
 
@@ -1257,8 +1259,10 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			std::vector<ptr_Position> v_ret_pos = p_trader_handler->get_positions(p_risk_input->symbol);
 			for(auto it = v_ret_pos.begin(); it != v_ret_pos.end(); ++it){ 
 			    ptr_Position  _cur_pos = *it;
-			    bool stop_profit = (_cur_pos->PosiDirection ==THOST_FTDC_PD_Long && _last_price-_cur_pos->OpenCost >stop_profit_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-_cur_pos->OpenCost<-stop_profit_bc);
-			    bool stop_loss = (_cur_pos->PosiDirection==THOST_FTDC_PD_Long && _last_price-_cur_pos->OpenCost <-stop_loss_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-_cur_pos->OpenCost>stop_loss_bc);
+				int multiplier = get_instrument_multiplier(_cur_pos->InstrumentID);
+				double vwap = _cur_pos->OpenCost/(_cur_pos->TodayPosition*multiplier);
+			    bool stop_profit = (_cur_pos->PosiDirection ==THOST_FTDC_PD_Long && _last_price-vwap>stop_profit_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-vwap<-stop_profit_bc);
+			    bool stop_loss = (_cur_pos->PosiDirection==THOST_FTDC_PD_Long && _last_price-vwap <-stop_loss_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-vwap>stop_loss_bc);
 			    // if(stop_profit || stop_loss)
 			    // LOG(INFO)<<"[risk_monitor] cur pos side=>"<<_cur_pos->PosiDirection<<",cur pos vwap=>"<<_cur_pos->OpenCost<<",cur pos vol=>"<<_cur_pos->TodayPosition<<",last price=>"<<_last_price;
 			    OrderData* p_order = new OrderData();

@@ -3702,7 +3702,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
 		CThostFtdcOrderField* task_data = reinterpret_cast<CThostFtdcOrderField*>(task->task_data);
         std::tm* now = std::localtime(&now_time);
          
-        LOG(INFO)<<"Get task data in process rtn order"<<task_data->InstrumentID;
+        LOG(INFO)<<"Get task data in process rtn order=>"<<task_data->InstrumentID;
         //if order insert date(calendar date) is the same of the login date(calendar date), and order insert time is later than login time
         int ret_time_cmp = strcmp(task_data->InsertTime, _login_time);
         bool is_1st_equ = task_data->InsertTime[0] == _login_time[0];
@@ -3728,7 +3728,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         auto it1 = m_all_orders.find(_order_id1);
         auto it2 = m_all_orders.find(_order_id2);
 
-        LOG(INFO)<<"Order id1=>"<<_order_id1<<"Order id2=>"<<_order_id2;
+        LOG(INFO)<<"Order id1=>"<<_order_id1<<", Order id2=>"<<_order_id2;
 
         //rREMARK temp solution to whether maintain the order(for multi-strategy case); task tag is the product id of product the 
         //current strategy trades. Thus if the instrumentID startswith the product ID(should double check the logic is correct??);
@@ -3738,7 +3738,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
 
         //3rd callback when trade status has updated, come with execution callback
         if (it2 != m_all_orders.end()){//order return from exchange exists,update the order fields, update  order field
-            LOG(INFO)<<"3th order callback, id2 exist,id2=>"<<it2->first<<"m_all_orders_size=>"<<m_all_orders.size();
+            LOG(INFO)<<"3th order callback, id2 exist,id2=>"<<it2->first<<", m_all_orders_size=>"<<m_all_orders.size();
             ptr_OrderField p_orderfield = it2->second;
             p_orderfield->VolumeTotalOriginal = task_data->VolumeTotalOriginal;
             p_orderfield->LimitPrice = task_data->LimitPrice;
@@ -3816,7 +3816,11 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id1, p_orderfield));
             // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
         }else{
-            LOG(INFO)<<"Order id not exist, and not handle, and return from the process,with trade product=> "<<trade_product;
+            LOG(INFO)<<"Order id not exist in order table, and not trading product => "<<trade_product<<"reset order availabe";
+            // TODO double check 
+            order_available_ = true;
+            cond_.notify_all();
+		    delete task_data;
             return;
         }
         LOG(INFO)<<"*************Order Report******************";
@@ -3842,7 +3846,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         LOG(INFO)<<"InsertTime=>"<<task_data->InsertTime;
         LOG(INFO)<<"SuspendTime=>"<<task_data->SuspendTime;
         LOG(INFO)<<"*************End Order Report******************";
-        if(trade_product && task_data->OrderStatus == THOST_FTDC_OST_Canceled){//鎴愬姛鎾ゅ崟涔嬪悗锛岄噴鏀句笅鍗曟帶鍒堕攣
+        if(trade_product && task_data->OrderStatus == THOST_FTDC_OST_Canceled){//如果是交易的品种，而且订单撤销
             order_complete_ = true;
             LOG(INFO)<<"Reset order_complete for cancel order callback, with order complete=>"<<order_complete_;
             cond_.notify_all();
@@ -3855,7 +3859,6 @@ void CTPTraderHandler::processRtnOrder(Task* task)
 
 void CTPTraderHandler::processRtnTrade(Task* task)
 {
-    std::cout<<"in processRtnTrade"<<std::endl;
 	if (task->task_data)
 	{
         std::cout<<"get processRtnTrade data"<<std::endl;
@@ -5754,44 +5757,44 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
     LOG(INFO)<<"[update_positions] Start update positions,curr pos size:"<<v_investor_position_fields.size();
 
     bool flag = false;
-    if (v_investor_position_fields.size()>0){//have positions now
-        for(auto it=v_investor_position_fields.begin(); it!=v_investor_position_fields.end(); ++it){
-            ptr_Position  p_curr_pos = *it;
-            LOG(INFO)<<"[update_positions] current positions:"<<p_curr_pos->InstrumentID<<",open cost:"<<p_curr_pos->OpenCost<<",pos vol:"<<p_curr_pos->OpenVolume<<",pos side:"<<p_curr_pos->PosiDirection;
-            LOG(INFO)<<"[update_positions]to be added exe,check cond:"<<p_trade->InstrumentID<<",exe side:"<<p_trade->Direction<<",pos side:"<<p_curr_pos->PosiDirection;
 
-            bool _is_long = p_curr_pos->PosiDirection == THOST_FTDC_PD_Long && p_trade->Direction == THOST_FTDC_D_Buy;
-            bool _is_short = p_curr_pos->PosiDirection == THOST_FTDC_PD_Short && p_trade->Direction == THOST_FTDC_D_Sell;
-            bool _is_same_direction = _is_long || _is_short;
-            std::cout<<"pos idrection(2:long,3:short)=>"<<p_curr_pos->PosiDirection<<",trade direction(0:buy, 1:sell)=>"<<p_trade->Direction<<",is_logn=>"<<_is_long<<",_is_short=>"<<_is_short<<std::endl;
-            bool _is_pos_exist = (strcmp(p_curr_pos->InstrumentID, p_trade->InstrumentID)==0) && ((_trade_open&&_is_same_direction)||(!_trade_open && !_is_same_direction));
-            LOG(INFO)<<"[update_positions] check whether to merge position========>:"<<_is_pos_exist;
-            if(_is_pos_exist){ //position exists 
-                LOG(INFO)<<"pos exist, and update position"<<",today position:"<<p_curr_pos->TodayPosition<<",exe vol:"<<exe_vol;
-                flag = true;
-                if (p_curr_pos->TodayPosition + exe_vol == 0){
-                    p_curr_pos->OpenCost = 0.0; 
-                }else{
-                    // p_curr_pos->OpenCost = (p_curr_pos->OpenCost*p_curr_pos->TodayPosition + p_trade->Price*exe_vol)/(p_curr_pos->TodayPosition+exe_vol);
-                    p_curr_pos->OpenCost = p_curr_pos->OpenCost + (p_trade->Price*exe_vol*multiplier);
-                    
-                }
-                p_curr_pos->TodayPosition += exe_vol;
-                p_curr_pos->Position += exe_vol;
-                if (_trade_open){
-                    p_curr_pos->OpenVolume += exe_vol;
-                }else{
-                    p_curr_pos->CloseVolume -= exe_vol;
-                }
-                //TODO add other value updates,PositionCost,持仓成本
-                LOG(INFO)<<"[update_positions] After update position,today pos=>"<<p_curr_pos->TodayPosition<<",pos=>"<<p_curr_pos->Position<<", open cost=>"<<p_curr_pos->OpenCost;
-                break;
+    for(auto it=v_investor_position_fields.begin(); it!=v_investor_position_fields.end(); ++it){
+        ptr_Position  p_curr_pos = *it;
+        LOG(INFO)<<"[update_positions] current positions:"<<p_curr_pos->InstrumentID<<",open cost:"<<p_curr_pos->OpenCost<<",pos vol:"<<p_curr_pos->OpenVolume<<",pos side:"<<p_curr_pos->PosiDirection;
+        LOG(INFO)<<"[update_positions]to be added exe,check cond:"<<p_trade->InstrumentID<<",exe side:"<<p_trade->Direction<<",pos side:"<<p_curr_pos->PosiDirection;
+
+        bool _is_long = p_curr_pos->PosiDirection == THOST_FTDC_PD_Long && p_trade->Direction == THOST_FTDC_D_Buy;
+        bool _is_short = p_curr_pos->PosiDirection == THOST_FTDC_PD_Short && p_trade->Direction == THOST_FTDC_D_Sell;
+        bool _is_same_direction = _is_long || _is_short;
+        //如果是当日持仓(策略启动前已经做filter)，而且买卖相同交易方向为开仓，或者买卖方向相反交易方向为平仓，则合并
+        bool _is_pos_exist = (strcmp(p_curr_pos->InstrumentID, p_trade->InstrumentID)==0) && ((_trade_open&&_is_same_direction)||(!_trade_open && !_is_same_direction) );
+        LOG(INFO)<<"[update_positions] check whether to merge position========>:"<<_is_pos_exist;
+        std::cout<<"pos idrection(2:long,3:short)=>"<<p_curr_pos->PosiDirection<<",trade direction(0:buy, 1:sell)=>"<<p_trade->Direction<<",is_logn=>"<<_is_long<<",_is_short=>"<<_is_short<<std::endl;
+        if(_is_pos_exist){ //position exists 
+            LOG(INFO)<<"[update_positions] pos exist, and update position"<<",today position:"<<p_curr_pos->TodayPosition<<",exe vol:"<<exe_vol;
+            flag = true;
+            if (p_curr_pos->TodayPosition + exe_vol == 0){
+                p_curr_pos->OpenCost = 0.0; 
+            }else{
+                // p_curr_pos->OpenCost = (p_curr_pos->OpenCost*p_curr_pos->TodayPosition + p_trade->Price*exe_vol)/(p_curr_pos->TodayPosition+exe_vol);
+                p_curr_pos->OpenCost = p_curr_pos->OpenCost + (p_trade->Price*exe_vol*multiplier);
             }
+            p_curr_pos->TodayPosition += exe_vol;
+            p_curr_pos->Position += exe_vol;
+            if (_trade_open){
+                p_curr_pos->OpenVolume += exe_vol;
+            }else{
+                p_curr_pos->CloseVolume -= exe_vol;
+            }
+            //TODO add other value updates,PositionCost,持仓成本
+            LOG(INFO)<<"[update_positions] After update position,today pos=>"<<p_curr_pos->TodayPosition<<",pos=>"<<p_curr_pos->Position<<", open cost=>"<<p_curr_pos->OpenCost;
+            break;
         }
     }
     
+    
     if(!flag){
-        LOG(INFO)<<"[update_positions] symbol not exist, start create new position for open order,flag=>"<<flag<<"all pos size=>"<<v_investor_position_fields.size();
+        LOG(INFO)<<"[update_positions]create new position for open order,flag=>"<<flag<<", all pos size=>"<<v_investor_position_fields.size();
         ptr_Position p_pos = new PositionField();
         strcpy(p_pos->InstrumentID, p_trade->InstrumentID);
         // p_pos->OpenCost = p_trade->Price;

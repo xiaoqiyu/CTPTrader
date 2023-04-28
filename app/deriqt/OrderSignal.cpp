@@ -105,10 +105,10 @@ int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _ra
 	}
 	
 	if (total_score >= this->long_score_benchmark){
-		LOG(INFO)<<"long signal:total score=>"<<total_score<<"long benchmark=>"<<long_score_benchmark;
+		LOG(INFO)<<"long signal:total score=>"<<total_score<<", long benchmark=>"<<long_score_benchmark;
 		return LONG_SIGNAL;
 	}else if(total_score <= -this->short_score_benchmark ){
-		LOG(INFO)<<"short signal:total score=>"<<total_score<<"short benchmark=>"<<short_score_benchmark;
+		LOG(INFO)<<"short signal:total score=>"<<total_score<<", short benchmark=>"<<short_score_benchmark;
 		return SHORT_SIGNAL;
 	}else{
 		return NO_SIGNAL;
@@ -120,6 +120,7 @@ int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _ra
 OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, ptr_daily_cache p_daily){
 	std::string _symbol = v_rev[0];
 	std::string _update_time = v_rev[1];
+	
 	int _update_milsec = std::stoi(v_rev[2]);
 	double _last_price = std::stod(v_rev[4]);
 	
@@ -130,9 +131,10 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, ptr_dai
 	int ret_signal = get_com_signal(v_rev, _range); //get the final signal
 	//FIXME hardcode for test
 	if (test_signal_num == 0){
-		ret_signal = SHORT_SIGNAL;
+		ret_signal = LONG_SIGNAL;
 		test_signal_num += 1;
 	}
+	// std::cout<<"get_signal,time=>"<<_update_time<<",signal=>"<<ret_signal<<std::endl;
 	if(ret_signal == LONG_SIGNAL){ //get long signal
 		p_orderdata->exchangeid = _exchangeid;
 		p_orderdata->symbol = _symbol;

@@ -722,22 +722,22 @@ public:
             LOG(INFO)<<p_cur_pos->InstrumentID<<",TodayPosition=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",position=>"<<p_cur_pos->Position<<", open cost=>"<<p_cur_pos->OpenCost;
             // std::cout<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
         }
-        // TODO 不对持仓做提前的erease了，意义不大，逻辑还会更复杂
-        // auto it = v_investor_position_fields.begin();
-        // for(; it!=v_investor_position_fields.end(); ){
-        //     ptr_Position p_cur_pos = *it;
-            
-        //     if(p_cur_pos->TodayPosition == 0 && p_cur_pos->OpenVolume == p_cur_pos->CloseVolume){ //FIXME double check the cond, 
-        //         std::cout<<"erase empty position,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
-        //         it = v_investor_position_fields.erase(it);
-        //     }else{
-        //         ++it;
-        //     }
-        // }
-        // for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
-        //     ptr_Position p_cur_pos = *it1;
-        //     LOG(INFO)<<"Final Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
-        // }
+        // 如果是T0设置，filter掉当日持仓为0的会更简单，因为T0的话，开仓平仓信号风控条件是不对昨日持仓做判断，而且持仓更新也是对当日更新（持仓和开仓均价）
+        // 同时只保留当前策略cover的品种，如果是需要多品种的，修改is_trade_product 函数的逻辑
+        auto it = v_investor_position_fields.begin();
+        for(; it!=v_investor_position_fields.end(); ){
+            ptr_Position p_cur_pos = *it;   
+            if(!(is_trade_product(this->task_tag.c_str(), p_cur_pos->InstrumentID)) ||(p_cur_pos->TodayPosition == 0 && p_cur_pos->OpenVolume == p_cur_pos->CloseVolume)){ //FIXME double check the cond, 
+                std::cout<<"erase empty position,"<<p_cur_pos->InstrumentID<<",position=>"<<p_cur_pos->TodayPosition<<",open=>"<<p_cur_pos->OpenVolume<<",close=>"<<p_cur_pos->CloseVolume<<", direction=>"<<p_cur_pos->PosiDirection<<",it addr=>"<<*it<<",pos addr"<<p_cur_pos<<std::endl;
+                it = v_investor_position_fields.erase(it);
+            }else{
+                ++it;
+            }
+        }
+        for(auto it1 = v_investor_position_fields.begin(); it1!=v_investor_position_fields.end(); ++it1){
+            ptr_Position p_cur_pos = *it1;
+            LOG(INFO)<<"Final Instrument ID=>"<<p_cur_pos->InstrumentID<<",offset=>"<<p_cur_pos->PositionCostOffset<<",direction=>"<<p_cur_pos->PosiDirection<<",volume=>"<<p_cur_pos->TodayPosition<<",open cost=>"<<p_cur_pos->OpenCost<<",open volume=>"<<p_cur_pos->OpenVolume<<",close volume=>"<<p_cur_pos->CloseVolume;
+        }
         LOG(INFO)<<"*************end init position***********************";
     };
 
