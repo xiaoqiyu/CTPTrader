@@ -10,7 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include "define.h"
-#include "gmtrade.h"
+// #include "gmtrade.h"
 #include "ThostFtdcUserApiStruct.h"
 #include <boost/thread/concurrent_queues/sync_queue.hpp>
 
@@ -157,14 +157,15 @@ inline string toUtf(const string &gb2312)
 }
 
 typedef struct{
-    double stop_profit = 50;//real money, not pct��ÿ��ί�е�ֹӯ���ã���λ��Ԫ��
-    double stop_loss = 50;//real money, not pct��ÿ��ί�е�ֹ�����ã���λ��Ԫ
+    double stop_profit = 5;//in price, not pct��ÿ��ί�е�ֹӯ���ã���λ��Ԫ��
+    double stop_loss = 10;//in price, not pct��ÿ��ί�е�ֹ�����ã���λ��Ԫ
     int close_type = 0; //���ּ����̶ȣ� ����źţ��ֳ��ж�֣�0�� ƽ���ж�֣�?1�� ���Ը��źţ�2�� ƽ���ж�֣������ղ֣�������pos_limit������
     long vol_limit = 0; //�ֲֵ������������λ����?
     double init_cash = 0; //��ʼ�ʽ𣬵�λ��Ԫ
     float risk_ratio = 0.1; //�ʽ���ն��޶�?
     int order_duration = 20; //�����µ���ʱ�������ƣ���λ����
     int signal_delay = 5; //�µ��ź��ӳ٣���λ���룬��ʱ����Ե�ǰ�µ��ź�?
+    int signal_interval = 2;
     int risk_duration = 60; // �ֲַ��ռ���Ƶ�ʣ���λ���룻
     int cancel_order_delay = 120; // ����ί�еļ������λ���룻���һ���޼�ί�г�ʱ�����ڷ��ռ���߳��л��Զ������ñ��?��
 }StrategyConfig;
@@ -299,6 +300,135 @@ struct daily_cache{
 };
 
 typedef daily_cache* ptr_daily_cache;
+
+enum OrderStatus
+{
+	OrderStatus_Unknown = 0,
+	OrderStatus_New = 1,                   //??
+	OrderStatus_PartiallyFilled = 2,       //??
+	OrderStatus_Filled = 3,                //??
+	OrderStatus_DoneForDay = 4,            //
+	OrderStatus_Canceled = 5,              //??
+	OrderStatus_PendingCancel = 6,         //??
+	OrderStatus_Stopped = 7,               //
+	OrderStatus_Rejected = 8,              //???
+	OrderStatus_Suspended = 9,             //??
+	OrderStatus_PendingNew = 10,           //??
+	OrderStatus_Calculated = 11,           //
+	OrderStatus_Expired = 12,              //???
+	OrderStatus_AcceptedForBidding = 13,   //
+	OrderStatus_PendingReplace = 14,       //
+};
+
+//??????
+enum ExecType
+{
+	ExecType_Unknown = 0,
+	ExecType_New = 1,                      //??
+	ExecType_DoneForDay = 4,               //
+	ExecType_Canceled = 5,                 //???
+	ExecType_PendingCancel = 6,            //???
+	ExecType_Stopped = 7,                  //
+	ExecType_Rejected = 8,                 //???
+	ExecType_Suspended = 9,                //??
+	ExecType_PendingNew = 10,              //??
+	ExecType_Calculated = 11,              //
+	ExecType_Expired = 12,                 //??
+	ExecType_Restated = 13,                //
+	ExecType_PendingReplace = 14,          //
+	ExecType_Trade = 15,                   //??
+	ExecType_TradeCorrect = 16,            //
+	ExecType_TradeCancel = 17,             //
+	ExecType_OrderStatus = 18,             //????
+	ExecType_CancelRejected = 19,          //?????
+};
+
+//??????
+enum OrderRejectReason
+{
+	OrderRejectReason_Unknown = 0,                           //????
+	OrderRejectReason_RiskRuleCheckFailed = 1,               //??????? 
+	OrderRejectReason_NoEnoughCash = 2,                      //????
+	OrderRejectReason_NoEnoughPosition = 3,                  //????
+	OrderRejectReason_IllegalAccountId = 4,                  //????ID
+	OrderRejectReason_IllegalStrategyId = 5,                 //????ID
+	OrderRejectReason_IllegalSymbol = 6,                     //??????
+	OrderRejectReason_IllegalVolume = 7,                     //?????
+	OrderRejectReason_IllegalPrice = 8,                      //?????
+	OrderRejectReason_AccountDisabled = 10,                  //?????????
+	OrderRejectReason_AccountDisconnected = 11,              //???????
+	OrderRejectReason_AccountLoggedout = 12,                 //???????
+	OrderRejectReason_NotInTradingSession = 13,              //?????
+	OrderRejectReason_OrderTypeNotSupported = 14,            //???????
+	OrderRejectReason_Throttle = 15,                         //????
+	OrderRejectReason_SymbolSusppended = 16,                 //??????
+	OrderRejectReason_Internal = 999,                        //????
+
+	CancelOrderRejectReason_OrderFinalized = 101,            //?????
+	CancelOrderRejectReason_UnknownOrder = 102,              //????
+	CancelOrderRejectReason_BrokerOption = 103,              //????
+	CancelOrderRejectReason_AlreadyInPendingCancel = 104,    //?????
+};
+
+//????
+enum OrderSide
+{
+	OrderSide_Unknown = 0,
+	OrderSide_Buy = 1,    //??
+	OrderSide_Sell = 2,    //??
+};
+
+//????
+enum OrderType
+{
+	OrderType_Unknown = 0,
+	OrderType_Limit = 1,    //????
+	OrderType_Market = 2,    //????
+	OrderType_Stop = 3,    //??????
+};
+
+//??????
+enum OrderDuration
+{
+	OrderDuration_Unknown = 0,
+	OrderDuration_FAK = 1,  //????????(fill and kill)
+	OrderDuration_FOK = 2,  //?????????(fill or kill)
+	OrderDuration_GFD = 3,  //????(good for day)
+	OrderDuration_GFS = 4,  //????(good for section)
+	OrderDuration_GTD = 5,  //???????(goodl till date)
+	OrderDuration_GTC = 6,  //?????(good till cancel)
+	OrderDuration_GFA = 7,  //???????(good for auction)
+};
+
+//??????
+enum OrderQualifier
+{
+	OrderQualifier_Unknown = 0,
+	OrderQualifier_BOC = 1,  //??????(best of counterparty)
+	OrderQualifier_BOP = 2,  //??????(best of party)
+	OrderQualifier_B5TC = 3,  //????????(best 5 then cancel)
+	OrderQualifier_B5TL = 4,  //?????????(best 5 then limit)
+};
+
+
+//????
+enum PositionSide
+{
+	PositionSide_Unknown = 0,
+	PositionSide_Long = 1,   //???
+	PositionSide_Short = 2,   //???
+};
+
+//????
+enum PositionEffect
+{
+	PositionEffect_Unknown = 0,
+	PositionEffect_Open = 1,     //??
+	PositionEffect_Close = 2,     //??,?????????????
+	PositionEffect_CloseToday = 3,     //???
+	PositionEffect_CloseYesterday = 4,     //???
+};
+
 
 
 

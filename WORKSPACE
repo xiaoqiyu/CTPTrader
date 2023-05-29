@@ -51,6 +51,16 @@ git_repository(
     shallow_since = "1570056263 -0700",
 )
 
+http_archive(
+    name = "com_github_nelhage_rules_boost",
+    type = "tar.gz",
+    # Replace the commit hash in both places (below) with the latest, rather than using the stale one here.
+    # Even better, set up Renovate and let it do the work for you (see "Suggestion: Updates" in the README).
+    url = "https://github.com/nelhage/rules_boost/archive/29390c119287deddd1d4b1062a2683465d1bd07b.tar.gz",
+    strip_prefix = "rules_boost-29390c119287deddd1d4b1062a2683465d1bd07b",
+    # When you first run this tool, it'll recommend a sha256 hash to put here with a message like: "DEBUG: Rule 'com_github_nelhage_rules_boost' indicated that a canonical reproducible form can be obtained by modifying arguments sha256 = ..."
+)
+
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
 

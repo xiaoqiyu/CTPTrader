@@ -57,7 +57,7 @@ private:
     bool pos_available_ = true; //用于持仓查询控制
     bool order_available_ =true; //用于委托查询控制
     bool order_complete_ = true; //用于控制订单流，同时只有一个order
-    gmtrade::DataArray<Position> *p_pos;
+    // gmtrade::DataArray<Position> *p_pos;
     std::vector<ptr_OrderField> v_all_orders;
 
     std::string account_id;

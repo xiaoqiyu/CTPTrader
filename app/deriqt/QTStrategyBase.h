@@ -32,7 +32,7 @@
 // #include "helper.h"
 #include "recordio.h"
 #include "recordio_range.h"
-#include "GMSimTrader.h"
+// #include "GMSimTrader.h"
 #include "OrderSignal.h"
 #include "Factor.h"
 #include <glog/logging.h>
@@ -111,7 +111,7 @@ public: //qry for product/instrument/account
 	std::vector<std::string> getInstrumentID();
 	int get_depth_mkt(std::string instrument_id);
 	int get_position_details(std::string investor_id, std::string broker_id);
-	void setInstrumentID(std::vector<std::string> v_instrumentid);
+	// void setInstrumentID(std::vector<std::string> v_instrumentid);
 	std::vector<CThostFtdcDepthMarketDataField*> get_market_datas(std::vector<std::string> _v_instrument_id)
 	{
 
@@ -174,7 +174,7 @@ protected:
 	void calculate_kline(); //TBA, not implement yet
 
 private:
-	std::vector<std::string> v_instrummentID;
+	std::vector<std::string> v_instrummentID;  //instrument id handled in the strategy, future for product class (strategy class=0), option id for product class(strategy class=1)
 	unordered_map<std::string, int> m_filename_idx;
 	unordered_map<std::string, std::string> m_depth_filename;
 	unordered_map<std::string, std::string> m_kline_filename;
@@ -197,26 +197,26 @@ private:
 	std::unordered_map<std::string, std::string> m_main_futures; //cache  product id to main instrument future ticker
 	std::unordered_map<std::string, std::string> m_product_exchangeid; //cache pdoduct to exchange id
 	int option_size = 10; //
-	std::vector<std::string> v_main_contract_ids; //main instrument tickers
-	std::vector<std::string> v_option_ids;//options tickers
-	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments;
+	std::vector<std::string> v_main_contract_ids; //main instrument tickers, 策略product class的主力期货合约ID
+	std::vector<std::string> v_option_ids;//options tickers, 策略product class 的期权（前 option_size) ID
+	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments; //product class 下的合约cache
 	recordio::RecordWriter * p_depth_mkt_writer;
 	std::ofstream * cache_ptr;
 	std::unique_ptr<bip::managed_shared_memory> segmet_ptr;
     std::unique_ptr<shm::char_alloc> char_alloc_ptr;
-	std::unique_ptr<SimTrader> simtrade_ptr;
+	// std::unique_ptr<SimTrader> simtrade_ptr;
     shm::ring_buffer* p_queue;
 	std::string simtrade_account_id;
 	OrderSignal * p_sig;
 	//factor pointer
 	Factor *p_factor;
 	//order table
-	std::vector<Order> v_order;
+	// std::vector<Order> v_order;
 	long factor_len = 1024;
-	long signal_delay;
+	long signal_interval; // 收到的tick的计数器，当signal_delay 到了信号计算的频率时，从行情进程发送因子给交易进程的共享队列,应该rename为counter,conf中的signal_interval 计数
 	std::time_t  last_order_time = std::time(nullptr);
 	std::string simtrade_token;
 	StrategyConfig * p_strategy_config;
 	int strategy_class; //0 for future, 1 for option
-	long conf_signal_delay;
+	long conf_signal_counter; //常数，传递信号的间隔设置，如 2，则为每两个2 会共享一个因子数据给交易进程
 };

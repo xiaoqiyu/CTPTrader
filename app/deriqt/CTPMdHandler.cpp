@@ -232,7 +232,7 @@ void CTPMdHandler::OnRspUnSubForQuoteRsp(CThostFtdcSpecificInstrumentField *pSpe
 // 行情详情通知
 void CTPMdHandler::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData)
 {
-	// std::cout<<"rev:"<<pDepthMarketData->LastPrice<<", id:"<<pDepthMarketData->InstrumentID<<std::endl;
+	// std::cout<<"rev in ctp md:"<<pDepthMarketData->LastPrice<<", id:"<<pDepthMarketData->InstrumentID<<std::endl;
 	DataField data = DataField();
 	CThostFtdcDepthMarketDataField *mkt_data = new CThostFtdcDepthMarketDataField();
 	data.data_type = FDEPTHMKT;
