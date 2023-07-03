@@ -28,7 +28,7 @@ cc_binary(
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",
-        "@zlib//:zlib",
+        "@com_github_madler_zlib//:zlib",
         "//base:build_info",
         "//base:init",
         "@com_github_google_glog//:glog",
@@ -79,7 +79,7 @@ cc_binary(
 	],
     deps = [
         "@com_github_gflags_gflags//:gflags",
-        "@zlib//:zlib",
+        "@com_github_madler_zlib//:zlib",
         "//base:build_info",
         "//base:init",
         "@com_github_google_glog//:glog",
