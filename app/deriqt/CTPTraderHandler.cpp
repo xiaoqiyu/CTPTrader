@@ -3709,8 +3709,11 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         std::string insert_date_str = std::string(task_data->InsertDate);
         bool _is_same_date =  (std::stoi(insert_date_str.substr(6,2))) == now->tm_mday;
         //只有报单日期等于登录当日日期且报单时间比登录时间慢，才会处理；这样逻辑的话，就相当于夜盘报单如果夜盘时候没有处理callback，第二天日盘开盘不会处理，因为即使交易日一样，报单日期不同了
+        // _login_time 是登陆时返回的交易所时间，task_data inserttime也是交易所返回时间
         if(!(strcmp(task_data->InsertTime, _login_time) > 0 && _is_same_date )){
             LOG(INFO)<<"[processRtnOrder] Ignore order callback for inserttime=>"<<task_data->InsertTime<<", insert date=>"<<std::stoi(insert_date_str.substr(6,2))<<",login time=>"<<_login_time<<",login date=>"<<now->tm_mday;
+            order_available_ = true; //忽略订单之后释放订单可查询锁
+            cond_.notify_all();
             return;
         }
         OrderIDRef* p_orderidref = new OrderIDRef();
@@ -3749,10 +3752,11 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             strcpy(p_orderfield->CombOffsetFlag, task_data->CombOffsetFlag);
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
-            if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){
+            if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){ 
                 LOG(INFO)<<"[update order table] Remove order when cancel,with order id2=>"<<_order_id2;
                 m_all_orders.erase(it2->first);
                 order_complete_ = true;
+                order_available_ = true;
                 cond_.notify_all();
             }
         //the 2nd order callback, when the order is accepted by the exchange
@@ -3776,11 +3780,12 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->VolumeTraded = task_data->VolumeTraded;
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
-            p_orderfield->InsertTime = now_time;
+            // p_orderfield->InsertTime = now_time; //第二个callback 不修改委托时间
             if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){ //TODO check whether there is other status to handle here, if cancel,the order is removed, and not processed
-                LOG(INFO)<<"[update order table] remove order when canceled with order_id1=>"<<_order_id1;
+                LOG(INFO)<<"[update order table] remove order when canceled with order_id1=>"<<_order_id1; //撤单的话释放订单查询锁，还有委托限制锁
                 m_all_orders.erase(_order_id1);
                 order_complete_ = true;
+                order_available_ = true;
                 cond_.notify_all();
             }else{
                 LOG(INFO)<<"[update order table] insert order with order id2=>"<<_order_id2<<", and remove order with order id1=>"<<_order_id1;
@@ -3789,7 +3794,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
                 p_orderfield->order_id = _order_id2;
                 // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
             }
-        //the first order callback, when the order is accepted by CTP, but not yet submit to the exchagne
+        //the 1st order callback, when the order is accepted by CTP, but not yet submit to the exchagne
         }else if (trade_product){//orer not exist and the instrument is traded in the strategy(otherwise ignore, no need to maintain order an pos), insert new order
             LOG(INFO)<<"1st order callback, and strategy tade the product";
             ptr_OrderField p_orderfield = new OrderField();
@@ -3812,10 +3817,10 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->OrderStatus = task_data->OrderStatus;
             p_orderfield->order_id = _order_id2;
             p_orderfield->InsertTime = now_time;
-            LOG(INFO)<<"[update order table] insert order into table with order id1=>"<<_order_id1;
+            LOG(INFO)<<"[update order table] insert order into table with order id1=>"<<_order_id1<<", order insert time=>"<<now->tm_min<<":"<<now->tm_sec;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id1, p_orderfield));
             // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
-        }else{
+        }else{ //忽略当前订单，释放查询锁
             LOG(INFO)<<"Order id not exist in order table, and not trading product => "<<trade_product<<"reset order availabe";
             // TODO double check 
             order_available_ = true;
@@ -3839,14 +3844,14 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         LOG(INFO)<<"Volume Traded=>"<<task_data->VolumeTraded;
         LOG(INFO)<<"Volume Ramained=>"<<task_data->VolumeTotal;
         LOG(INFO)<<"OffsetFlag [0:buy,1:sell,3:closetoday,4:close prev] =>"<<task_data->CombOffsetFlag;
-        LOG(INFO)<<"OrderStatus [0:all traded,3:in queue,5:canceled,a:unknown] =>"<<task_data->OrderStatus;
+        LOG(INFO)<<"OrderStatus [0:all traded,1:partial traded-in queue,3:in queue,5:canceled,a:unknown] =>"<<task_data->OrderStatus;
         LOG(INFO)<<"OrderSubmissionStatus [0:submitted,3:accepted,4:rejected] =>"<<task_data->OrderSubmitStatus;
         LOG(INFO)<<"StatusMsg=>"<<task_data->StatusMsg;
         LOG(INFO)<<"OrderUpdateTime=>"<<task_data->UpdateTime;
         LOG(INFO)<<"InsertTime=>"<<task_data->InsertTime;
         LOG(INFO)<<"SuspendTime=>"<<task_data->SuspendTime;
         LOG(INFO)<<"*************End Order Report******************";
-        if(trade_product && task_data->OrderStatus == THOST_FTDC_OST_Canceled){//如果是交易的品种，而且订单撤销
+        if(trade_product && task_data->OrderStatus == THOST_FTDC_OST_Canceled){//如果是交易的品种，而且订单撤销，释放订单锁
             order_complete_ = true;
             LOG(INFO)<<"Reset order_complete for cancel order callback, with order complete=>"<<order_complete_;
             cond_.notify_all();
@@ -3905,7 +3910,7 @@ void CTPTraderHandler::processRtnTrade(Task* task)
                 m_all_orders.erase(it->first);
                 order_complete_ = true;
                 cond_.notify_all();
-                LOG(INFO)<<"[processRtnTrade] order completed  with order_id=>"<<it->first<<",status [0,tradded,5:canceled] =>"<<p_orderfield->OrderStatus;
+                LOG(INFO)<<"[processRtnTrade] order completed  with order_id=>"<<it->first<<",status [0,tradded,5:canceled] =>"<<p_orderfield->OrderStatus<<", order_complette=>"<<order_complete_;
             }
         }
         // std::cout<<"before delete in processRtnTrade"<<std::endl;
@@ -5787,7 +5792,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
                 p_curr_pos->CloseVolume -= exe_vol;
             }
             //TODO add other value updates,PositionCost,持仓成本
-            LOG(INFO)<<"[update_positions] After update position,today pos=>"<<p_curr_pos->TodayPosition<<",pos=>"<<p_curr_pos->Position<<", open cost=>"<<p_curr_pos->OpenCost;
+            LOG(INFO)<<"[update_positions] After update position,today pos=>"<<p_curr_pos->TodayPosition<<",pos=>"<<p_curr_pos->Position<<", open cost=>"<<p_curr_pos->OpenCost<<", direction=>"<<p_curr_pos->PosiDirection;
             break;
         }
     }
@@ -5809,7 +5814,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
             p_pos->PosiDirection = THOST_FTDC_PD_Short;
         }
         //TODO add other value updates,比如PositionCost,持仓成本
-        LOG(INFO)<<"[update_positions] new add pos,open cost=>"<<p_pos->OpenCost<<",today position=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<",open volume=>"<<p_pos->PosiDirection<<p_pos->OpenVolume<<", close volume=>"<<p_pos->CloseVolume;
+        LOG(INFO)<<"[update_positions] new add pos,open cost=>"<<p_pos->OpenCost<<",today position=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<p_pos->PosiDirection<<",open volume=>"<<p_pos->OpenVolume<<", close volume=>"<<p_pos->CloseVolume;
         v_investor_position_fields.push_back(p_pos);
         LOG(INFO)<<"[update_positions] after add new transaction,all position size=>"<<v_investor_position_fields.size()<<",curr pos vol=>"<<p_pos->TodayPosition;
     }
@@ -5840,12 +5845,17 @@ int CTPTraderHandler::cancel_order(ptr_OrderIDRef p_orderidref){
     orderfield.ActionFlag = THOST_FTDC_AF_Delete;
 
     int ret = ReqOrderAction(&orderfield, nRequestID++);
+    unique_lock<mutex> mlock(mutex_);
+    cond_.wait(mlock,[&](){
+        return order_complete_;
+    });
     return ret;
 }
 
 std::vector<ptr_OrderField> CTPTraderHandler::get_all_orders()
 {
     unique_lock<mutex> mlock(mutex_);
+    // std::cout<<"wait for order available to return"<<std::endl;
     cond_.wait(mlock, [&]() {
     return order_available_ ; 
     }); //绛夊緟鏉′欢鍙橀噺閫氱煡

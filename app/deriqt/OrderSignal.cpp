@@ -17,7 +17,6 @@ int OrderSignal::_dual_thrust(double last_price, double _range, double open_pric
 
 int OrderSignal::_ma_rules(double _ma_diff_last, double _ma_diff_curr){
 	double edge = std::stod(config_ptr->Get("reg","edge","0.0"));
-	// std::cout<<"????ma diff last=>" <<_ma_diff_last<<", ma diff curr=>"<<_ma_diff_curr<<", edge=>"<<edge<<std::endl;
 	if (_ma_diff_last <  edge && _ma_diff_curr > edge){
 		return 1;
 	}else if(_ma_diff_last > edge && _ma_diff_curr < edge){
@@ -52,6 +51,10 @@ int OrderSignal::_reg_rules(double _log_return, double _mid_log_return){
 	return 0;
 }
 
+int OrderSignal::_dl_rules(std::string update_time, double price_spread, double last_price, double interest_diff, double volume, double wap, double log_return){
+	
+	return 0;
+}
 
 
 int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _range){
@@ -130,10 +133,16 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, ptr_dai
 	this->open_price = p_daily->open_price;
 	int ret_signal = get_com_signal(v_rev, _range); //get the final signal
 	//FIXME hardcode for test
-	if (test_signal_num == 0){
-		ret_signal = LONG_SIGNAL;
-		test_signal_num += 1;
-	}
+	// if (test_signal_num == 0){
+	// 	ret_signal = LONG_SIGNAL;
+	// 	test_signal_num += 1;
+	// }
+	// else if(test_signal_num == 1)
+	// {
+	// 	ret_signal = SHORT_SIGNAL;
+	// 	test_signal_num += 1;
+	// }
+	
 	// std::cout<<"get_signal,time=>"<<_update_time<<",signal=>"<<ret_signal<<std::endl;
 	if(ret_signal == LONG_SIGNAL){ //get long signal
 		p_orderdata->exchangeid = _exchangeid;

@@ -14,7 +14,9 @@
 #include <stdio.h>
 #include "UserStruct.h"
 
-
+// RENAME_FEATURES = ['UpdateTime', 'open_close_ratio', 'price_spread', 'aoi', 'LastPrice',
+//                    'OpenInterest', 'InterestDiff', 'Turnover', 'Volume', 'wap', 'log_return',
+//                    'buy_sell_spread', 'slope', 'cos', 'bs_tag', 'bs_vol', 'label']
 
 class Factor
 {
@@ -71,7 +73,7 @@ public:
             
             // double _prev_slope = 0;
 
-            double _curr_spread = pDepthMarketData->AskPrice1 - pDepthMarketData->BidPrice1;
+            double _curr_spread =  pDepthMarketData->BidPrice1 - pDepthMarketData->AskPrice1;
             double _curr_vwap = pDepthMarketData->Turnover/pDepthMarketData->Volume;
             double _curr_mid = (pDepthMarketData->AskPrice1*pDepthMarketData->BidVolume1+pDepthMarketData->BidPrice1*pDepthMarketData->AskVolume1)/(pDepthMarketData->AskVolume1+pDepthMarketData->BidVolume1);
             if (this->v_last_factor.size()>0){ // not the first tick, has factor cached 
@@ -178,7 +180,7 @@ public:
 	        this->v_curr_factor.push_back(_curr_max); //vector:1;factor:5
 	        this->v_curr_factor.push_back(_curr_min); //vector:2;factor:6
 	        this->v_curr_factor.push_back(_curr_spread); //vector:3;factor:7
-	        this->v_curr_factor.push_back(_curr_mid); //vector:4;factor:8
+	        this->v_curr_factor.push_back(_curr_mid); //vector:4;factor:8, vwap in python
 	        this->v_curr_factor.push_back(_curr_vwap);//vector:5;factor:9
             this->v_curr_factor.push_back(_log_return);//vector:6;factor:10
             this->v_curr_factor.push_back(_log_return_short);//vector:7;factor:11
