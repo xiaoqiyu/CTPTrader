@@ -4,6 +4,7 @@ cc_library(
         "lib/libtorch.so",
         "lib/libc10.so",
         "lib/libtorch_cpu.so",
+        "lib/libgomp-52f2fd74.so.1",
     ],
     linkopts = [
         "-ltorch",
