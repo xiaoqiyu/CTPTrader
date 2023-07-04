@@ -315,11 +315,20 @@ def brpc_workspace():
         build_file = str(Label("//bazel/snappy:snappy.BUILD")),
     )
 
-    http_archive(
+    '''http_archive(
         name = "libtorch_archive",
         strip_prefix = "libtorch",
         #sha256 = "f5a33910a2d2932b3224788dfdfab5ba7dd972ec8a3488bf92be63ae30a54591",
         type = "zip",
-        urls = ["https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip"],
+        urls = ["https://download.pytorch.org/libtorch/cu118/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcu118.zip"],
+        build_file = str(Label("//bazel:libtorch.BUILD")),
+    )'''
+    native.new_local_repository(
+        name = "libtorch_archive",
+        #strip_prefix = "libtorch",
+        #sha256 = "f5a33910a2d2932b3224788dfdfab5ba7dd972ec8a3488bf92be63ae30a54591",
+        #type = "zip",
+        path = "/home/kiki/workspace/libtorch/libtorch",
+        #build_file = "@//:libtorch.BUILD"
         build_file = str(Label("//bazel:libtorch.BUILD")),
     )
