@@ -341,7 +341,8 @@ http_archive(
     strip_prefix = "libtorch",
     #sha256 = "f5a33910a2d2932b3224788dfdfab5ba7dd972ec8a3488bf92be63ae30a54591",
     type = "zip",
-    urls = ["https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip"],
+    #urls = ["https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.0.0%2Bcpu.zip"],
+    urls = ["https://download.pytorch.org/libtorch/cu118/libtorch-cxx11-abi-shared-with-deps-2.0.1%2Bcu118.zip"],
     build_file = "//bazel:libtorch.BUILD",
 )
 

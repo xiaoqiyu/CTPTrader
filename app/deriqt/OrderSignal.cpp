@@ -52,8 +52,43 @@ int OrderSignal::_reg_rules(double _log_return, double _mid_log_return){
 }
 
 int OrderSignal::_dl_rules(std::string update_time, double price_spread, double last_price, double interest_diff, double volume, double wap, double log_return){
-	
-	return 0;
+	time_step_cnt ++;
+	double _price_spread = (price_spread - v_means[0])/v_std[0];
+	double _last_price = (last_price - v_means[1])/v_std[1];
+	double _interest_diff = (interest_diff - v_means[2])/v_std[2];
+	double _volume = (volume - v_means[3]) / v_std[3];
+	double _wap = (wap - v_means[4]) / v_std[4];
+	double _log_return = (log_return - v_means[5])/v_std[5];
+
+	// v_ts_factors updates
+	v_ts_factors.push_back(_price_spread);
+	v_ts_factors.push_back(_last_price);
+	v_ts_factors.push_back(_interest_diff);
+	v_ts_factors.push_back(_volume);
+	v_ts_factors.push_back(_wap);
+	v_ts_factors.push_back(_log_return);	
+
+
+	int ret = 0;
+	std::cout<<"call dl strategy,with time step=>"<<time_step_cnt<<"devicetype=>"<<device_type<<std::endl;
+	std::cout<<price_spread<<","<<_price_spread<<"=>"<<last_price<<","<<_last_price<<"=>"<<interest_diff<<","<<_interest_diff<<"=>"<<volume<<","<<_volume<<"=>"<<wap<<","<<_wap<<"=>"<<log_return<<","<<_log_return<<std::endl;
+	std::vector<torch::jit::IValue> inputs;
+
+	if (time_step_cnt == 120){
+		torch::Device device(device_type);
+		torch::Tensor x = torch::from_blob(v_ts_factors.data(),{1, 120, 6}).to(device);
+		inputs.push_back(x);
+		at::Tensor output = module_ptr->forward(inputs).toTensor();
+		auto prediction = torch::softmax(static_cast<at::Tensor>(output), 1);
+		at::Tensor class_id = prediction.argmax(1);
+		int _clf = class_id[0].item().toInt();
+		std::cout<<v_ts_factors<<std::endl;
+		std::cout<<"time step 120=>"<<time_step_cnt<<"call prediction=>"<<_clf<<std::endl;
+		v_ts_factors.clear();
+		time_step_cnt = 0;
+		ret = _clf;
+	}
+	return ret;
 }
 
 
@@ -94,15 +129,21 @@ int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _ra
 
 	int n_strategy = 0;
 	int total_score = 0;
+	
+	std::cout<<"rev signal=>"<<_update_time<<std::endl;
 	for (const auto &s : v_strategy_name)
 	{       
+		std::cout<<"rev:"<<_update_time<<",strategy=>"<<s<<std::endl;
 		if(s == "ma"){
 			total_score += _ma_rules(_ma_ls_diff_last, _ma_ls_diff_curr);
 		}else if(s == "reg"){
 			total_score += _reg_rules(_log_return, _mid_log_return_short); //TODO check the factor
 		}else if (s == "dual"){
 			total_score += _dual_thrust(_last_price, _range, this->open_price);
-		}else{
+		}else if(s=="dl"){
+			total_score += _dl_rules(_update_time, _spread, _last_price,_curr_interest, _volume, _mid, _log_return);
+		}
+		else{
 			LOG(INFO)<<"Input other valid strategy name";
 		}
 	}

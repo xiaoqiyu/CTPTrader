@@ -427,7 +427,6 @@ void QTStrategyBase::on_tick()
 						_terminate = true;
 						break;
 					}
-					
 					//正常处理行情
 					bool _process_future = (this->strategy_class == 0) && (find(v_main_contract_ids.begin(), v_main_contract_ids.end(), pDepthMarketData->InstrumentID)!=v_main_contract_ids.end());
 					bool _process_option = (this->strategy_class == 1) && (find(v_option_ids.begin(), v_option_ids.end(), pDepthMarketData->InstrumentID)!=v_option_ids.end());

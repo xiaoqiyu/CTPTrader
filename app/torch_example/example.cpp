@@ -14,6 +14,7 @@ int main() {
   
   // assert(module != nullptr);
   
+  
   std::unique_ptr< torch::jit::script::Module> module_ptr = std::make_unique< torch::jit::script::Module>(torch::jit::load("/home/kiki/workspace/CTPTrader/app/torch_example/rnn_rb.pt"));
   std::cout<<"ok\n"<<std::endl;
   std::vector<torch::jit::IValue> inputs;
@@ -22,6 +23,7 @@ int main() {
   std::cout << output << '\n';
   // at::Tensor _pred = module.predict(inputs).toTensor();
   // std::cout << _pred << '\n';
+  std::cout<<"device:"<<output.device();
 
 
   /*

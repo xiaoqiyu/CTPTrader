@@ -40,7 +40,7 @@ cc_binary(
 		"@boost//:system",
 		"@boost//:thread",
 		"@boost//:circular_buffer",
-		 "@libtorch_archive//:torch_cpu_c",
+		"@libtorch_archive//:torch",
 	],
 	linkopts = [
     "-lrt",
