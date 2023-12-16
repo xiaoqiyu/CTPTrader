@@ -70,8 +70,8 @@ int OrderSignal::_dl_rules(std::string update_time, double price_spread, double 
 
 
 	int ret = 0;
-	std::cout<<"call dl strategy,with time step=>"<<time_step_cnt<<"devicetype=>"<<device_type<<std::endl;
-	std::cout<<price_spread<<","<<_price_spread<<"=>"<<last_price<<","<<_last_price<<"=>"<<interest_diff<<","<<_interest_diff<<"=>"<<volume<<","<<_volume<<"=>"<<wap<<","<<_wap<<"=>"<<log_return<<","<<_log_return<<std::endl;
+	// std::cout<<"call dl strategy,with time step=>"<<time_step_cnt<<"devicetype=>"<<device_type<<",update time=>"<<update_time<<std::endl;
+	// std::cout<<price_spread<<","<<_price_spread<<"=>"<<last_price<<","<<_last_price<<"=>"<<interest_diff<<","<<_interest_diff<<"=>"<<volume<<","<<_volume<<"=>"<<wap<<","<<_wap<<"=>"<<log_return<<","<<_log_return<<std::endl;
 	std::vector<torch::jit::IValue> inputs;
 
 	if (time_step_cnt == 120){
@@ -82,11 +82,16 @@ int OrderSignal::_dl_rules(std::string update_time, double price_spread, double 
 		auto prediction = torch::softmax(static_cast<at::Tensor>(output), 1);
 		at::Tensor class_id = prediction.argmax(1);
 		int _clf = class_id[0].item().toInt();
-		std::cout<<v_ts_factors<<std::endl;
-		std::cout<<"time step 120=>"<<time_step_cnt<<"call prediction=>"<<_clf<<std::endl;
+		LOG(INFO)<<"Get prection clf=>"<<_clf<<"for update time=>"<<update_time;
 		v_ts_factors.clear();
 		time_step_cnt = 0;
-		ret = _clf;
+		if(_clf==0){
+			ret = -1;
+		}else if(_clf == 2){
+			ret = 1;
+		}else{
+			ret = 0;
+		}
 	}
 	return ret;
 }
@@ -96,7 +101,7 @@ int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _ra
 	std::string _symbol = v_rev[0];
 	std::string _update_time = v_rev[1];
 	int _update_milsec = std::stoi(v_rev[2]);
-	long _volume = std::stoi(v_rev[3]);
+	long _volume = std::stoi(v_rev[17]);
 	double _last_price = std::stod(v_rev[4]);
 	double _max = std::stod(v_rev[5]);
 	double _min = std::stod(v_rev[6]);
@@ -130,10 +135,8 @@ int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _ra
 	int n_strategy = 0;
 	int total_score = 0;
 	
-	std::cout<<"rev signal=>"<<_update_time<<std::endl;
 	for (const auto &s : v_strategy_name)
 	{       
-		std::cout<<"rev:"<<_update_time<<",strategy=>"<<s<<std::endl;
 		if(s == "ma"){
 			total_score += _ma_rules(_ma_ls_diff_last, _ma_ls_diff_curr);
 		}else if(s == "reg"){
@@ -151,7 +154,7 @@ int OrderSignal::get_com_signal(const std::vector<std::string>&v_rev, double _ra
 	if (total_score >= this->long_score_benchmark){
 		LOG(INFO)<<"long signal:total score=>"<<total_score<<", long benchmark=>"<<long_score_benchmark;
 		return LONG_SIGNAL;
-	}else if(total_score <= -this->short_score_benchmark ){
+	}else if(total_score <= this->short_score_benchmark ){
 		LOG(INFO)<<"short signal:total score=>"<<total_score<<", short benchmark=>"<<short_score_benchmark;
 		return SHORT_SIGNAL;
 	}else{
@@ -183,7 +186,7 @@ OrderData* OrderSignal::get_signal(const std::vector<std::string>&v_rev, ptr_dai
 	// 	ret_signal = SHORT_SIGNAL;
 	// 	test_signal_num += 1;
 	// }
-	
+	// ret_signal = NO_SIGNAL;
 	// std::cout<<"get_signal,time=>"<<_update_time<<",signal=>"<<ret_signal<<std::endl;
 	if(ret_signal == LONG_SIGNAL){ //get long signal
 		p_orderdata->exchangeid = _exchangeid;

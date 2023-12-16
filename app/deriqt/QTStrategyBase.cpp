@@ -10,7 +10,7 @@ void cache_main_instruments(std::vector<std::string> _v_instrument_id);
 int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::string _conf_file_name)
 {
 	//初始
-	LOG(INFO)<<"[Init] Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name;
+	LOG(WARNING)<<"[Init] Init Strategy with mode: "<<this->mode<< "conf file: "<<_conf_file_name;
 
 	FileName _conf_file = {'\0'};
 	strcpy(_conf_file, _conf_file_name.c_str());
@@ -23,7 +23,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	
 	FileName _strategy_file = {'\0'};
 	std::string _str_file_name = "/home/kiki/workspace/CTPTrader/conf/"+this->name+".ini"; //FIXME remove hardcode for the conf path
-	LOG(INFO)<<"[Init]read strategy conf name:"<<_str_file_name;
+	LOG(WARNING)<<"[Init]read strategy conf name:"<<_str_file_name;
 	strcpy(_strategy_file, _str_file_name.c_str());
 	INIReader reader_str(_strategy_file);
 	if (reader_str.ParseError() != 0)
@@ -62,7 +62,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_queue->pop(v_tmp);
 	}
 
-	LOG(INFO)<<"***************[Init]Start CTP Handler Init****************";
+	LOG(WARNING)<<"***************[Init]Start CTP Handler Init****************";
 	//mode 0(subscribe depth market) and mode 2(live trade) need to connect to ctp td; mode 0 for query api, mode 2 for order api 
 	//CTP Trader handler init
 	this->p_trader_handler = new CTPTraderHandler();
@@ -71,7 +71,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->p_trader_handler->init(task_tag, broker_id, user_id);
 	sleep(5);
 
-	LOG(INFO) << "[Init] Start CTP Authenticate.......";
+	LOG(WARNING) << "[Init] Start CTP Authenticate.......";
 	CThostFtdcReqAuthenticateField reqAuth = {0};
 	strcpy(reqAuth.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
 	strcpy(reqAuth.UserID, reader.Get("user", "UserID", "123456").c_str());
@@ -80,7 +80,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->p_trader_handler->ReqAuthenticate(&reqAuth, nRequestID++);
 	sleep(5);
 
-	LOG(INFO)<< "[Init] Start CTP Login......";
+	LOG(WARNING)<< "[Init] Start CTP Login......";
 	CThostFtdcReqUserLoginField reqUserLogin = {0};
 	strcpy(reqUserLogin.BrokerID, reader.Get("user", "BrokerID", "9999").c_str());
 	strcpy(reqUserLogin.UserID, reader.Get("user", "UserID", "123456").c_str());
@@ -91,36 +91,40 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	sleep(5);
 
 	trading_date = this->p_trader_handler->getTradingDay();
-	LOG(INFO)<< "[Init] CTP log in sucess, Trading date is: " << trading_date;
+	LOG(WARNING)<< "[Init] CTP log in sucess, Trading date is: " << trading_date;
 
-	LOG(INFO)<<"[Init] Start query and init local position table...";
+	LOG(WARNING)<<"[Init] Start query and init local position table...";
 	this->p_trader_handler->init_positions(this->user_id, this->broker_id);
-	LOG(INFO)<<"[Init] End query and init local position table...";
+	LOG(WARNING)<<"[Init] End query and init local position table...";
 	
 
-	LOG(INFO)<<"[Init] Start Cache main instruments.....";
+	LOG(WARNING)<<"[Init] Start Cache main instruments.....";
+	std::cout<<"[Init] Start Cache main instruments....."<<std::endl;
 	this->cache_main_instruments(_v_product_ids);
-	LOG(INFO)<<"[Init] End Cache main instruments.....";
+	LOG(WARNING)<<"[Init] End Cache main instruments.....";
+	std::cout<<"[Init] End Cache main instruments....."<<std::endl;
+
+
 	if (strategy_class == 0){
 		for(auto it=v_main_contract_ids.begin(); it!=v_main_contract_ids.end();++it)
 		{
-			LOG(INFO)<<"[Init] strategy class=>0, push main future contract id to target v_instrumentID=>"<<(*it);
+			LOG(WARNING)<<"[Init] strategy class=>0, push main future contract id to target v_instrumentID=>"<<(*it);
 			this->v_instrummentID.push_back((*it));
 		}
 
 	}else if(strategy_class == 1){
 		for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
 		{
-			LOG(INFO)<<"[Init] strategy class=>1, push option id to target v_instrumentID=>"<<(*it);
+			LOG(WARNING)<<"[Init] strategy class=>1, push option id to target v_instrumentID=>"<<(*it);
 			this->v_instrummentID.push_back((*it));
 		}
 	}else{
-		LOG(INFO)<<"[Init] unhandle strategy class, strategy_class=>"<<strategy_class;
+		LOG(WARNING)<<"[Init] unhandle strategy class, strategy_class=>"<<strategy_class;
 	}
-	LOG(INFO)<<"***************[Init] End CTP Handler Init****************";
+	LOG(WARNING)<<"***************[Init] End CTP Handler Init****************";
 
 
-	LOG(INFO)<<"************** [Init] Start cache daily market*************";
+	LOG(WARNING)<<"************** [Init] Start cache daily market*************";
 
 	//从当天存下的行情记录中找到第一个tick作为open price,因为daily cache的接口没有当天的行情
 	std::ofstream * cache_ptr = new std::ofstream();
@@ -148,7 +152,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 						_tmp_ptr->InstrumentID = cache_instrument_id;
 						_tmp_ptr->open_price = p_mkt->LastPrice;
 						m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(cache_instrument_id, _tmp_ptr));
-						LOG(INFO)<<"[Init] Got cache open price for instrument id:"<<*it<<":update time:"<<p_mkt->UpdateTime<<", open:"<<p_mkt->LastPrice;
+						LOG(WARNING)<<"[Init] Got cache open price for instrument id:"<<*it<<":update time:"<<p_mkt->UpdateTime<<", open:"<<p_mkt->LastPrice;
 					}
 				}
 			}
@@ -182,7 +186,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 			m_daily_cache.insert(std::pair<std::string, ptr_daily_cache>(sec, _tmp_ptr));
 		}
 	}//end of session loop
-	LOG(INFO)<<"**************[Init] End cache daily market*************";
+	LOG(WARNING)<<"**************[Init] End cache daily market*************";
 
 	ptr_daily_cache p_curr_daily_cache = NULL;
 	for (const auto &it : m_daily_cache){
@@ -193,18 +197,18 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	this->p_trader_handler->init_price_limits(p_curr_daily_cache);
 	
 	if(this->mode == 0){//mode 0 need to connect CTPMD to subscribe depth market data
-		LOG(INFO)<<"***************[Init] Start CTP MD Init****************";
+		LOG(WARNING)<<"***************[Init] Start CTP MD Init****************";
 		//CTP MD connect and init
 		this->p_md_handler = new CTPMdHandler();
 		this->p_md_handler->set_config(_conf_file);
 		this->p_md_handler->CreateFtdcMdApi();
 		this->p_md_handler->RegisterFront(strcpy(mdAddr, reader.Get("md", "FrontMdAddr", "127.0.0.1:1234").c_str()));
 		this->p_md_handler->init(this->v_instrummentID);
-		LOG(INFO)<<"***************[Init] End CTP MD Init****************";
+		LOG(WARNING)<<"***************[Init] End CTP MD Init****************";
 	}
 
 	// if(this->mode == 1){//mode 1 will connet to simtrade server for simulation
-	// 	LOG(INFO)<<"[Init] Mode 1: init gm simtrade.....";
+	// 	LOG(WARNING)<<"[Init] Mode 1: init gm simtrade.....";
 	// 	simtrade_token = reader.Get("simtrade", "token", "a1128cf0aaa3735b04a2706c8029a562e8c2c6b6");
 	// 	simtrade_account_id = reader.Get("simtrade", "account_id", "a1a91403-2fc2-11ec-bd15-00163e0a4100");
 	// 	simtrade_ptr.reset(new SimTrader(reader.Get("simtrade", "token", "a1128cf0aaa3735b04a2706c8029a562e8c2c6b6").c_str()));
@@ -221,7 +225,7 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	// 	//判断状�?
 	// 	if (status == 0)
 	// 	{
-	// 	    LOG(INFO) << "[Init] Connected to simtrade server" << std::endl;
+	// 	    LOG(WARNING) << "[Init] Connected to simtrade server" << std::endl;
 	// 	}
 	// 	else
 	// 	{
@@ -229,13 +233,13 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 	// 	}
 	// }
 
-	LOG(INFO)<<"***************[Init] Start Resource(queue/thread) Allocation****************";
+	LOG(WARNING)<<"***************[Init] Start Resource(queue/thread) Allocation****************";
 	//data/order thread init,队列和线程资源分配
 	if (this->mode == 0){ // start the data thread to process depth markets
-		LOG(INFO)<<"[Init] Mode 0: Create thread for data thread";
+		LOG(WARNING)<<"[Init] Mode 0: Create thread for data thread";
 		this->data_thread = thread(&QTStrategyBase::on_tick, this);
 		//mode 0 for kline resample and depth market cache
-	    LOG(INFO)<<"[Init] Mode 0: Create cache writer";
+	    LOG(WARNING)<<"[Init] Mode 0: Create cache writer";
 		int cnt = 0;
 		//private varilbe init
 		for(auto iter = this->v_instrummentID.begin(); iter!=this->v_instrummentID.end(); ++iter)
@@ -250,13 +254,13 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_depth_mkt->open(_depth_mkt_filename, std::ios::app|std::ios::binary);
 		this->p_depth_mkt_writer = new recordio::RecordWriter(p_depth_mkt);									
 	}else if (this-> mode == 1 || this->mode ==2){
-		LOG(INFO)<<"[Init] Mode 1&2: create order/risk/signal data queue.......";
+		LOG(WARNING)<<"[Init] Mode 1&2: create order/risk/signal data queue.......";
 		// order data queue for sim/live trade
 		this->p_order_queue = new DataQueue();
 		this->p_risk_queue = new DataQueue();
 		this->p_sig = new OrderSignal(this->name);
 
-		LOG(INFO)<<"[Init] Mode 1&2: create and init strategyconfig......";
+		LOG(WARNING)<<"[Init] Mode 1&2: create and init strategyconfig......";
 		this->p_strategy_config = new StrategyConfig(); //new and init the strategy config
 		p_strategy_config->close_type = std::stoi(reader_str.Get("strategy","close_type","0"));
 		p_strategy_config->stop_profit = std::stod(reader_str.Get("strategy", "stop_profit","1"));
@@ -268,20 +272,20 @@ int QTStrategyBase::init(std::vector<std::string>&  _v_product_ids, const std::s
 		p_strategy_config->signal_interval = std::stoi(reader_str.Get("strategy", "signal_interval","5"));
 		p_strategy_config->risk_duration = std::stoi(reader_str.Get("strategy", "risk_duration","60"));
 		p_strategy_config->cancel_order_delay = std::stoi(reader_str.Get("strategy", "cancel_order_delay","120"));
-		LOG(INFO)<<"stop profit(in price)=>"<<p_strategy_config->stop_profit<<", stop loss(in price)=>"<<p_strategy_config->stop_loss<<", vol limit=>"<<p_strategy_config->vol_limit
+		LOG(WARNING)<<"stop profit(in price)=>"<<p_strategy_config->stop_profit<<", stop loss(in price)=>"<<p_strategy_config->stop_loss<<", vol limit=>"<<p_strategy_config->vol_limit
 		<<", init cash=>"<<p_strategy_config->init_cash<<", risk ratio=>"<<p_strategy_config->risk_ratio
 		<<", signal delay=>"<<p_strategy_config->signal_delay<<"(sec), risk duration=>"<<p_strategy_config->risk_duration<<"(sec), cancel order delay=>"<<p_strategy_config->cancel_order_delay<<"(sec), signal interval=>"<<p_strategy_config->signal_interval<<"(tick)";
 	}else{
 		LOG(ERROR)<< "Invalid mode for strategy";
 	}
 	this->active_ = true;
-	LOG(INFO)<<"***************[Init] End Resource(queue/thread) Allocation****************";
+	LOG(WARNING)<<"***************[Init] End Resource(queue/thread) Allocation****************";
 	return 0;
 };
 
 void QTStrategyBase::on_event()
 {
-	LOG(INFO)<<"[on_event] Start process signal: on event";
+	LOG(WARNING)<<"[on_event] Start process signal: on event";
 	try
 	{
 		bool _terminate = false;  //控制本循环的本地变量
@@ -292,9 +296,9 @@ void QTStrategyBase::on_event()
     		if (p_queue->pop(v)) 
 			{
 				std::string msg = v.data();
-				// LOG(INFO)<<"[on_event] rev msg:"<<msg;
+				// LOG(WARNING)<<"[on_event] rev msg:"<<msg;
 				if (msg== "null\n"){ 
-					LOG(INFO)<<"[on_event] receive null msg from on_tick, set _terminate for on_event, msg=>"<<msg;
+					LOG(WARNING)<<"[on_event] receive null msg from on_tick, set _terminate for on_event, msg=>"<<msg;
 					_terminate = true;
 					OrderData* p_orderdata = new OrderData();
 					p_orderdata->status = TERMINATE_SIGNAL;
@@ -330,10 +334,12 @@ void QTStrategyBase::on_event()
 							p_daily->InstrumentID = v_rev[4];
 							p_daily->open_price = std::stod(v_rev[4]); //is not exist in cache, update the open(first tick),ignore the prev date tick
 						}
+						
 						OrderData* p_orderdata = p_sig->get_signal(v_rev, p_daily);
+						
 						p_orderdata->order_insert_time = now_time;
 						if(p_orderdata->status == LONG_SIGNAL || p_orderdata->status==SHORT_SIGNAL){
-							LOG(INFO)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
+							LOG(WARNING)<<"[on_event] get_signal:"<<p_orderdata->status<<std::endl;
 							place_order(p_orderdata);
 						}//end of handle signal
 					}//end of handle trade mode
@@ -342,7 +348,7 @@ void QTStrategyBase::on_event()
 			//if get the terminate signal, stop the whle and join the thread
 			if(_terminate)
 			{
-				LOG(INFO)<<"[on_event] break on_event";
+				LOG(WARNING)<<"[on_event] break on_event";
 				break;
 			}
 		}//end of while
@@ -357,7 +363,7 @@ void QTStrategyBase::on_event()
 
 void QTStrategyBase::on_risk()
 {
-	LOG(INFO)<<"[on_risk] Start risk thread";
+	LOG(WARNING)<<"[on_risk] Start risk thread";
 	try{
 		bool _terminate = false;
 		while(!_terminate){
@@ -375,13 +381,13 @@ void QTStrategyBase::on_risk()
 				}
 				int _risk_monitor = (ltm->tm_min*60 + ltm->tm_sec)%p_strategy_config->risk_duration;
 				if(_risk_monitor == 0){//will call risk monitor to check
-					// LOG(INFO)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
+					// LOG(WARNING)<<"[on_risk] calling risk monitor for update time=>"<<_update_time;
 					int ret = this->risk_monitor(p_risk_input, p_strategy_config);
 					if (ret== -1) {_terminate=true;}
 				}
 			}
 			if (_terminate){
-				LOG(INFO)<<"[on_risk] break on_risk";
+				LOG(WARNING)<<"[on_risk] break on_risk";
 				break;
 			}
 		}
@@ -414,10 +420,10 @@ void QTStrategyBase::on_tick()
 					if (std::strcmp(pDepthMarketData->UpdateTime, "14:55:00") >=0  && std::strcmp(pDepthMarketData->UpdateTime, "21:00:00") <0){
 					// if (std::strcmp(pDepthMarketData->UpdateTime, "22:50:00") >=0 ){
 						if (!_sent_terminate){
-							LOG(INFO)<<"[on_tick] send null msg to p_queue(to trade process) for time=>"<<pDepthMarketData->UpdateTime;
+							LOG(WARNING)<<"[on_tick] send null msg to p_queue(to trade process) for time=>"<<pDepthMarketData->UpdateTime;
 							std::strcpy(s, "null\n");//TODO remove hardcode msg
 							p_queue->push(shm::shared_string(s, *char_alloc_ptr));
-							// LOG(INFO)<<"Break strategy when eod, but still subscribe depth market";
+							// LOG(WARNING)<<"Break strategy when eod, but still subscribe depth market";
 							_sent_terminate = true;
 						}
 						break;
@@ -434,7 +440,7 @@ void QTStrategyBase::on_tick()
 						int signal_flag = this->signal_interval % conf_signal_counter; 
 						long _offset = p_factor->update_factor(pDepthMarketData, s, signal_flag);	
 						if (_offset > 0){
-							// LOG(INFO)<<"Push signal with signal delay=>"<<this->signal_delay<<"offset=>"<<_offset<<",delay flag=>"<<signal_flag<<std::endl;
+							// LOG(WARNING)<<"Push signal with signal delay=>"<<this->signal_delay<<"offset=>"<<_offset<<",delay flag=>"<<signal_flag<<std::endl;
 							auto it = m_product_exchangeid.find(pDepthMarketData->InstrumentID);
 							if(it != m_product_exchangeid.end()){
 								_offset += sprintf(s + _offset, "%s,", (it->second).c_str());
@@ -458,7 +464,7 @@ void QTStrategyBase::on_tick()
 				std::strcpy(s, "null\n");//TODO remove hardcode msg
 				p_queue->push(shm::shared_string(s, *char_alloc_ptr));
 				_terminate = true;
-				LOG(INFO)<<"Break on_tick, end of subscribe market";
+				LOG(WARNING)<<"Break on_tick, end of subscribe market";
 				break;
 			}
 
@@ -468,7 +474,7 @@ void QTStrategyBase::on_tick()
 			//if got the invalied data type, break the while and join the thread
 			if (_terminate)
 			{
-				LOG(INFO)<<"[on_tick] break on_tick";
+				LOG(WARNING)<<"[on_tick] break on_tick";
 				break; 
 			}
 		}//end while
@@ -486,13 +492,13 @@ void QTStrategyBase::start()
 {
 	this->start_ = true;
 	if(this->mode == 0){
-		LOG(INFO)<<"[start] mode 0: start subscribe mkt data";
+		LOG(WARNING)<<"[start] mode 0: start subscribe mkt data";
 		this->p_md_handler->SubscribeMarketData();
 		//FIXME exit ctp TD in md
 		p_trader_handler->exit();
 		
 	}else if(this->mode == 1 || this->mode == 2){
-		LOG(INFO)<<"[start] mode 1&2: Simtrade, listening to factor";
+		LOG(WARNING)<<"[start] mode 1&2: Simtrade, listening to factor";
 		this->signal_thread = thread(&QTStrategyBase::on_event, this); 
 		this->order_thread = thread(&QTStrategyBase::process_order, this);
 		this->risk_monitor_thread = thread(&QTStrategyBase::on_risk, this);
@@ -602,7 +608,7 @@ void QTStrategyBase::insert_limit_order_fok(TThostFtdcPriceType limit_price, TTh
 }
 
 // void QTStrategyBase::insert_order_sim(OrderData* p_order_data){	
-	// LOG(INFO)<<"[insert_order_sim] in insert order sim, symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal:"<<p_order_data->status;
+	// LOG(WARNING)<<"[insert_order_sim] in insert order sim, symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal:"<<p_order_data->status;
 	// DataField data = DataField();
 	// data.data_type = ORDERFIELDSIM;
 	// OrderData *_order_data = new OrderData();
@@ -612,7 +618,7 @@ void QTStrategyBase::insert_limit_order_fok(TThostFtdcPriceType limit_price, TTh
 // }
 
 void QTStrategyBase::place_order(OrderData* p_order_data){
-	LOG(INFO)<<"[place_order] symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal(long:142,short:143,stop:147,terminate:148):"<<p_order_data->status;
+	LOG(WARNING)<<"[place_order] symbol:"<<p_order_data->symbol<<",side:"<<p_order_data->side<<",signal(long:142,short:143,stop:147,terminate:148):"<<p_order_data->status;
 	DataField data = DataField();
 	
 	OrderData *_order_data = new OrderData();
@@ -658,7 +664,7 @@ int QTStrategyBase::req_trade(std::string investor_id, std::string broker_id)
 	std::strcpy(trade_fields.BrokerID, broker_id.c_str());
 	// int ret_req = this->p_trader_handler->ReqQryTradingAccount(&trade_fields, nRequestID++);	
 	int ret_req = this->p_trader_handler->ReqQryTrade(&trade_fields, nRequestID++);
-	LOG(INFO)<<"[req_trade] Req return in req_trade:"<<ret_req;
+	LOG(WARNING)<<"[req_trade] Req return in req_trade:"<<ret_req;
 	return ret_req;
 }
 
@@ -669,7 +675,7 @@ int QTStrategyBase::get_position_details(std::string investor_id, std::string br
 	std::strcpy(pos_detail_fields.InvestorID, investor_id.c_str());
 	std::strcpy(pos_detail_fields.BrokerID, broker_id.c_str());
 	int ret_req = this->p_trader_handler->ReqQryInvestorPositionDetail(&pos_detail_fields,nRequestID++);
-	LOG(INFO)<<"Req return in position details is:"<<ret_req;
+	LOG(WARNING)<<"Req return in position details is:"<<ret_req;
 	return ret_req;
 }
 
@@ -677,12 +683,12 @@ int QTStrategyBase::get_position_details(std::string investor_id, std::string br
 void QTStrategyBase::stop()
 {
 	//TODO stop data_thread, but the ctp instance is still active
-	LOG(INFO)<<"[stop] Calling stop for strategy...";
+	LOG(WARNING)<<"[stop] Calling stop for strategy...";
 	if(this->mode == 0){
-		LOG(INFO)<<"[stop] Mode 0: join data thread";
+		LOG(WARNING)<<"[stop] Mode 0: join data thread";
 		this->data_thread.join();
 	}else if (this->mode == 1 || this->mode == 2){
-		LOG(INFO)<<"[stop] Mode 1&2: join order thread";
+		LOG(WARNING)<<"[stop] Mode 1&2: join order thread";
 		this->signal_thread.join();
 		std::cout<<"complete signal thread join"<<std::endl;
 		this->order_thread.join();
@@ -699,13 +705,13 @@ void QTStrategyBase::stop()
 //释放资源,退出应用程序时调用
 void QTStrategyBase::release()
 {
-	LOG(INFO)<<"[release] Calling release in strategy";
+	LOG(WARNING)<<"[release] Calling release in strategy";
 	if (this->mode == 0){
-		LOG(INFO)<<"[release] Mode 0: delete t2k helper";
-		LOG(INFO)<<"[release] Mode 0 in relase:stop CTP MD";
+		LOG(WARNING)<<"[release] Mode 0: delete t2k helper";
+		LOG(WARNING)<<"[release] Mode 0 in relase:stop CTP MD";
 		this->p_md_handler->exit();
 	}else if(this->mode == 1 || this->mode==2){
-		LOG(INFO)<<"[release] Mode 1&2: delete order queue in release";
+		LOG(WARNING)<<"[release] Mode 1&2: delete order queue in release";
 		p_order_queue->terminate();
 		delete p_order_queue;
 		std::cout<<"complete delete order queue"<<std::endl;
@@ -717,7 +723,7 @@ void QTStrategyBase::release()
 		this->p_trader_handler->exit();
 
 	}else{
-		LOG(INFO)<<"[release] Invalid mode in relase:"<<this->mode;
+		LOG(WARNING)<<"[release] Invalid mode in relase:"<<this->mode;
 	}
 	active_ = false;	
 }
@@ -754,20 +760,20 @@ STOP_SIGNAL:
 */
 int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 {
-	// LOG(INFO)<<"[verify_order_condition] calling verify order conditioin.................";
+	// LOG(WARNING)<<"[verify_order_condition] calling verify order conditioin.................";
 	std::time_t now_time = std::time(nullptr);
 	int signal_delay = now_time - p_orderdata->order_insert_time;
 	if(signal_delay > p_strategy_config->signal_delay){
-		LOG(INFO)<<"[verify_order_condition] Skip order with signal delay =>"<<signal_delay<<",delay config=>"<<p_strategy_config->signal_delay;
+		LOG(WARNING)<<"[verify_order_condition] Skip order with signal delay =>"<<signal_delay<<",delay config=>"<<p_strategy_config->signal_delay;
 		return OrderVerify_unvalid;
 	}
 	std::vector<ptr_Position> v_pos = p_trader_handler->get_positions(p_orderdata->symbol);
 	
-	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
+	LOG(WARNING)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
 
 	int _total_pos_vol = 0;
 	for(auto it=v_pos.begin(); it != v_pos.end(); ++it){
-		std::cout<<(*it)->InstrumentID<<","<<(*it)->TodayPosition<<","<<(*it)->OpenVolume<<","<<(*it)->CloseVolume<<","<<(*it)->PosiDirection<<std::endl;
+		LOG(WARNING)<<(*it)->InstrumentID<<","<<(*it)->TodayPosition<<","<<(*it)->OpenVolume<<","<<(*it)->CloseVolume<<","<<(*it)->PosiDirection<<std::endl;
 		_total_pos_vol += (*it)->TodayPosition;
 	}
 	
@@ -775,7 +781,6 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	double _up_limit_price = 0.0;
 	double _down_limit_price = 0.0;
 	auto it = this->m_daily_cache.find(p_orderdata->symbol);
-	
 	int multiplier = get_instrument_multiplier(p_orderdata->symbol);
 	if (multiplier==0){
 		LOG(ERROR)<<"multiplier is 0 for instrument=>"<<p_orderdata->symbol;
@@ -792,13 +797,13 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 	
 
 	if(p_orderdata->status == LONG_SIGNAL){ // long signal
-		LOG(INFO)<<"[verify_order_condition] check long signal";
+		LOG(WARNING)<<"[verify_order_condition] check long signal";
 
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			ptr_Position p_curr_pos = *it;
 			double vwap = p_curr_pos->OpenCost/(p_curr_pos->TodayPosition*multiplier);
 			if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Short){//long signal and short position, close the position for all vol by stop_profit
-				LOG(INFO)<<"[verify_order_condition] long signal, close short position";
+				LOG(WARNING)<<"[verify_order_condition] long signal, close short position";
 				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->price = floor(vwap - p_strategy_config->stop_profit);//买入平仓，下取整
 				p_orderdata->volume = p_curr_pos->TodayPosition;
@@ -811,7 +816,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 				//REMARK restrict vol limit for the whole account, not pos level
 				// p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
 				p_orderdata->volume = p_strategy_config->vol_limit - _total_pos_vol; //FIXME this only need to support for multi-strategy case
-				LOG(INFO)<<"[verify_order_condition] long signal, open long position,order volume=>"<<p_orderdata->volume<<",vol_limit=>"<<p_strategy_config->vol_limit;
+				LOG(WARNING)<<"[verify_order_condition] long signal, open long position,order volume=>"<<p_orderdata->volume<<",vol_limit=>"<<p_strategy_config->vol_limit;
 				if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 				
 				p_orderdata->side = OrderSide_Buy;
@@ -823,20 +828,20 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 			p_orderdata->order_type = OrderType_Limit;
 			p_orderdata->volume = p_strategy_config->vol_limit;
 			p_orderdata->price = _up_limit_price; //it is used as market data, with the high limit price
-			LOG(INFO)<<"[verify_order_condition] long signal, open long position, order volume=>"<<p_strategy_config->vol_limit;
+			LOG(WARNING)<<"[verify_order_condition] long signal, open long position, order volume=>"<<p_strategy_config->vol_limit;
 			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 			p_orderdata->side = OrderSide_Buy;
 			p_orderdata->position_effect = PositionEffect_Open;
 			return OrderVerify_valid;
 		}
 	}else if (p_orderdata->status==SHORT_SIGNAL){ //short signal
-		LOG(INFO)<<"[verify_order_condition] check short signal";
+		LOG(WARNING)<<"[verify_order_condition] check short signal";
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			ptr_Position p_curr_pos = *it;
 			double vwap = p_curr_pos->OpenCost/(p_curr_pos->TodayPosition*multiplier);
-			std::cout<<"pos direction=>"<<p_curr_pos->PosiDirection<<std::endl;
+			// std::cout<<"pos direction=>"<<p_curr_pos->PosiDirection<<std::endl;
 			if(p_curr_pos->PosiDirection == THOST_FTDC_PD_Long){//short signal and long position, close the position for all vol by stop_profit
-				LOG(INFO)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->TodayPosition;
+				LOG(WARNING)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->TodayPosition;
 				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->price = ceil(vwap + p_strategy_config->stop_profit);//卖出平仓，上取整
 				p_orderdata->volume = p_curr_pos->TodayPosition;
@@ -849,7 +854,7 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 				//REMARK restrict vol limit for the whole account, not pos level
 				// p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
 				p_orderdata->volume = p_strategy_config->vol_limit - _total_pos_vol;//FIXME this only need to support for multi-strategy case
-				LOG(INFO)<<"[verify_order_condition] short signal, open short position,order volume=>"<<p_orderdata->volume;
+				LOG(WARNING)<<"[verify_order_condition] short signal, open short position,order volume=>"<<p_orderdata->volume;
 				if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 				p_orderdata->side = OrderSide_Sell;
 				p_orderdata->position_effect = PositionEffect_Open;
@@ -860,17 +865,17 @@ int QTStrategyBase::verify_order_condition_ctp(OrderData* p_orderdata)
 			p_orderdata->order_type = OrderType_Limit;
 			p_orderdata->price = _down_limit_price;
 			p_orderdata->volume = p_strategy_config->vol_limit;
-			LOG(INFO)<<"[verify_order_condition] short signal, open short position, order volume=>"<<p_strategy_config->vol_limit;
+			LOG(WARNING)<<"[verify_order_condition] short signal, open short position, order volume=>"<<p_strategy_config->vol_limit;
 			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 			p_orderdata->side = OrderSide_Sell;
 			p_orderdata->position_effect = PositionEffect_Open;
 			return OrderVerify_valid;
 		}		
 	}else if (p_orderdata->status == STOP_SIGNAL){//check whether stop profit/loss,由于仿真没法下条件单，这相当于手工实现条件单，实际上CTP可以下条件单
-		LOG(INFO)<<"[verify_order_condition] stop profit and loss order, order volume=>"<<p_orderdata->volume;
+		LOG(WARNING)<<"[verify_order_condition] stop profit and loss order, order volume=>"<<p_orderdata->volume;
 		return OrderVerify_valid;
 	}
-	LOG(INFO)<<"[verify_order_condition] return invalid order";
+	LOG(WARNING)<<"[verify_order_condition] return invalid order";
 	return OrderVerify_unvalid;
 }
 
@@ -888,15 +893,15 @@ STOP_SIGNAL:
 /*
 int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 {
-	LOG(INFO)<<"[verify_order_condition] calling verify order conditioin.................";
+	LOG(WARNING)<<"[verify_order_condition] calling verify order conditioin.................";
 	std::time_t now_time = std::time(nullptr);
 	int signal_delay = now_time - p_orderdata->order_insert_time;
 	if(signal_delay > p_strategy_config->signal_delay){
-		LOG(INFO)<<"[verify_order_condition] Skip order with signal delay =>"<<signal_delay<<",delay config=>"<<p_strategy_config->signal_delay;
+		LOG(WARNING)<<"[verify_order_condition] Skip order with signal delay =>"<<signal_delay<<",delay config=>"<<p_strategy_config->signal_delay;
 		return OrderVerify_unvalid;
 	}
 	std::vector<Position *> v_pos = simtrade_ptr->get_positions(p_orderdata->symbol);
-	LOG(INFO)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
+	LOG(WARNING)<<"[verify_order_condition] return for get_position,size:"<<v_pos.size();
 	int _total_pos_vol = 0;
 	bool except = false; //REMARK gm callback issue remove this hack for system error, ugply but work for now
 	for(auto it=v_pos.begin(); it!=v_pos.end();++it){
@@ -906,16 +911,16 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		_total_pos_vol += p_curr_pos->volume;
 	}
 	if(except && _total_pos_vol >= p_strategy_config->vol_limit){
-		LOG(INFO)<<"[verify_order_condition] Except for position side and Exceed vol limit, return unvalid order";
+		LOG(WARNING)<<"[verify_order_condition] Except for position side and Exceed vol limit, return unvalid order";
 		return OrderVerify_unvalid;
 	}
 	if(p_orderdata->status == LONG_SIGNAL){ // long signal
-		LOG(INFO)<<"[verify_order_condition] check long signal";
+		LOG(WARNING)<<"[verify_order_condition] check long signal";
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			Position* p_curr_pos = *it;
 			// std::cout<<"?????????????cur pos vol=>"<<p_curr_pos->volume<<"cur pos side=>"<<p_curr_pos->side<<",vol=>"<<p_curr_pos->volume<<",vwap=>"<<p_curr_pos->vwap<<std::endl;
 			if(p_curr_pos->side == OrderSide_Sell){//long signal and short position, close the position for all vol by stop_profit
-				LOG(INFO)<<"[verify_order_condition] long signal, close short position";
+				LOG(WARNING)<<"[verify_order_condition] long signal, close short position";
 				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->price = p_curr_pos->vwap - p_strategy_config->stop_profit;
 				p_orderdata->volume = p_curr_pos->volume;
@@ -927,7 +932,7 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 				//REMARK restrict vol limit for the whole account, not pos level
 				// p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
 				p_orderdata->volume = p_strategy_config->vol_limit - _total_pos_vol;
-				LOG(INFO)<<"[verify_order_condition] long signal, open long position,order volume=>"<<p_orderdata->volume<<",vol_limit=>"<<p_strategy_config->vol_limit;
+				LOG(WARNING)<<"[verify_order_condition] long signal, open long position,order volume=>"<<p_orderdata->volume<<",vol_limit=>"<<p_strategy_config->vol_limit;
 				if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 				
 				p_orderdata->side = OrderSide_Buy;
@@ -938,18 +943,18 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		if(v_pos.size()==0){//long signal and no positions,open long until vol_limit
 			p_orderdata->order_type = OrderType_Market;
 			p_orderdata->volume = p_strategy_config->vol_limit;
-			LOG(INFO)<<"[verify_order_condition] long signal, open long position, order volume=>"<<p_strategy_config->vol_limit;
+			LOG(WARNING)<<"[verify_order_condition] long signal, open long position, order volume=>"<<p_strategy_config->vol_limit;
 			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 			p_orderdata->side = OrderSide_Buy;
 			p_orderdata->position_effect = PositionEffect_Open;
 			return OrderVerify_valid;
 		}
 	}else if (p_orderdata->status==SHORT_SIGNAL){ //short signal
-		LOG(INFO)<<"[verify_order_condition] check short signal";
+		LOG(WARNING)<<"[verify_order_condition] check short signal";
 		for(auto it=v_pos.begin(); it!=v_pos.end();++it){
 			Position* p_curr_pos = *it;
 			if(p_curr_pos->side == OrderSide_Buy){//short signal and long position, close the position for all vol by stop_profit
-				LOG(INFO)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->volume;
+				LOG(WARNING)<<"[verify_order_condition] short signal, close long position, order volume=>"<<p_curr_pos->volume;
 				p_orderdata->order_type = OrderType_Limit;
 				p_orderdata->price = p_curr_pos->vwap + p_strategy_config->stop_profit;
 				p_orderdata->volume = p_curr_pos->volume;
@@ -961,7 +966,7 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 				//REMARK restrict vol limit for the whole account, not pos level
 				// p_orderdata->volume = p_strategy_config->vol_limit - p_curr_pos->volume;
 				p_orderdata->volume = p_strategy_config->vol_limit - _total_pos_vol;
-				LOG(INFO)<<"[verify_order_condition] short signal, open short position,order volume=>"<<p_orderdata->volume;
+				LOG(WARNING)<<"[verify_order_condition] short signal, open short position,order volume=>"<<p_orderdata->volume;
 				if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 				p_orderdata->side = OrderSide_Sell;
 				p_orderdata->position_effect = PositionEffect_Open;
@@ -971,7 +976,7 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 		if(v_pos.size()==0){ //short signal and no positions, open short until vol_limit
 			p_orderdata->order_type = OrderType_Market;
 			p_orderdata->volume = p_strategy_config->vol_limit;
-			LOG(INFO)<<"[verify_order_condition] short signal, open short position, order volume=>"<<p_strategy_config->vol_limit;
+			LOG(WARNING)<<"[verify_order_condition] short signal, open short position, order volume=>"<<p_strategy_config->vol_limit;
 			if(p_orderdata->volume <= 0) return OrderVerify_unvalid;
 			
 			p_orderdata->side = OrderSide_Sell;
@@ -979,45 +984,45 @@ int QTStrategyBase::verify_order_condition(OrderData* p_orderdata)
 			return OrderVerify_valid;
 		}		
 	}else if (p_orderdata->status == STOP_SIGNAL){//check whether stop profit/loss,由于仿真没法下条件单，这相当于手工实现条件单，实际上CTP可以下条件单
-		LOG(INFO)<<"[verify_order_condition] stop profit and loss order, order volume=>"<<p_orderdata->volume;
+		LOG(WARNING)<<"[verify_order_condition] stop profit and loss order, order volume=>"<<p_orderdata->volume;
 		return OrderVerify_valid;
 	}
-	LOG(INFO)<<"[verify_order_condition] return invalid order";
+	LOG(WARNING)<<"[verify_order_condition] return invalid order";
 	return OrderVerify_unvalid;
 }
 */
 
 void QTStrategyBase::process_order()
 {
-	LOG(INFO)<<"[process_order] calling process_order:is active:"<<active_;
+	LOG(WARNING)<<"[process_order] calling process_order:is active:"<<active_;
 	bool _terminate = false;
 	while(!_terminate) 
 	{
 		DataField data = this->p_order_queue->pop();
 		if (data._data)
 		{
-			// LOG(INFO)<<"[process_order] get order data, data field is:"<<data.data_type<<","<<data._data;
+			// LOG(WARNING)<<"[process_order] get order data, data field is:"<<data.data_type<<","<<data._data;
 			switch (data.data_type)
 			{
 			case ORDERFIELDCTP://ctp trade
 			{
 				OrderData *p_orderdata = reinterpret_cast<OrderData *>(data._data);
 				if(p_orderdata->status == TERMINATE_SIGNAL){
-					LOG(INFO)<<"[process_order] received terminate signal, cancel orders and close positions";
+					LOG(WARNING)<<"[process_order] received terminate signal, cancel orders and close positions";
 					int ret = this->cancel_all_orders();
-					LOG(INFO)<<"[process_order] received terminate signal, return from cancel all orders=>"<<ret;
+					LOG(WARNING)<<"[process_order] received terminate signal, return from cancel all orders=>"<<ret;
 					sleep(2);
 					ret = this->close_all_orders();
 					start_ = false; //TODO double check whether this is safe
 					_terminate = true;
-					LOG(INFO)<<"[process_order] received terminate signal, return from close all orderrs=>"<<ret<<", start_=>"<<start_<<", _terminate=>"<<_terminate;
+					LOG(WARNING)<<"[process_order] received terminate signal, return from close all orderrs=>"<<ret<<", start_=>"<<start_<<", _terminate=>"<<_terminate;
 					break;
 				}
-				LOG(INFO)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
+				LOG(WARNING)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
 				if(verify_order_condition_ctp(p_orderdata)==OrderVerify_valid){
 					this->p_trader_handler->insert_order(p_orderdata);
 				}else{
-					LOG(INFO)<<"[process_order] order invalid, ignore signal";
+					LOG(WARNING)<<"[process_order] order invalid, ignore signal";
 				}
 				break;
 			}
@@ -1028,7 +1033,7 @@ void QTStrategyBase::process_order()
 				// 	_terminate = true;
 				// 	break;
 				// }
-				// LOG(INFO)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
+				// LOG(WARNING)<<"[process_order] ready place order :symbol:"<<p_orderdata->symbol<<",side:"<<p_orderdata->side<<",order status=>"<<p_orderdata->status<<",order vol=>"<<p_orderdata->volume;
 				// if(verify_order_condition(p_orderdata)==OrderVerify_valid){
 				// 	this->simtrade_ptr->insert_order(p_orderdata);
 				// }
@@ -1040,7 +1045,7 @@ void QTStrategyBase::process_order()
 		}//end of if 
 		if(_terminate) 
 		{
-			LOG(INFO)<<"[process_order] break process order";
+			LOG(WARNING)<<"[process_order] break process order";
 			break;
 		}
 	}//end of while
@@ -1048,7 +1053,7 @@ void QTStrategyBase::process_order()
 
 void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrument_id)
 {
-	LOG(INFO)<<"[cache_main_instruments]......";
+	LOG(WARNING)<<"[cache_main_instruments]......";
 	std::vector<CThostFtdcInstrumentField*> ret_instruments = get_instruments(_v_instrument_id);
 	std::vector<CThostFtdcDepthMarketDataField*> ret_depth_market_data = get_market_datas(_v_instrument_id);
 	std::unordered_map<std::string, double> m_ins2openinterest;
@@ -1084,7 +1089,7 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 	//get main future ids by cal results
 	for(const auto& n:m_main_futures)
 	{
-		LOG(INFO)<<"[cache_main_instruments] push  main contract future id in cache main contract->"<<n.first<<","<<n.second;
+		LOG(WARNING)<<"[cache_main_instruments] push  main contract future id in cache main contract->"<<n.first<<","<<n.second;
 		v_main_contract_ids.push_back(n.second);
 	}
 
@@ -1107,7 +1112,7 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 
 	//calculate target option id lst
 	for(auto& t:m_option_val){
-		LOG(INFO)<<t.first<<"[cache_main_instruments] option size:"<<t.second.size();
+		LOG(WARNING)<<t.first<<"[cache_main_instruments] option size:"<<t.second.size();
 		sort(t.second.begin(), t.second.end(), [](const std::pair<std::string, double>& x, const std::pair<std::string, double>& y) -> bool {return x.second<y.second;});
 		const auto it = t.second.rbegin();
 		int cnt = 0;
@@ -1118,24 +1123,31 @@ void QTStrategyBase::cache_main_instruments(std::vector<std::string> _v_instrume
 				cnt ++;
 			}
 		}
-		LOG(INFO)<<"[cache_main_instruments] complete push option ids";
+		LOG(WARNING)<<"[cache_main_instruments] complete push option ids";
 	}
 	for(auto it=v_option_ids.begin(); it!=v_option_ids.end();++it)
 	{
-		LOG(INFO)<<"[cache_main_instruments] v_option_id=>"<<*it;
+		LOG(WARNING)<<"[cache_main_instruments] v_option_id=>"<<*it;
 	}
-	LOG(INFO)<<"[cache_main_instruments] start cache target instruments......";
+	LOG(WARNING)<<"[cache_main_instruments] start cache target instruments......";
 
 	for(auto it=ret_instruments.begin(); it!=ret_instruments.end();++it){
-		CThostFtdcInstrumentField* p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
+		CThostFtdcInstrumentField* p_tmp = new CThostFtdcInstrumentField();
+		p_tmp = reinterpret_cast<CThostFtdcInstrumentField*>(*it);
 		std::string _instrument_id = p_tmp->InstrumentID;
+
+
 		auto f_it = find(v_main_contract_ids.begin(), v_main_contract_ids.end(), _instrument_id);
+	
 		if(f_it!=v_main_contract_ids.end()){
-			m_target_instruments.insert(std::pair<std::string, CThostFtdcInstrumentField*>(_instrument_id,p_tmp));
+			// m_instrument_fields.insert(std::pair<std::string, CThostFtdcInstrumentField*>(_instrument_id,p_tmp));
+			m_vol_multiple.insert(std::pair<std::string, int>(_instrument_id, p_tmp->VolumeMultiple));
 		}
+
 		auto o_it = find(v_option_ids.begin(), v_option_ids.end(), _instrument_id);
 		if(o_it!=v_option_ids.end()){
-			m_target_instruments.insert(std::pair<std::string, CThostFtdcInstrumentField*>(_instrument_id,p_tmp));
+			// m_instrument_fields.insert(std::pair<std::string, CThostFtdcInstrumentField*>(_instrument_id,p_tmp));
+			m_vol_multiple.insert(std::pair<std::string, int>(_instrument_id, p_tmp->VolumeMultiple));
 		}
 	}
 	
@@ -1196,20 +1208,20 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
     std::time_t now_time = std::time(nullptr);
 	// std::cout<<"check risk monitor=>"<<now_time<<std::endl;
     tm *ltm = localtime(&now_time);
-	// LOG(INFO)<<"[risk_monitor] Start risk monitor, min=>"<<ltm->tm_min<<",sec=>"<<ltm->tm_sec;
+	// LOG(WARNING)<<"[risk_monitor] Start risk monitor, min=>"<<ltm->tm_min<<",sec=>"<<ltm->tm_sec;
     if(ltm->tm_hour == 14 && ltm->tm_min == 58){//for backup, if not close for terminate signal
-        LOG(INFO)<<"[risk_monitor] market closed, close all positions";
+        LOG(WARNING)<<"[risk_monitor] market closed, close all positions";
 		this->cancel_all_orders();
 		//FIXME cancel没有做订单锁定处�?
 		sleep(2);
 		this->close_all_orders();
 		start_ = false; //TODO double check whether this is safe
-		LOG(INFO)<<"[risk_monitor] return for cancel orders and close positions";
+		LOG(WARNING)<<"[risk_monitor] return for cancel orders and close positions";
 		return 0; //to break the risk thread
 	//TODO remove this ,double check, only cancel for the delayed order
     // }else if(ltm->tm_sec < 5){ //FIXME hardcode this delay buffer, should changed to be adapted,整分钟时候未必会调用,所以尝试设置多两秒buffer
 		// int ret = this->cancel_all_orders();
-        // LOG(INFO)<<"[risk_monitor] cancel all orders for mintues with return =>"<<ret;
+        // LOG(WARNING)<<"[risk_monitor] cancel all orders for mintues with return =>"<<ret;
     }else{// 定期检查未成订单以及持仓，订单超时
 		//order data params which derive from conf and mkt
         double _last_price = p_risk_input->last_price;
@@ -1228,7 +1240,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
         	//             ret = cancel_all_orders();//FIXME should call order_cancle, but order_cancel has some issue
         	//             // ret = order_cancel(_tmp.order_id, account_id.c_str());
         	//             sleep(1);
-        	//             LOG(INFO)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<_tmp.order_id<<"order vol=>"<<_tmp.volume;
+        	//             LOG(WARNING)<<"[risk_monitor] cancel order for order delay=>"<<order_delay<<"cancel order return=>"<<ret<<"cancel order id=>"<<_tmp.order_id<<"order vol=>"<<_tmp.volume;
         	//         }
         	//     }//end of for order loop
         	// ret_order->release();
@@ -1240,7 +1252,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			//     bool stop_profit = (_cur_pos->side==PositionSide_Long && _last_price-_cur_pos->vwap >stop_profit_bc) || (_cur_pos->side==PositionSide_Short && _last_price-_cur_pos->vwap<-stop_profit_bc);
 			//     bool stop_loss = (_cur_pos->side==PositionSide_Long && _last_price-_cur_pos->vwap <-stop_loss_bc) || (_cur_pos->side==PositionSide_Short && _last_price-_cur_pos->vwap>stop_loss_bc);
 			//     // if(stop_profit || stop_loss)
-			//     LOG(INFO)<<"[risk_monitor] cur pos side=>"<<_cur_pos->side<<",cur pos vwap=>"<<_cur_pos->vwap<<",cur pos vol=>"<<_cur_pos->volume<<",last price=>"<<_last_price;
+			//     LOG(WARNING)<<"[risk_monitor] cur pos side=>"<<_cur_pos->side<<",cur pos vwap=>"<<_cur_pos->vwap<<",cur pos vol=>"<<_cur_pos->volume<<",last price=>"<<_last_price;
 			//     OrderData* p_order = new OrderData();
 			//     p_order->order_type = OrderType_Limit;
 			//     p_order->volume = _cur_pos->volume;
@@ -1264,9 +1276,9 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			//         // idle
 			//     }
 			//     if((stop_profit || stop_loss) && (p_order->volume>0 && p_order->price>1.0)){
-			//         LOG(INFO) <<"[risk_monitor] insert order for stop_profit or loss,stop_profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
+			//         LOG(WARNING) <<"[risk_monitor] insert order for stop_profit or loss,stop_profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
 			// 		place_order(p_order);
-			//         // LOG(INFO)<<"[risk_monitor] order return status=>"<<p_order_ret->status<<",order rej reason=>"<<p_order_ret->ord_rej_reason<<",rej details=>"<<p_order_ret->ord_rej_reason_detail;
+			//         // LOG(WARNING)<<"[risk_monitor] order return status=>"<<p_order_ret->status<<",order rej reason=>"<<p_order_ret->ord_rej_reason<<",rej details=>"<<p_order_ret->ord_rej_reason_detail;
 			//     }
 			// }//end of position loop
         }else if(mode == 2){ //ctp cancel stale orders 
@@ -1275,14 +1287,14 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			for(auto it = v_ret_orders.begin(); it != v_ret_orders.end(); ++it){
     			ptr_OrderField p_cur_order = *it;
     			std::time_t order_delay = now_time - p_cur_order->InsertTime;
-    			// LOG(INFO)<<"[risk monitor] order delay=>"<<order_delay<<",order update time=>"<<p_cur_order->InsertTime<<",now time=>"<<now_time<<"order delay conf=>"<<p_strategy_conf->cancel_order_delay;
+    			// LOG(WARNING)<<"[risk monitor] order delay=>"<<order_delay<<",order update time=>"<<p_cur_order->InsertTime<<",now time=>"<<now_time<<"order delay conf=>"<<p_strategy_conf->cancel_order_delay;
     			int ret;
     			if(order_delay > p_strategy_conf->cancel_order_delay && p_cur_order->OrderStatus != THOST_FTDC_OST_AllTraded && p_cur_order->OrderStatus != THOST_FTDC_OST_Canceled){
-					LOG(INFO)<<"[risk_monitor] cancel stale order in order table,order id"<<p_cur_order->order_id<<", order vol=>"<<p_cur_order->VolumeTotalOriginal<<", order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<", order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
+					LOG(WARNING)<<"[risk_monitor] cancel stale order in order table,order id"<<p_cur_order->order_id<<", order vol=>"<<p_cur_order->VolumeTotalOriginal<<", order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<", order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
 					ret = p_trader_handler->cancel_order(p_cur_order->p_orderid_ref);
 					//FIXME double check, 撤单没有做订单锁�?
     		    	sleep(1);
-    		    	LOG(INFO)<<"[risk_monitor] ret from cancel order for order delay=>"<<order_delay<<", cancel order return=>"<<ret<<", cancel order id=>"<<p_cur_order->order_id<<", order vol=>"<<p_cur_order->VolumeTotalOriginal<<", order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<", order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
+    		    	LOG(WARNING)<<"[risk_monitor] ret from cancel order for order delay=>"<<order_delay<<", cancel order return=>"<<ret<<", cancel order id=>"<<p_cur_order->order_id<<", order vol=>"<<p_cur_order->VolumeTotalOriginal<<", order ref=>"<<p_cur_order->p_orderid_ref->OrderRef<<", order sys ref=>"<<p_cur_order->p_orderid_ref->OrderSysID;
     			}
 			}//end of for order loop
 
@@ -1299,7 +1311,7 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			    bool stop_profit = (_cur_pos->PosiDirection ==THOST_FTDC_PD_Long && _last_price-vwap>stop_profit_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-vwap<-stop_profit_bc);
 			    bool stop_loss = (_cur_pos->PosiDirection==THOST_FTDC_PD_Long && _last_price-vwap <-stop_loss_bc) || (_cur_pos->PosiDirection==THOST_FTDC_PD_Short && _last_price-vwap>stop_loss_bc);
 			    // if(stop_profit || stop_loss)
-			    // LOG(INFO)<<"[risk_monitor] cur pos side=>"<<_cur_pos->PosiDirection<<",cur pos vwap=>"<<_cur_pos->OpenCost<<",cur pos vol=>"<<_cur_pos->TodayPosition<<",last price=>"<<_last_price;
+			    // LOG(WARNING)<<"[risk_monitor] cur pos side=>"<<_cur_pos->PosiDirection<<",cur pos vwap=>"<<_cur_pos->OpenCost<<",cur pos vol=>"<<_cur_pos->TodayPosition<<",last price=>"<<_last_price;
 			    OrderData* p_order = new OrderData();
 			    p_order->order_type = OrderType_Limit;
 			    p_order->volume = _cur_pos->TodayPosition;
@@ -1325,9 +1337,9 @@ int QTStrategyBase::risk_monitor(RiskInputData* p_risk_input, StrategyConfig* p_
 			        // idle
 			    }
 			    if((stop_profit || stop_loss) && (p_order->volume>0 && p_order->price>1.0)){
-			        LOG(INFO) <<"[risk_monitor] insert order for stop_profit or loss,stop_profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
+			        LOG(WARNING) <<"[risk_monitor] insert order for stop_profit or loss,stop_profit=>"<<stop_profit<<",stop loss=>"<<stop_loss;
 					place_order(p_order);
-			        // LOG(INFO)<<"[risk_monitor] order return status=>"<<p_order_ret->status<<",order rej reason=>"<<p_order_ret->ord_rej_reason<<",rej details=>"<<p_order_ret->ord_rej_reason_detail;
+			        // LOG(WARNING)<<"[risk_monitor] order return status=>"<<p_order_ret->status<<",order rej reason=>"<<p_order_ret->ord_rej_reason<<",rej details=>"<<p_order_ret->ord_rej_reason_detail;
 			    }
 			}//end of position loop
 		}

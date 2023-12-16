@@ -32,9 +32,12 @@ int main(int argc, char *argv[])
 
     google::InitGoogleLogging(argv[0]);
     FLAGS_log_dir = std::string("./log/");
+    FLAGS_stderrthreshold = 0;
+    FLAGS_minloglevel = -1;
+
     //TODO remove hardcode of the path, with relative path
     system("cp /mnt/c/projects/option_future_research_private/codes/research/daily_models/daily_cache.ini ~/workspace/CTPTrader/conf/");
-    system("cp /mnt/c/projects/option_future_research_private/data/models/tsmodels/tsmodels_rb.txt ~/workspace/CTPTrader/conf/");
+    // system("cp /mnt/c/projects/option_future_research_private/data/models/tsmodels/tsmodels_rb.txt ~/workspace/CTPTrader/conf/");
     system("cp /mnt/c/projects/option_future_research_private/data/models/tsmodels/rnn_rb.pt ~/workspace/CTPTrader/conf/");
     // system("cp /mnt/c/projects/pycharm/option_future_research/conf/strategy.ini ~/projects/DERIQT_F/conf/");
 

@@ -72,7 +72,7 @@ public:
             double _vol_short = 0.0;
             
             // double _prev_slope = 0;
-
+            // std::cout<<pDepthMarketData->UpdateTime<<"?????, bid price=>"<<pDepthMarketData->BidPrice1<<",ask price=>"<<pDepthMarketData->AskPrice1<<std::endl;
             double _curr_spread =  pDepthMarketData->BidPrice1 - pDepthMarketData->AskPrice1;
             double _curr_vwap = pDepthMarketData->Turnover/pDepthMarketData->Volume;
             double _curr_mid = (pDepthMarketData->AskPrice1*pDepthMarketData->BidVolume1+pDepthMarketData->BidPrice1*pDepthMarketData->AskVolume1)/(pDepthMarketData->AskVolume1+pDepthMarketData->BidVolume1);

@@ -67,7 +67,7 @@ public: //strategy function
 public: //stategy management
 	QTStrategyBase(const std::string &name,  int mode, const char* shared_memory_name, uint32_t size, int strategy_class):name(name), mode(mode),strategy_class(strategy_class){
 
-		LOG(INFO)<<"[QTStrategyBase] name=>"<<name<<",mode=>"<<mode<<",shared_memory_name=>"<<shared_memory_name<<",size=>"<<size<<",strategy class=>"<<strategy_class;		
+		LOG(WARNING)<<"[QTStrategyBase] name=>"<<name<<",mode=>"<<mode<<",shared_memory_name=>"<<shared_memory_name<<",size=>"<<size<<",strategy class=>"<<strategy_class;		
 		segmet_ptr.reset(new bip::managed_shared_memory(bip::open_or_create, shared_memory_name, size));
 		char_alloc_ptr.reset(new shm::char_alloc(segmet_ptr->get_segment_manager()));
 		p_queue = segmet_ptr->find_or_construct<shm::ring_buffer>("queue")();		
@@ -120,7 +120,7 @@ public: //qry for product/instrument/account
 
 	std::vector<CThostFtdcInstrumentField*> get_instruments(std::vector<std::string> _v_instrument_id)
 	{
-		LOG(INFO)<<"[get_instruments] product id=>"<<_v_instrument_id[0];
+		LOG(WARNING)<<"[get_instruments] product id=>"<<_v_instrument_id[0];
 		return p_trader_handler->get_instruments(_v_instrument_id);
 	}
 
@@ -153,9 +153,16 @@ public: //qry for product/instrument/account
 
 	//得到某个合约的合约乘数，如果合约没有cache,返回0
 	int get_instrument_multiplier(const std::string& instrument_id){
-		for (auto it = m_target_instruments.begin(); it!=m_target_instruments.end(); ++it){
+		// std::cout<<"------------------calling get instrument multiplier--------"<<std::endl;
+		// LOG(WARNING)<<"calling search instrument id in m_target_instruments=>(line 156: str.h)"<<instrument_id<<std::endl;
+		for (auto it = m_vol_multiple.begin(); it!=m_vol_multiple.end(); ++it){
+			// std::cout<<"search:"<<instrument_id<<", first=>"<<it->first<<",second, volume=>"<<it->second->VolumeMultiple<<",addr=>"<<it->second<<std::endl;
+			// std::cout<<it->first<<","<<instrument_id<<std::endl;
+			// LOG(WARNING)<<"???????????????? found instrument id in m_target_instruments=>(line 157: str.h)"<<it->first<<std::endl;
 			if(it->first == instrument_id){
-				return it->second->VolumeMultiple;
+				// std::cout<<"return equal"<<std::endl;
+				// return it->second->VolumeMultiple;
+				return it->second;
 			}
 		}
 		return 0;
@@ -199,7 +206,9 @@ private:
 	int option_size = 10; //
 	std::vector<std::string> v_main_contract_ids; //main instrument tickers, 策略product class的主力期货合约ID
 	std::vector<std::string> v_option_ids;//options tickers, 策略product class 的期权（前 option_size) ID
-	std::unordered_map<std::string,CThostFtdcInstrumentField*> m_target_instruments; //product class 下的合约cache
+	//FIXME: 合约cache future 的合约内容会被reset?????
+	// std::unordered_map<std::string,CThostFtdcInstrumentField*> m_instrument_fields; //product class 下的合约cache
+	std::unordered_map<std::string, int> m_vol_multiple; //合约乘数
 	recordio::RecordWriter * p_depth_mkt_writer;
 	std::ofstream * cache_ptr;
 	std::unique_ptr<bip::managed_shared_memory> segmet_ptr;

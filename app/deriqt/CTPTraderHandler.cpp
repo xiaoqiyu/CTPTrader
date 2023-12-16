@@ -3067,7 +3067,7 @@ void CTPTraderHandler::processRspQryProduct(Task* task)
 
 void CTPTraderHandler::processRspQryInstrument(Task* task)
 {
-	//ProductClass:,"1":æœŸè´§å•ä¸€åˆçº¦ï¼?"2":æœŸæƒå•ä¸€åˆçº¦
+	//ProductClass:,"1":æœŸè´§å•ä¸€åˆçº¦ï¿½?"2":æœŸæƒå•ä¸€åˆçº¦
 	//ProductID: "cu_o":option,"cu":future
 	if (task->task_data)
 	{
@@ -3708,11 +3708,11 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         bool is_1st_equ = task_data->InsertTime[0] == _login_time[0];
         std::string insert_date_str = std::string(task_data->InsertDate);
         bool _is_same_date =  (std::stoi(insert_date_str.substr(6,2))) == now->tm_mday;
-        //Ö»ÓÐ±¨µ¥ÈÕÆÚµÈÓÚµÇÂ¼µ±ÈÕÈÕÆÚÇÒ±¨µ¥Ê±¼ä±ÈµÇÂ¼Ê±¼äÂý£¬²Å»á´¦Àí£»ÕâÑùÂß¼­µÄ»°£¬¾ÍÏàµ±ÓÚÒ¹ÅÌ±¨µ¥Èç¹ûÒ¹ÅÌÊ±ºòÃ»ÓÐ´¦Àícallback£¬µÚ¶þÌìÈÕÅÌ¿ªÅÌ²»»á´¦Àí£¬ÒòÎª¼´Ê¹½»Ò×ÈÕÒ»Ñù£¬±¨µ¥ÈÕÆÚ²»Í¬ÁË
-        // _login_time ÊÇµÇÂ½Ê±·µ»ØµÄ½»Ò×ËùÊ±¼ä£¬task_data inserttimeÒ²ÊÇ½»Ò×Ëù·µ»ØÊ±¼ä
+        //Ö»ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½Úµï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò±ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Èµï¿½Â¼Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å»á´¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½àµ±ï¿½ï¿½Ò¹ï¿½Ì±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¹ï¿½ï¿½Ê±ï¿½ï¿½Ã»ï¿½Ð´ï¿½ï¿½ï¿½callbackï¿½ï¿½ï¿½Ú¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¿ï¿½ï¿½Ì²ï¿½ï¿½á´¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú²ï¿½Í¬ï¿½ï¿½
+        // _login_time ï¿½Çµï¿½Â½Ê±ï¿½ï¿½ï¿½ØµÄ½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ä£¬task_data inserttimeÒ²ï¿½Ç½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
         if(!(strcmp(task_data->InsertTime, _login_time) > 0 && _is_same_date )){
             LOG(INFO)<<"[processRtnOrder] Ignore order callback for inserttime=>"<<task_data->InsertTime<<", insert date=>"<<std::stoi(insert_date_str.substr(6,2))<<",login time=>"<<_login_time<<",login date=>"<<now->tm_mday;
-            order_available_ = true; //ºöÂÔ¶©µ¥Ö®ºóÊÍ·Å¶©µ¥¿É²éÑ¯Ëø
+            order_available_ = true; //ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½Í·Å¶ï¿½ï¿½ï¿½ï¿½É²ï¿½Ñ¯ï¿½ï¿½
             cond_.notify_all();
             return;
         }
@@ -3780,9 +3780,9 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             p_orderfield->VolumeTraded = task_data->VolumeTraded;
             p_orderfield->VolumeTotal = task_data->VolumeTotal;
             p_orderfield->OrderStatus = task_data->OrderStatus;
-            // p_orderfield->InsertTime = now_time; //µÚ¶þ¸öcallback ²»ÐÞ¸ÄÎ¯ÍÐÊ±¼ä
+            // p_orderfield->InsertTime = now_time; //ï¿½Ú¶ï¿½ï¿½ï¿½callback ï¿½ï¿½ï¿½Þ¸ï¿½Î¯ï¿½ï¿½Ê±ï¿½ï¿½
             if(p_orderfield->OrderStatus == THOST_FTDC_OST_Canceled){ //TODO check whether there is other status to handle here, if cancel,the order is removed, and not processed
-                LOG(INFO)<<"[update order table] remove order when canceled with order_id1=>"<<_order_id1; //³·µ¥µÄ»°ÊÍ·Å¶©µ¥²éÑ¯Ëø£¬»¹ÓÐÎ¯ÍÐÏÞÖÆËø
+                LOG(INFO)<<"[update order table] remove order when canceled with order_id1=>"<<_order_id1; //ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½Í·Å¶ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¯ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 m_all_orders.erase(_order_id1);
                 order_complete_ = true;
                 order_available_ = true;
@@ -3820,7 +3820,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
             LOG(INFO)<<"[update order table] insert order into table with order id1=>"<<_order_id1<<", order insert time=>"<<now->tm_min<<":"<<now->tm_sec;
             m_all_orders.insert(std::pair<std::string, ptr_OrderField>(_order_id1, p_orderfield));
             // std::cout<<"[order report] order id=>"<<p_orderfield->order_id<<",volume traded=>"<<p_orderfield->VolumeTraded<<",volume remained=>"<<p_orderfield->VolumeTotal<<std::endl;
-        }else{ //ºöÂÔµ±Ç°¶©µ¥£¬ÊÍ·Å²éÑ¯Ëø
+        }else{ //ï¿½ï¿½ï¿½Ôµï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·Å²ï¿½Ñ¯ï¿½ï¿½
             LOG(INFO)<<"Order id not exist in order table, and not trading product => "<<trade_product<<"reset order availabe";
             // TODO double check 
             order_available_ = true;
@@ -3851,7 +3851,7 @@ void CTPTraderHandler::processRtnOrder(Task* task)
         LOG(INFO)<<"InsertTime=>"<<task_data->InsertTime;
         LOG(INFO)<<"SuspendTime=>"<<task_data->SuspendTime;
         LOG(INFO)<<"*************End Order Report******************";
-        if(trade_product && task_data->OrderStatus == THOST_FTDC_OST_Canceled){//Èç¹ûÊÇ½»Ò×µÄÆ·ÖÖ£¬¶øÇÒ¶©µ¥³·Ïú£¬ÊÍ·Å¶©µ¥Ëø
+        if(trade_product && task_data->OrderStatus == THOST_FTDC_OST_Canceled){//ï¿½ï¿½ï¿½ï¿½Ç½ï¿½ï¿½×µï¿½Æ·ï¿½Ö£ï¿½ï¿½ï¿½ï¿½Ò¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í·Å¶ï¿½ï¿½ï¿½ï¿½ï¿½
             order_complete_ = true;
             LOG(INFO)<<"Reset order_complete for cancel order callback, with order complete=>"<<order_complete_;
             cond_.notify_all();
@@ -3866,7 +3866,7 @@ void CTPTraderHandler::processRtnTrade(Task* task)
 {
 	if (task->task_data)
 	{
-        std::cout<<"get processRtnTrade data"<<std::endl;
+        // std::cout<<"get processRtnTrade data"<<std::endl;
 		CThostFtdcTradeField* task_data = reinterpret_cast<CThostFtdcTradeField*>(task->task_data);
         OrderIDRef* p_orderidref = new OrderIDRef();
         strcpy(p_orderidref->OrderRef, task_data->OrderRef);
@@ -4688,7 +4688,7 @@ void CTPTraderHandler::processTask()
                 this->processRspOrderInsert(&task);
                 break;
             }
-			//é¢„åŸ‹å•å½•å…¥è¯·æ±?
+			//é¢„åŸ‹å•å½•å…¥è¯·ï¿½?
             case ONRSPPARKEDORDERINSERT:
             {
                 this->processRspParkedOrderInsert(&task);
@@ -4718,7 +4718,7 @@ void CTPTraderHandler::processTask()
                 this->processRspSettlementInfoConfirm(&task);
                 break;
             }
-			//åˆ é™¤é¢„åŸ‹å?
+			//åˆ é™¤é¢„åŸ‹ï¿½?
             case ONRSPREMOVEPARKEDORDER:
             {
                 this->processRspRemoveParkedOrder(&task);
@@ -4868,7 +4868,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryTransferBank(&task);
                 break;
             }
-			//æŠ•èµ„è€…æŒä»“æ˜Žç»?
+			//æŠ•èµ„è€…æŒä»“æ˜Žï¿½?
             case ONRSPQRYINVESTORPOSITIONDETAIL:
             {
                 this->processRspQryInvestorPositionDetail(&task);
@@ -5198,7 +5198,7 @@ void CTPTraderHandler::processTask()
                 this->processRspQryContractBank(&task);
                 break;
             }
-			//æŸ¥è¯¢é¢„åŸ‹å?
+			//æŸ¥è¯¢é¢„åŸ‹ï¿½?
             case ONRSPQRYPARKEDORDER:
             {
                 this->processRspQryParkedOrder(&task);
@@ -5605,7 +5605,7 @@ int CTPTraderHandler::ReqQryTrade(CThostFtdcQryTradeField *pQryTrade, int nReque
 	return ret;
 }
 
-///è¯·æ±‚æŸ¥è¯¢æŠ•èµ„è€…æŒä»?
+///è¯·æ±‚æŸ¥è¯¢æŠ•èµ„è€…æŒï¿½?
 int CTPTraderHandler::ReqQryInvestorPosition(CThostFtdcQryInvestorPositionField *pQryInvestorPosition, int nRequestID)
 {
 	this->available_ = false;
@@ -5631,7 +5631,7 @@ int CTPTraderHandler::ReqQryTradingAccount(CThostFtdcQryTradingAccountField *pQr
 	return ret;
 }
 
-//è¯·æ±‚æŸ¥è¯¢æŠ•èµ„è€…æŒä»“æ˜Žç»?
+//è¯·æ±‚æŸ¥è¯¢æŠ•èµ„è€…æŒä»“æ˜Žï¿½?
 int CTPTraderHandler::ReqQryInvestorPositionDetail(CThostFtdcQryInvestorPositionDetailField *pQryInvestorPositionDetail, int nRequestID)
 {
 	this->available_ = false;
@@ -5713,8 +5713,8 @@ int CTPTraderHandler::insert_order(OrderData * p_orderdata){
         orderfield.CombOffsetFlag[0] = THOST_FTDC_OF_Open;
     }
     orderfield.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
-    //TODO double check ä¸‹å•ç±»åž‹ï¼›test SHFE,åªæœ‰å³æˆæ’¤å•ï¼Œæˆ–è€…å½“æ—¥æœ‰æ•ˆå¯ç”?    
-    // orderfield.TimeCondition = THOST_FTDC_TC_IOC;//ç«‹å³å®Œæˆï¼Œå¦åˆ™æ’¤å?
+    //TODO double check ä¸‹å•ç±»åž‹ï¼›test SHFE,åªæœ‰å³æˆæ’¤å•ï¼Œæˆ–è€…å½“æ—¥æœ‰æ•ˆå¯ï¿½?    
+    // orderfield.TimeCondition = THOST_FTDC_TC_IOC;//ç«‹å³å®Œæˆï¼Œå¦åˆ™æ’¤ï¿½?
     orderfield.TimeCondition = THOST_FTDC_TC_GFD;//å½“æ—¥æœ‰æ•ˆ
     orderfield.VolumeCondition = THOST_FTDC_VC_AV;    
     orderfield.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;  
@@ -5771,10 +5771,10 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
         bool _is_long = p_curr_pos->PosiDirection == THOST_FTDC_PD_Long && p_trade->Direction == THOST_FTDC_D_Buy;
         bool _is_short = p_curr_pos->PosiDirection == THOST_FTDC_PD_Short && p_trade->Direction == THOST_FTDC_D_Sell;
         bool _is_same_direction = _is_long || _is_short;
-        //Èç¹ûÊÇµ±ÈÕ³Ö²Ö(²ßÂÔÆô¶¯Ç°ÒÑ¾­×öfilter)£¬¶øÇÒÂòÂôÏàÍ¬½»Ò×·½ÏòÎª¿ª²Ö£¬»òÕßÂòÂô·½ÏòÏà·´½»Ò×·½ÏòÎªÆ½²Ö£¬ÔòºÏ²¢
+        //ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½Õ³Ö²ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½Ñ¾ï¿½ï¿½ï¿½filter)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½×·ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Ö£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à·´ï¿½ï¿½ï¿½×·ï¿½ï¿½ï¿½ÎªÆ½ï¿½Ö£ï¿½ï¿½ï¿½Ï²ï¿½
         bool _is_pos_exist = (strcmp(p_curr_pos->InstrumentID, p_trade->InstrumentID)==0) && ((_trade_open&&_is_same_direction)||(!_trade_open && !_is_same_direction) );
         LOG(INFO)<<"[update_positions] check whether to merge position========>:"<<_is_pos_exist;
-        std::cout<<"pos idrection(2:long,3:short)=>"<<p_curr_pos->PosiDirection<<",trade direction(0:buy, 1:sell)=>"<<p_trade->Direction<<",is_logn=>"<<_is_long<<",_is_short=>"<<_is_short<<std::endl;
+        LOG(INFO)<<"pos idrection(2:long,3:short)=>"<<p_curr_pos->PosiDirection<<",trade direction(0:buy, 1:sell)=>"<<p_trade->Direction<<",is_long=>"<<_is_long<<",_is_short=>"<<_is_short<<std::endl;
         if(_is_pos_exist){ //position exists 
             LOG(INFO)<<"[update_positions] pos exist, and update position"<<",today position:"<<p_curr_pos->TodayPosition<<",exe vol:"<<exe_vol;
             flag = true;
@@ -5791,7 +5791,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
             }else{
                 p_curr_pos->CloseVolume -= exe_vol;
             }
-            //TODO add other value updates,PositionCost,³Ö²Ö³É±¾
+            //TODO add other value updates,PositionCost,ï¿½Ö²Ö³É±ï¿½
             LOG(INFO)<<"[update_positions] After update position,today pos=>"<<p_curr_pos->TodayPosition<<",pos=>"<<p_curr_pos->Position<<", open cost=>"<<p_curr_pos->OpenCost<<", direction=>"<<p_curr_pos->PosiDirection;
             break;
         }
@@ -5813,7 +5813,7 @@ void CTPTraderHandler::update_positions(CThostFtdcTradeField* p_trade){
         } else if(p_trade->Direction == THOST_FTDC_D_Sell){
             p_pos->PosiDirection = THOST_FTDC_PD_Short;
         }
-        //TODO add other value updates,±ÈÈçPositionCost,³Ö²Ö³É±¾
+        //TODO add other value updates,ï¿½ï¿½ï¿½ï¿½PositionCost,ï¿½Ö²Ö³É±ï¿½
         LOG(INFO)<<"[update_positions] new add pos,open cost=>"<<p_pos->OpenCost<<",today position=>"<<p_pos->TodayPosition<<",direction [2:long,3:short] =>"<<p_pos->PosiDirection<<",open volume=>"<<p_pos->OpenVolume<<", close volume=>"<<p_pos->CloseVolume;
         v_investor_position_fields.push_back(p_pos);
         LOG(INFO)<<"[update_positions] after add new transaction,all position size=>"<<v_investor_position_fields.size()<<",curr pos vol=>"<<p_pos->TodayPosition;
@@ -5887,7 +5887,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(){
     return this->v_investor_position_fields;
 }
 
-// TODO: ·µ»Ø¸ÃºÏÔ¼ instrument_idÓÐµ±ÈÕ³Ö²ÖµÄ£¨TodayPosition >0) µÄ¼ÇÂ¼£¬Õâ¸öÊÇT0Éè¶¨£¬¿´¿´Òª²»Òªrename, ÔÚverify orderºÍrisk monitorÖÐµ÷ÓÃ
+// TODO: ï¿½ï¿½ï¿½Ø¸Ãºï¿½Ô¼ instrument_idï¿½Ðµï¿½ï¿½Õ³Ö²ÖµÄ£ï¿½TodayPosition >0) ï¿½Ä¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½T0ï¿½è¶¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Òªrename, ï¿½ï¿½verify orderï¿½ï¿½risk monitorï¿½Ðµï¿½ï¿½ï¿½
 std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& instrument_id){
     unique_lock<mutex> mlock(mutex_);
     cond_.wait(mlock, [&]() {
@@ -5896,7 +5896,7 @@ std::vector<ptr_Position> CTPTraderHandler::get_positions(const std::string& ins
     std::vector<ptr_Position> v_ret_pos;
     for(auto it = this->v_investor_position_fields.begin(); it != v_investor_position_fields.end(); ++it){
         ptr_Position p_cur_pos = *it;
-        // °´ÕÕT0Ã¿ÈÕÆ½²ÖµÄÉè¶¨£¬¾ÍÊÇ²é¿´µ±ÈÕµÄ³Ö²Ö
+        // ï¿½ï¿½ï¿½ï¿½T0Ã¿ï¿½ï¿½Æ½ï¿½Öµï¿½ï¿½è¶¨ï¿½ï¿½ï¿½ï¿½ï¿½Ç²é¿´ï¿½ï¿½ï¿½ÕµÄ³Ö²ï¿½
         if(strcmp(p_cur_pos->InstrumentID, instrument_id.c_str()) == 0 && p_cur_pos->TodayPosition>0){
             v_ret_pos.push_back(p_cur_pos);
         }
@@ -5924,7 +5924,7 @@ int CTPTraderHandler::close_position(ptr_Position p_pos){
     return ret;
 }
     
-// Æ½µôËùÓÐÂú×ãÒÔÏÂµÄ³Ö²Ö£º1. ³Ö²ÖµÄºÏÔ¼ÊÇ¸Ã²ßÂÔcoverµÄÆ·ÖÖ£¨product_id/task_tag), 2. ¸ÃºÏÔ¼ÓÐµ±ÈÕ³Ö²Ö
+// Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÂµÄ³Ö²Ö£ï¿½1. ï¿½Ö²ÖµÄºï¿½Ô¼ï¿½Ç¸Ã²ï¿½ï¿½ï¿½coverï¿½ï¿½Æ·ï¿½Ö£ï¿½product_id/task_tag), 2. ï¿½Ãºï¿½Ô¼ï¿½Ðµï¿½ï¿½Õ³Ö²ï¿½
 int CTPTraderHandler::close_all_positions(){
     std::vector<ptr_Position> v_pos = get_positions();//FIXME check whether to filter by product_id or symbol
     int ret = 0;
